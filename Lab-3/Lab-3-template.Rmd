@@ -1,8 +1,8 @@
 ---
-title: "Lab 3 - Common trends in plankton data"
-subtitle: "Dynamic Factor Analysis (DFA)"
-author: "Person 1, Person 2, Person 3"
-date: April 20, 2023
+title: Team 1 - Lab 1
+subtitle: Dynamic Factor Analysis (DFA) - Common trends in plankton data
+author: "Name 1, Name 2, Name 3"
+date: April XX, 2025
 output: 
   html_document:
     code-folding: true
@@ -13,8 +13,6 @@ output:
 ```{r setup, include = FALSE}
 options(dplyr.summarise.inform = FALSE)
 ```
-
-***
 
 # Data
 

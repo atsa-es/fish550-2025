@@ -1,8 +1,8 @@
 ---
-title: "Lab 5 - Time-varying productivity of salmon"
-subtitle: "Dynamic Linear Models (DLMs)"
-author: "Person 1, Person 2, Person 3"
-date: May 11, 2023
+title: Team X - Lab 5
+subtitle: Dynamic Linear Models (DLMs) - Time-varying productivity of salmon
+author: "Name 1, Name 2, Name 3"
+date: May XX, 2025
 output: 
   html_document:
     code-folding: true
@@ -14,7 +14,6 @@ output:
 options(dplyr.summarise.inform = FALSE)
 ```
 
-***
 
 # Data
 

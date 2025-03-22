@@ -1,6 +1,10 @@
 # Getting Started
 
-* Read the background at [Lab1-ARIMA](https://atsa-es.github.io/atsa/Labs/Week%202/Lab1-ARIMA-2023.html)
+* Read the background at [Lab1-ARIMA-2023](https://atsa-es.github.io/atsa/Labs/Week%202/Lab1-ARIMA-2023.html)
+* And at [Lab1-Intro](https://atsa-es.github.io/fish550-2025/Lab-1/Lab1-ARIMA.html)
+* Use `Lab-1-template.Rmd` as your template.
+* See Team-Demo folder for an example write-up
+* You can also look at the 2023 student's write-ups; note, the labs are similar but not identical! <https://atsa-es.github.io/fish550-2023/>
 
 # Set up your Fish 550 repository on your computer
 
@@ -10,7 +14,7 @@ The following steps only need to be done once for the course
 
 1. **Open RStudio**
 2. Click File > New Project and then Version Control > Git.
-3. Paste https://github.com/atsa-es/fish550-2023 into the url box and make sure the repo is being put someplace you can easily find.
+3. Paste https://github.com/atsa-es/fish550-2025 into the url box and make sure the repo is being put someplace you can easily find.
 4. Click Create Project
 5. When you are ready to push changes to GitHub, click the Git tab, check the files to be committed, add a msg, click the push up arrow.
 6. When you want to pull changes from GitHub, go to the Git tab and click the down arrow.
@@ -19,7 +23,7 @@ The following steps only need to be done once for the course
 
 1. **Open GitHub Desktop** (download if necessary)
 2. Click File > Clone Repository... and then click the URL tab. Notice where the repo is being saved and change if needed/wanted.
-3. Paste https://github.com/atsa-es/fish550-2023 into the url box and click Clone
+3. Paste https://github.com/atsa-es/fish550-2025 into the url box and click Clone
 4. **Open RStudio** and click File > New Project > Existing Directory
 5. Navigate to the repo directory that you cloned in step 5
 6. When you are ready to push changes to GitHub, go to GitHub Desktop, commit the changes and push to GitHub

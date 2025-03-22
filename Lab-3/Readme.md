@@ -2,9 +2,9 @@
 
 * Read over the background material on DFA [here](https://atsa-es.github.io/atsa/Labs/Week%204/intro-to-dfa.html)
 
-* Do a pull of the `fish550-2023` repository so you have the most updated version.
+* Do a pull of the `fish550-2025` repository so you have the most updated version.
 
-* Copy [Lab-3-template](https://github.com/atsa-es/fish550-2023/tree/main/Lab-3) into your team folder.
+* Copy [Lab-3-template](https://github.com/atsa-es/fish550-2025/tree/main/Lab-3) into your team folder.
 
 
 # Collaborating on your write-up

@@ -15,3 +15,4 @@ _freeze
 *.o
 *.so
 Lab-6/univariate_example.html
+/docs

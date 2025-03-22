@@ -1,7 +1,14 @@
-# Lab 2: MARSS models
-
-Team member names: 
-
+---
+title: Team X - Lab 2
+subtitle: MARSS models
+author: "Name 1, Name 2, Name 3"
+date: April XX, 2025
+output: 
+  html_document:
+    code-folding: true
+    toc: true
+    toc_float: true
+---
 
 # Data
 

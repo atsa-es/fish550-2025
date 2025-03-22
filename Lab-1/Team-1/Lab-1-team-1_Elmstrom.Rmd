@@ -1,0 +1,300 @@
+# Lab 1: ARIMA models
+
+Team member names: Nick Chambers (SAFS), Liz Elmstrom (SAFS), Maria Kuruvilla (QERM)
+
+This is Liz's copy of the script to mess around with. Happy to combine to main document at any time. 
+
+# Data
+
+Bristol Bay Data. Discuss what part of the data set you will work with.
+
+Read in the data/load packages
+```{r}
+library(tseries)
+library(forecast)
+library(tidyverse)
+library(zoo)
+
+bb_data <- readRDS(here::here("Lab-1", "Data_Images", "bristol_bay_data_plus_covariates.rds"))
+```
+
+## Checking out the unique data groups
+```{r echo=FALSE}
+cat("colnames: ", colnames(bb_data), "\n")
+cat("system (river): ", unique(bb_data$system), "\n")
+cat("age groups: ", unique(bb_data$age_group), "\n")
+
+```
+
+## Explore the data
+```{r fig.cap="total across all 4 ages"}
+
+bb_data %>% 
+  group_by(system, ret_yr) %>%
+  summarize(total = sum(ret, na.rm=TRUE)) %>%
+  ggplot(aes(x=ret_yr, y=log(total))) + 
+    geom_line() + 
+    ggtitle("log abundance by river") +
+    facet_wrap(~system)
+
+bb_data %>% 
+  group_by(system, ret_yr) %>%
+  summarize(total = sum(forecast.adfw, na.rm=TRUE)) %>%
+  ggplot(aes(x=ret_yr, y=log(total))) + 
+    geom_line() + 
+    ggtitle("ADFW log abundance by river") +
+    facet_wrap(~system)
+
+bb_data %>% 
+  group_by(system, ret_yr) %>%
+  summarize(total = sum(forecast.fri, na.rm=TRUE)) %>%
+  ggplot(aes(x=ret_yr, y=log(total))) + 
+    geom_line() + 
+    ggtitle("FRI log abundance by river") +
+    facet_wrap(~system)
+```
+
+# Question your team will address
+
+We will look at the total forecasts for each river system. 
+
+"Compare the accuracy of total abundance forecasts using ARIMA models for Bristol Bay sockeye rivers and compare to the AKFW and UW FRI forecasts."
+
+Could also test accuracy based on training data length... 
+
+"Compare the forecasts of total North Pacific pink and chum using 5, 10, 15, and 20 years of training data. Does forecast accuracy increase with more training data?"
+
+# Method you will use
+
+Start with one river and figure it out
+Divide and conquer
+Fit ARIMA models
+Do Diagonstics 
+Make Forecasts
+Test accuracy
+
+## Initial plan (Eli's words)
+
+Describe what you plan to do to address your question. Note this example is with Ruggerone & Irvine data but your team will use the Bristol Bay data.
+
+Example, "We will fit ARIMA models to 1960-1980 data on pink salmon in 2 regions in Alaska and 2 regions in E Asia. We will make 1981-1985  forecasts (5 year) and compare the accuracy of the forecasts to the actual values. We will measure accuracy with mean squared error. We will use the forecast package to fit the ARIMA models."
+
+## What you actually did (Eli's words)
+
+Example, "We were able to do our plan fairly quickly, so after writing the basic code, we divided up all 12 regions in Ruggerone & Irvine and each team member did 4 regions. We compared the accuracy of forecasts for different time periods using 20-years for training and 5-year forecasts each time. We compared the RMSE, MAE, and MAPE accuracy measures."
+
+## Filter out river data
+
+Get total abundance per river out of `bb_data`
+```{r}
+
+#Sum and log returns for each river and year
+lndata <- bb_data %>%
+  group_by(system, ret_yr) %>%
+  summarize(lntotal = log(sum(ret, na.rm=TRUE)))
+
+# my_rivers <- lndata %>%
+#   filter(system == c("Egegik","Igushik", 'Kvichak')) #doesn't work
+
+# Grabs all years
+my_rivers <- filter(lndata, system %in% c("Egegik","Igushik", 'Kvichak'))
+  
+```
+
+# Diagnostics and preliminary exploration
+
+## Plot the data
+
+Plot the data and discuss any obvious problems with stationarity from your visual test.
+```{r}
+
+# Plotting three rivers
+my_rivers %>% 
+  ggplot(aes(x=ret_yr, y=lntotal)) + 
+    geom_line() + 
+    ggtitle("log abundance by river") +
+    facet_wrap(~system)+theme_bw()
+
+# Based on these plots, I hypothesize that data will be non-stationary for the Egegki. Igushik and Kvichak could be stationary? Igushik could be stationary around a linear trend. 
+```
+## Use ACF and PACF
+
+Use the ACF and PACF plots to explore the time series. What did you learn? Also try decomposition.
+
+```{r testing for corr}
+
+River <- unique(my_rivers$system)
+par(mfrow=c(1,2))
+for(i in 1:length(River)){
+  sub<-subset(my_rivers,my_rivers$system==River[i])
+  
+  acf_plots <- acf(sub$lntotal, plot = FALSE)
+  plot(acf_plots, main = River[i])
+  
+  pacf_plots <- pacf(sub$lntotal, plot = FALSE)
+  plot(pacf_plots, main = River[i])
+}
+
+```
+Egegik- lots of autocorrelation. Some in Igushik. Not much in Kvichak
+
+## Test for stationarity
+
+The Dickey fuller test- looks for evidence that the t.s. are a random walk. The null hypothesis for both tests is that the data are non-stationary. We want to REJECT the null hypothesis for this test, so we want a p-value of less that 0.05 (or smaller). If we reject the null, it IS stationary. 
+
+The KPSS test- The null hypothesis for the KPSS test is that the data are stationary. For this test, we do NOT want to reject the null hypothesis. In other words, we want the p-value to be greater than 0.05 not less than 0.05.
+
+```{r stationarity tests}
+
+adf.list <- kpss.list <- list()
+p.vals <- kp.vals <-  vector()
+
+for(i in 1:length(River)){
+  sub<-subset(my_rivers,my_rivers$system==River[i])
+  
+  adf.list[[i]] <- adf.test(sub$lntotal, k = 0)
+  kpss.list[[i]] <- kpss.test(sub$lntotal, null = "Trend")
+  
+  p.vals[i] <- adf.list[[i]]$p.value
+  kp.vals[i] <- kpss.list[[i]]$p.value
+}
+names(p.vals) <- names(kp.vals) <- River
+p.vals # Should be less than .05
+kp.vals # Should be greater than .05
+
+```
+For the ADF test, we want to REJECT the null hypothesis, so we want a p-value less than 0.05
+For the KPSS test, we want to ACCEPT the null hypothesis, so we want a p-value greater than 0.05
+
+Egegik == non-stationary
+Igushik == stationary
+Kvichak == stationary
+
+## Testing for differencing 
+
+Egegik is non-stationary (i.e., could be a random walk) so can test the level of differencing needed to make it stationary. 
+
+```{r}
+
+eg <- filter(lndata, system %in% c("Egegik"))
+ndiffs(eg$lntotal, test='kpss')
+ndiffs(eg$lntotal, test='adf')
+
+## testing the others in case
+ig <- filter(lndata, system %in% c("Igushik"))
+ndiffs(ig$lntotal, test='kpss')
+ndiffs(ig$lntotal, test='adf')
+
+kv <- filter(lndata, system %in% c("Kvichak"))
+ndiffs(kv$lntotal, test='kpss')
+ndiffs(kv$lntotal, test='adf')
+
+```
+According to both, differencing the data by 1 should work. 
+
+## Dividing the data into test and train
+
+Make a time series object and divide into train and test data.
+```{r}
+
+## Egegik
+e.datts <- ts(eg$lntotal, start=eg$ret_yr[1])
+## Differencing Egegik by 1
+#diff1dat <- diff(e.datts)
+e.train <- window(e.datts, 1963, 1993)
+e.test <- window(e.datts, 1984, 2020)
+
+## Igushik
+i.datts <- ts(ig$lntotal, start=eg$ret_yr[1])
+i.train <- window(i.datts, 1963, 1993)
+i.test <- window(i.datts, 1994, 2020)
+
+## Kvichak
+kv.datts <- ts(kv$lntotal, start=eg$ret_yr[1]) ## Changed the train and test data timing 
+kv.train <- window(kv.datts, 1963, 2003)
+kv.test <- window(kv.datts, 2004, 2020)
+
+```
+
+
+Fit a model with `auto.arima()` in the forecast package.
+```{r message=FALSE}
+
+mod.eg <- auto.arima(e.train)
+mod.eg
+
+mod.ig <- auto.arima(i.train)
+mod.ig
+
+mod.kv <- auto.arima(kv.train)
+mod.kv
+
+### Notes from Eli, testing with data from the Kvichak. (auto.arima chose a 0,0,1 model)
+
+# Chosing our own arima structure. This is how we would write it if we just wanted a single model with a specified structure. 
+fit = Arima(kv.train, order = c(2,1,0))# just a random example of how its written, didn't chose the order for any reason
+
+# For loop to test multiple models and find their accuracy
+mod.list <- list(c(0,0,1), c(1,0,1), c(2,0,1))## List of mods to test. First option is what auto.arima chose
+fits <- list()# list to store the model fits in 
+err.list <- list(0) # list for accuracy data
+for(i in 1:3){
+  fits[[i]] <- Arima(kv.train, order = mod.list[[i]])# loops through list, fits model, and stores in 'fits'
+  err.list[[i]] <- accuracy(forecast(fits[[i]], h =10), kv.test) # puts accuracy data into list
+}
+
+fits
+err.list
+
+# Testing plot with the last ARIMA model (2,0,1)
+fr.test <- forecast(fits[[3]], h=20)
+autoplot(fr.test) + geom_point(aes(x=x, y=y), data=fortify(kv.test))+
+  geom_point(aes(x=ret_yr, y=lntotal), data = kv_fri_fore, col='red')
+
+```
+
+
+Plot a 5-year and 10-year forecast against the test data.
+```{r}
+
+fri_fore <- bb_data %>%
+  group_by(system, ret_yr) %>%
+  summarize(lntotal = log(sum(forecast.fri, na.rm=TRUE)))
+
+eg_fri_fore <- fri_fore %>% filter(system %in% 'Egegik')
+
+fr <- forecast(mod.eg, h=5)
+autoplot(fr) + geom_point(aes(x=x, y=y), data=fortify(e.test))+
+  geom_point(aes(x=ret_yr, y=lntotal), data = eg_fri_fore, col='red')
+
+## How to un-difference to compare to forecasted data?
+
+ig_fri_fore <- fri_fore %>% filter(system %in% 'Igushik')
+i.fr <- forecast(mod.ig, h=5)
+autoplot(i.fr) + geom_point(aes(x=x, y=y), data=fortify(i.test))+
+  geom_point(aes(x=ret_yr, y=lntotal), data = ig_fri_fore, col = "red")
+
+kv_fri_fore <- fri_fore %>% filter(system %in% 'Kvichak')
+k.fr <- forecast(mod.kv, h=5)
+autoplot(k.fr) + geom_point(aes(x=x, y=y), data=fortify(kv.test))+
+  geom_point(aes(x=ret_yr, y=lntotal), data = kv_fri_fore, col = "red")
+
+```
+```{r}
+## Testing the accuracy of the model
+
+
+accuracy(mod.eg) # fit within the train data
+accuracy(forecast(mod.eg, h=5), e.test) # comparison of a forecast (5 year) to the test data (5 year)
+
+## Had to run, will work on this more later. 
+```
+
+# Results
+
+# Discussion
+
+# Description of each team member's contributions (Eli's words)
+
+Example: "All team members helped decide on the goal and ran the analyses for the individual regions. Team members 2 & 3 wrote most of the code for the analysis of the regions. Team member 4 researched approaches for measuring accuracy of forecasts in [Hyndman & Athanasopoulos[OTexts.com/fpp2] and team member 2 added code for that to the methods. Team member 4 also researched tests for stationarity and worked with team member 2 to code that up. Team member 1 worked on the plotting section of the report using and adapting code that team member 3 wrote. All team members helped edit the report and wrote the discussion together."
+

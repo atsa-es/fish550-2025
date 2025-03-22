@@ -2,7 +2,7 @@
 title: Lab Intro
 subtitle: Lab 1 Forecasting with ARIMA models
 author: E Holmes
-date: March 22, 2023
+date: April X, 2025
 output: 
   html_document:
     code-folding: true
@@ -19,10 +19,10 @@ For this lab you will use the material you have learned in the first 3 lectures 
 
 ## Teams
 
-1. Bristol Bay Data: Nick Chambers (SAFS), Liz Elmstrom (SAFS), Maria Kuruvilla (QERM)
-2. Bristol Bay Data: Eric French (Civil), Dylan Hubl (ESRM), Miranda Mudge (Molecular & Cell Bio)
-3. Ruggerone & Irvine Data: Zoe Rand (QERM), Madison Shipley (SAFS), Emma Timmins-Schiffman (Genome Sci)
-4. Ruggerone & Irvine Data: Terrance Wang (SAFS), Josh Zahner (SAFS), Karl Veggerby (SAFS)
+1. Bristol Bay Data: 
+2. Bristol Bay Data: 
+3. Ruggerone & Irvine Data: 
+4. Ruggerone & Irvine Data: 
 
 ## References
 

@@ -32,3 +32,4 @@ Open a terminal and make sure you are in fish550-2025. Run this
 ```
 quarto publish gh-pages
 ```
+The first time this is run, it will fail. Do a manual push of the gh-pages branch. After that, the publish command will work.

@@ -2,7 +2,7 @@
 title: Lab Intro
 subtitle: "Lab 3 Common trends in plankton data"
 author: "Mark Scheuerell"
-date: "April 20, 2023"
+date: "Due date April X, 2025"
 output: 
   html_document:
     code-folding: true
@@ -21,13 +21,13 @@ For this lab you will use dynamic factor analysis (DFA) to examine common tempor
 
 ## Teams
 
-1) Liz Elmstrom (SAFS), Dylan Hubl (SEFS) 
+1) 
 
-2) Maria Kuruvilla (QERM), Eric French (CEE), Madison Shipley (SAFS)
+2) 
 
-3) Nick Chambers (SAFS), Terrance Wang (SAFS), Zoe Rand (QERM)
+3) 
 
-4) Emma Timmins-Schiffman (Genome Sci), Karl Veggerby (SAFS), Miranda Mudge (Molecular & Cellular)
+4) 
 
 
 ## Lake Washington data

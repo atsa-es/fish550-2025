@@ -2,7 +2,7 @@
 title: Lab Intro
 subtitle: "Lab 4 Hidden Markov Models"
 author: "Eric Ward"
-date: "Due Tues May 9 11:59 PM PDT"
+date: "Due Tues May X 11:59 PM PDT"
 output: 
   html_document:
     code-folding: true

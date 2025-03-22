@@ -17,12 +17,14 @@ Look in the ReadMe file in the Lab folder. Do your team work in your team folder
 ### Prerequisites
 
 1. Make sure GH Pages is set up to use gh-pages branch
-  <img width="431" alt="image" src="https://github.com/user-attachments/assets/343f1a70-b5c4-47d8-aa14-764d5a6bc681" />
+
+<img width="431" alt="image" src="https://github.com/user-attachments/assets/343f1a70-b5c4-47d8-aa14-764d5a6bc681" />
 
 2. Make sure the gh-pages branch exists. You can create on GH
-   <img width="323" alt="image" src="https://github.com/user-attachments/assets/49b7fbc1-62c0-4b7a-bd71-6e2a306c962d" />
+   
+<img width="323" alt="image" src="https://github.com/user-attachments/assets/49b7fbc1-62c0-4b7a-bd71-6e2a306c962d" />
 
-3. Back on RStudio, make sure you are not on the GH branch (locally)
+4. Back on RStudio, make sure you are not on the GH branch (locally). Do a Git pull to make sure you have the `gh-pages` branch locally but don't switch to it.
 
 ### To update the lab book
 

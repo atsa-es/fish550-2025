@@ -1,13 +1,28 @@
-# fish550-2023
+# fish550-2025
 
-GitHub Repo for FISH 550 2023 https://atsa-es.github.io/atsa/
+GitHub Repo for FISH 550 2025 https://atsa-es.github.io/atsa/
 
 ## Labs
 
-* [Lab 1](https://github.com/atsa-es/fish550-2023/tree/main/Lab-1) The lab info is in `Lab1-ARIMA.Rmd`. Knit that on your computer after cloning.
-* [Lab 2](https://github.com/atsa-es/fish550-2023/tree/main/Lab-2) The lab info is in `Lab2-MARSS.Rmd`. Knit that on your computer after cloning.
+Look in the ReadMe file in the Lab folder. Do your team work in your team folder. Once done add your final team report to the Final_Write_ups folder for the lab.
 
-## Lectures
+* [Lab 1](https://github.com/atsa-es/fish550-2025/tree/main/Lab-1) 
+* [Lab 2](https://github.com/atsa-es/fish550-2025/tree/main/Lab-2)
+* [Lab 3](https://github.com/atsa-es/fish550-2025/tree/main/Lab-3) 
+* [Lab 4](https://github.com/atsa-es/fish550-2025/tree/main/Lab-4) 
+* [Lab 5](https://github.com/atsa-es/fish550-2025/tree/main/Lab-5)
 
-* [Week 3](https://github.com/atsa-es/fish550-2023/tree/main/Lectures Week 3) Has the scripts that we will work through on Tues April 11th.
+## Building the lab book
 
+### Prerequisites
+
+1. Make sure GH Pages is set up to use gh-pages branch
+2. Make sure the gh-pages branch exists. You can create on GH
+3. Make sure you are not on the GH branch (locally)
+
+### To update the lab book
+
+Open a terminal and make sure you are in fish550-2025. Run this
+```
+quarto publish gh-pages
+```

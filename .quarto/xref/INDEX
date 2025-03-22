@@ -1,0 +1,20 @@
+{
+  "index.qmd": {
+    "index.html": "338a4361"
+  },
+  "Lab-1/Lab1-ARIMA.Rmd": {
+    "Lab1-ARIMA.html": "aff6f23d"
+  },
+  "Lab-2/Lab2-MARSS.Rmd": {
+    "Lab2-MARSS.html": "a6f758c3"
+  },
+  "Lab-3/Lab-3-DFA.Rmd": {
+    "Lab-3-DFA.html": "1aca0928"
+  },
+  "Lab-4/Lab-4-HMM.Rmd": {
+    "Lab-4-HMM.html": "657272dc"
+  },
+  "Lab-5/Lab-5-DLM.Rmd": {
+    "Lab-5-DLM.html": "2191e1bc"
+  }
+}

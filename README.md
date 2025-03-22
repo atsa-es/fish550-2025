@@ -4,7 +4,7 @@ GitHub Repo for FISH 550 2025 https://atsa-es.github.io/atsa/
 
 ## Labs
 
-Look in the ReadMe file in the Lab folder. Do your team work in your team folder. Once done add your final team report to the Final_Write_ups folder for the lab.
+Look in the ReadMe file in the Lab folder. Do your team work in your team folder. Once done, label your final team write-up as `Lab-X-team-X_final.Rmd`.
 
 * [Lab 1](https://github.com/atsa-es/fish550-2025/tree/main/Lab-1) 
 * [Lab 2](https://github.com/atsa-es/fish550-2025/tree/main/Lab-2)
@@ -12,7 +12,7 @@ Look in the ReadMe file in the Lab folder. Do your team work in your team folder
 * [Lab 4](https://github.com/atsa-es/fish550-2025/tree/main/Lab-4) 
 * [Lab 5](https://github.com/atsa-es/fish550-2025/tree/main/Lab-5)
 
-## Building the lab book
+## Building the lab book (for Eli)
 
 ### Prerequisites
 

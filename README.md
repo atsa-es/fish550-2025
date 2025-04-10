@@ -2,6 +2,15 @@
 
 GitHub Repo for FISH 550 2025 https://atsa-es.github.io/atsa/
 
+## atsalibrary
+
+```
+install.packages('atsalibrary', repos = c('https://atsa-es.r-universe.dev', 'https://cloud.r-project.org'))
+
+# to also install Suggests use
+install.packages('atsalibrary', repos = c('https://atsa-es.r-universe.dev', 'https://cloud.r-project.org'), dependencies = TRUE)
+```
+
 ## Labs
 
 Look in the ReadMe file in the Lab folder. Do your team work in your team folder. Once done, label your final team write-up as `Lab-X-team-X_final.Rmd`.
@@ -13,6 +22,8 @@ Look in the ReadMe file in the Lab folder. Do your team work in your team folder
 * [Lab 5](https://github.com/atsa-es/fish550-2025/tree/main/Lab-5)
 
 ## Building the lab book (for Eli)
+
+Students ignore this.
 
 ### Prerequisites
 

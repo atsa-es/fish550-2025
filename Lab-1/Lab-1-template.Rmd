@@ -12,18 +12,18 @@ output:
 
 # Data
 
-Ruggerone & Irvine Data. Discuss what part of the data set you will work with.
+Discuss what parts of the data sets you will work with.
 
 # Question your team will address
 
 What will your team do with the data? You can do many things with the data. The only constraints are that you
 
-* fit ARIMA models (note you'll want to log the abundance data). You can fit other models in addition ot ARIMA if you want.
-* do diagnostics for ARIMA models
+* fit ARIMA and ETS models. You can fit other models in addition to these if you want (lm, glm, gam, etc)
+* do diagnostics for ARIMA and ETS models
 * make forecasts
 * test how good your forecasts or compare forecasts (many options here)
 
-Example, "Our team decided to compare the accuracy of forecasts using best fit ARIMA models for pink salmon using 4 regions in the Ruggerone & Irvine data. Our question is whether forecast accuracy is different for different regions."
+Example, "Our team decided to compare the accuracy of forecasts using best fit ARIMA models for WA, OR and CA commercial yearly landings. Our question is whether forecast accuracy is different for simple (1st order) versus 2nd to 4th order ARIMA models."
 
 # Method you will use
 
@@ -31,11 +31,11 @@ Example, "Our team decided to compare the accuracy of forecasts using best fit A
 
 Describe what you plan to do to address your question.
 
-Example, "We will fit ARIMA models to 1960-1980 data on pink salmon in 2 regions in Alaska and 2 regions in E Asia. We will make 1981-1985  forecasts (5 year) and compare the accuracy of the forecasts to the actual values. We will measure accuracy with mean squared error. We will use the forecast package to fit the ARIMA models."
+Example, "We will fit ARIMA models to 1960-1980 data and make 1981-1985  forecasts (5 year). We will compare the accuracy of the forecasts to the actual values. We will measure accuracy with mean squared error. We will use the forecast package to fit the ARIMA models with different AR orders (1st up to 4th order)."
 
 ## What you actually did
 
-Example, "We were able to do our plan fairly quickly, so after writing the basic code, we divided up all 12 regions in Ruggerone & Irvine and each team member did 4 regions. We compared the accuracy of forecasts for different time periods using 20-years for training and 5-year forecasts each time. We compared the RMSE, MAE, and MAPE accuracy measures."
+Example, "We were able to do our plan fairly quickly, so after writing the basic code. We compared the accuracy of forecasts for different time periods using 20-years for training and 5-year forecasts each time. We compared the RMSE, MAE, and MAPE accuracy measures."
 
 # Diagnostics and preliminary exploration
 
@@ -43,15 +43,6 @@ Example, "We were able to do our plan fairly quickly, so after writing the basic
 
 Plot the data and discuss any obvious problems with stationarity from your visual test.
 
-```{r fig.cap="pink salmon by regions"}
-library(tidyverse)
-ruggerone_data %>% 
-  filter(species=="pink") %>% 
-  ggplot(aes(x=year, y=log(returns))) + 
-    geom_line() + 
-    ggtitle("sockeye salmon log abundance") +
-    facet_wrap(~region)
-```
 
 ## Use ACF and PACF
 
@@ -59,7 +50,7 @@ Use the ACF and PACF plots to explore the time series. What did you learn? Also 
 
 ## Test for stationarity
 
-Run tests and discuss any stationarity issues and how these were addressed.
+Run tests using `forecast::ndiffs` and discuss any stationarity issues that are revealed.
 
 # Results
 

@@ -1,6 +1,7 @@
 # load packages
 library(atsalibrary)
 library(ggplot2)
+library(patchwork)
 library(tidyverse)
 
 ## STUFF FROM .rmd
@@ -57,4 +58,51 @@ ggplot(chinook.year.filtered, aes(x = Year, y = log.metric.tons)) +
   ) +
   theme_minimal()
 
-## SANDBOX ANALYSIS
+## SANDBOX Price analysis
+# check out data
+head(chinook.month)
+
+# back out price (US$/ton)
+chinook.month$price <- chinook.month$value.usd/chinook.month$metric.tons
+head(chinook.month)
+
+# plot with price by state
+landings.monthly <- ggplot(chinook.month, aes(x = Date, y = log.metric.tons)) +
+  geom_line() +
+  facet_wrap(~ State, nrow = 1) +  # 3 panels vertically
+  labs(title = "Monthly Chinook Salmon Landings",
+       x = "Date",
+       y = "Log(m. tons)") +
+  theme_minimal()
+landings.monthly
+
+price.monthly <- ggplot(chinook.month, aes(x = Date, y = price)) +
+  geom_line() +
+  facet_wrap(~ State, nrow = 1) +  # 3 panels horizontal
+  labs(title = "Monthly Chinook Salmon Landings",
+       x = "Date",
+       y = "US$/Metric Ton") +
+  theme_minimal()
+price.monthly
+  # clear periodicity in price
+  # WA Jan 2016 = infinity, kinda silly
+
+chinook.month[sapply(chinook.month, is.infinite)] <- NA
+chinook.month <- chinook.month %>% mutate_all(~ifelse(is.nan(.), NA, .))
+price.monthly <- ggplot(chinook.month, aes(x = Date, y = price)) +
+  geom_line() +
+  facet_wrap(~ State, nrow = 1) +  # 3 panels horizontal
+  labs(title = "Monthly Chinook Salmon Price",
+       x = "Date",
+       y = "US$/m. ton") +
+  theme_minimal()
+price.monthly
+landings.monthly
+
+landings.monthly/price.monthly
+
+# plan:   forecast value
+#         forecast price and landings
+#             (interact price and landings)
+#         is forecasting price*landings more efficient than forecasting value?
+

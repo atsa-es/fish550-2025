@@ -1,5 +1,5 @@
 ---
-title: Team X - Lab 1
+title: Team 3 - Lab 1
 subtitle: Forecasting with ARIMA and ETS models
 author: "Name 1, Name 2, Name 3"
 date: April XX, 2025

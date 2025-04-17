@@ -1,0 +1,62 @@
+---
+title: Team X - Lab 1
+subtitle: Forecasting with ARIMA and ETS models
+author: "Name 1, Name 2, Name 3"
+date: April XX, 2025
+output: 
+  html_document:
+    code-folding: true
+    toc: true
+    toc_float: true
+---
+
+# Data
+
+Discuss what parts of the data sets you will work with.
+
+# Question your team will address
+
+What will your team do with the data? You can do many things with the data. The only constraints are that you
+
+* fit ARIMA and ETS models. You can fit other models in addition to these if you want (lm, glm, gam, etc)
+* do diagnostics for ARIMA and ETS models
+* make forecasts
+* test how good your forecasts or compare forecasts (many options here)
+
+Example, "Our team decided to compare the accuracy of forecasts using best fit ARIMA models for WA, OR and CA commercial yearly landings. Our question is whether forecast accuracy is different for simple (1st order) versus 2nd to 4th order ARIMA models."
+
+# Method you will use
+
+## Initial plan
+
+Describe what you plan to do to address your question.
+
+Example, "We will fit ARIMA models to 1960-1980 data and make 1981-1985  forecasts (5 year). We will compare the accuracy of the forecasts to the actual values. We will measure accuracy with mean squared error. We will use the forecast package to fit the ARIMA models with different AR orders (1st up to 4th order)."
+
+## What you actually did
+
+Example, "We were able to do our plan fairly quickly, so after writing the basic code. We compared the accuracy of forecasts for different time periods using 20-years for training and 5-year forecasts each time. We compared the RMSE, MAE, and MAPE accuracy measures."
+
+# Diagnostics and preliminary exploration
+
+## Plot the data
+
+Plot the data and discuss any obvious problems with stationarity from your visual test.
+
+
+## Use ACF and PACF
+
+Use the ACF and PACF plots to explore the time series. What did you learn? Also try decomposition.
+
+## Test for stationarity
+
+Run tests using `forecast::ndiffs` and discuss any stationarity issues that are revealed.
+
+# Results
+
+# Discussion
+
+# Description of each team member's contributions
+
+Example: "All team members helped decide on the goal and ran the analyses for the individual regions. Team members 2 & 3 wrote most of the code for the analysis of the regions. Team member 4 researched approaches for measuring accuracy of forecasts in [Hyndman & Athanasopoulos[OTexts.com/fpp2] and team member 2 added code for that to the methods. Team member 4 also researched tests for stationarity and worked with team member 2 to code that up. Team member 1 worked on the plotting section of the report using and adapting code that team member 3 wrote. All team members helped edit the report and wrote the discussion together."
+

@@ -16,6 +16,15 @@ Discuss what parts of the data sets you will work with.
 
 # Question your team will address
 
+Compare the forescast accuracy of ARIMA models in yearly and monthly data (i.e. is the accuracy of monthly or yearly data better?)
+1)Test stationarity of the data, if not, use differencing to get it into stationary data, then confirm
+2)Fit an ARIMA model to the monthly data 
+2) use Autoarima and run diagnositcs on training data (accuracy data)
+3) Fit an ARIMA model to the yearly data
+4) use Autoarima and run diagnositcs (80%)
+5) use accuracy function and compare the accuracy 
+
+
 What will your team do with the data? You can do many things with the data. The only constraints are that you
 
 * fit ARIMA and ETS models. You can fit other models in addition to these if you want (lm, glm, gam, etc)

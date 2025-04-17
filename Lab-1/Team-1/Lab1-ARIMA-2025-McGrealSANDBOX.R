@@ -101,8 +101,163 @@ landings.monthly
 
 landings.monthly/price.monthly
 
+value.monthly <- ggplot(chinook.month, aes(x = Date, y = value.usd)) +
+  geom_line() +
+  facet_wrap(~ State, nrow = 1) +  # 3 panels horizontal
+  labs(title = "Monthly Chinook Salmon Value",
+       x = "Date",
+       y = "US$") +
+  theme_minimal()
+price.monthly
+landings.monthly
+value.monthly
+
+landings.monthly/price.monthly/value.monthly
+
 # plan:   forecast value
 #         forecast price and landings
 #             (interact price and landings)
 #         is forecasting price*landings more efficient than forecasting value?
 
+# set time series
+CAchinook.month <- subset(chinook.month, State == "CA")
+ORchinook.month <- subset(chinook.month, State == "OR")
+WAchinook.month <- subset(chinook.month, State == "WA")
+
+#CA
+CAlands.ts <- ts(CAchinook.month$log.metric.tons, start=c(1990,1),
+                 frequency = 12)
+CAlands.train <- window(CAlands.ts, c(1990, 1), c(2020, 12))
+CAlands.test <- window(CAlands.ts, c(2021, 1), c(2022, 12))
+
+CAprice.ts <- ts(CAchinook.month$price, start=c(1990,1),
+                 frequency = 12)
+CAprice.train <- window(CAprice.ts, c(1990, 1), c(2020, 12))
+CAprice.test <- window(CAprice.ts, c(2021, 1), c(2022, 12))
+
+CAvalue.ts <- ts(CAchinook.month$value.usd, start=c(1990,1),
+                 frequency = 12)
+CAvalue.train <- window(CAvalue.ts, c(1990, 1), c(2020, 12))
+CAvalue.test <- window(CAvalue.ts, c(2021, 1), c(2022, 12))
+
+#OR
+ORlands.ts <- ts(ORchinook.month$log.metric.tons, start=c(1990,1),
+                 frequency = 12)
+ORlands.train <- window(ORlands.ts, c(1990, 1), c(2020, 12))
+ORlands.test <- window(ORlands.ts, c(2021, 1), c(2022, 12))
+
+ORprice.ts <- ts(ORchinook.month$price, start=c(1990,1),
+                 frequency = 12)
+ORprice.train <- window(ORprice.ts, c(1990, 1), c(2020, 12))
+ORprice.test <- window(ORprice.ts, c(2021, 1), c(2022, 12))
+
+ORvalue.ts <- ts(ORchinook.month$value.usd, start=c(1990,1),
+                 frequency = 12)
+ORvalue.train <- window(ORvalue.ts, c(1990, 1), c(2020, 12))
+ORvalue.test <- window(ORvalue.ts, c(2021, 1), c(2022, 12))
+
+#WA
+WAlands.ts <- ts(WAchinook.month$log.metric.tons, start=c(1990,1),
+                 frequency = 12)
+WAlands.train <- window(WAlands.ts, c(1990, 1), c(2020, 12))
+WAlands.test <- window(WAlands.ts, c(2021, 1), c(2022, 12))
+
+WAprice.ts <- ts(WAchinook.month$price, start=c(1990,1),
+                 frequency = 12)
+WAprice.train <- window(WAprice.ts, c(1990, 1), c(2020, 12))
+WAprice.test <- window(WAprice.ts, c(2021, 1), c(2022, 12))
+
+WAvalue.ts <- ts(WAchinook.month$value.usd, start=c(1990,1),
+                 frequency = 12)
+WAvalue.train <- window(WAvalue.ts, c(1990, 1), c(2020, 12))
+WAvalue.test <- window(WAvalue.ts, c(2021, 1), c(2022, 12))
+
+# set up forecasts
+#CA
+CAlands.fit <- forecast::auto.arima(CAlands.train)
+CAprice.fit <- forecast::auto.arima(CAprice.train)
+CAvalue.fit <- forecast::auto.arima(CAvalue.train)
+
+CAlands.fit
+CAprice.fit
+CAvalue.fit
+
+#OR
+ORlands.fit <- forecast::auto.arima(ORlands.train)
+ORprice.fit <- forecast::auto.arima(ORprice.train)
+ORvalue.fit <- forecast::auto.arima(ORvalue.train)
+
+ORlands.fit
+ORprice.fit
+ORvalue.fit
+
+#WA
+WAlands.fit <- forecast::auto.arima(WAlands.train)
+WAprice.fit <- forecast::auto.arima(WAprice.train)
+WAvalue.fit <- forecast::auto.arima(WAvalue.train)
+
+WAlands.fit
+WAprice.fit
+WAvalue.fit
+
+# project forecasts
+#CA
+CAlands.fc <- forecast::forecast(CAlands.fit, h=24)
+plot(CAlands.fc)
+points(CAlands.test)
+
+CAprice.fc <- forecast::forecast(CAprice.fit, h=24)
+plot(CAprice.fc)
+points(CAprice.test)
+
+CAvalue.fc <- forecast::forecast(CAvalue.fit, h=24)
+plot(CAvalue.fc)
+points(CAvalue.test)
+
+#OR
+ORlands.fc <- forecast::forecast(ORlands.fit, h=24)
+plot(ORlands.fc)
+points(ORlands.test)
+
+ORprice.fc <- forecast::forecast(ORprice.fit, h=24)
+plot(ORprice.fc)
+points(ORprice.test)
+
+ORvalue.fc <- forecast::forecast(ORvalue.fit, h=24)
+plot(ORvalue.fc)
+points(ORvalue.test)
+
+#WA
+WAlands.fc <- forecast::forecast(WAlands.fit, h=24)
+plot(WAlands.fc)
+points(WAlands.test)
+
+WAprice.fc <- forecast::forecast(WAprice.fit, h=24)
+plot(WAprice.fc)
+points(WAprice.test)
+
+WAvalue.fc <- forecast::forecast(WAvalue.fit, h=24)
+plot(WAvalue.fc)
+points(WAvalue.test)
+
+#comparing forecasts
+#CA
+CAlands.compoundfc <- exp(CAlands.fc$mean)
+CAvalue.compoundfc <- CAlands.compoundfc*CAprice.fc$mean
+CAvalue.compoundfc
+CAvalue.fc$mean
+CAvalue.test
+
+#OR
+ORlands.compoundfc <- exp(ORlands.fc$mean)
+ORvalue.compoundfc <- ORlands.compoundfc*ORprice.fc$mean
+ORvalue.compoundfc
+ORvalue.fc$mean
+ORvalue.test
+
+#WA
+WAlands.compoundfc <- exp(WAlands.fc$mean)
+WAvalue.compoundfc <- WAlands.compoundfc*WAprice.fc$mean
+WAvalue.compoundfc
+WAvalue.fc$mean
+WAvalue.test

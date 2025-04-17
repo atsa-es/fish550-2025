@@ -2,14 +2,14 @@
 title: Lab Intro
 subtitle: "Lab 2 Analyzing multivariate salmon data"
 author: "E Holmes"
-date: "April X, 2025"
+date: "April 17, 2025"
 output:
-  pdf_document:
-    toc: yes
   html_document:
     code-folding: yes
     toc: yes
     toc_float: yes
+  pdf_document:
+    toc: yes
 ---
 
 ```{r message=FALSE}
@@ -21,22 +21,34 @@ For this lab you will use multivariate auto-regressive state-space (MARSS) to an
 
 ## Teams
 
-1. Lower Columbia River Chinook: 
-2. Lower Columbia River Steelhead: 
-3. Lower Columbia River Coho: 
-4. Middle Columbia River Steelhead: 
+1. Salmon, coho (Oregon Coast ESU) `esu[7]`
+2. Salmon, Chinook (Snake River spring/summer-run ESU) `esu[2]`
+3. Steelhead (Snake River Basin DPS) `esu[11]`
 
-## Lower Columbia River salmon spawner data
-
-These data are from the [Coordinated Assessments Partnership (CAP) ](https://www.streamnet.org/cap/about-cap/) and downloaded using the [rCAX R client](https://nwfsc-math-bio.github.io/rCAX/) for the CAX (the CAP database) API. The data are saved in `Lab-2/Data_Images/columbia-river.rda`.
-
-```{r}
-load(here::here("Lab-2", "Data_Images", "columbia-river.rda"))
+```{r, results = "asis", echo=FALSE}
+# Set up names and shuffle
+set.seed(123)
+names_str <- "Anna, Brian, Nicole, Matheus, Lilac, Mary, Ben, Emma, Tina"
+names <- strsplit(names_str, ",\\s*")[[1]]
+shuffled <- sample(names)
+teams <- split(shuffled, ceiling(seq_along(shuffled) / 3))
+for (i in seq_along(teams)) {
+  cat(sprintf("- **Team %d**: %s  \n", i, paste(teams[[i]], collapse = ", ")))
+}
 ```
 
-The data set has data for fi endangered and threatened ESU (Evolutionary Significant Units) in the Lower Columbia River.
-```{r}
-esu <- unique(columbia.river$esu_dps)
+
+## WA and OR Endangered and Threatened salmon spawner data
+
+These data are from the [Coordinated Assessments Partnership (CAP) ](https://www.streamnet.org/cap/about-cap/) and downloaded using the [rCAX R client](https://nwfsc-cb.github.io/rCAX/) for the CAX (the CAP database) API. The data are saved in `Lab-2/Data_Images/columbia-river.rda`. See `Lab-2/Data_Images/setup_data_2025.R` for the script to create the data.
+
+```{r load-data}
+load("Data_Images/esa-salmon.rda")
+```
+
+The data set has data for endangered and threatened ESU (Evolutionary Significant Units) and DPS (Distinct Population Segments) in the Washington and Oregon.
+```{r esus}
+esu <- unique(esa.salmon$esu_dps)
 esu
 ```
 
@@ -47,10 +59,10 @@ knitr::include_graphics("Data_Images/LCR-chinook-regions.png")
 ### Data structure
 
 The dataset has the following columns
-```{r}
-colnames(columbia.river)
+```{r data-structure}
+colnames(esa.salmon)
 ```
-* species: Chinook, Coho, Steelhead
+* species: Chinook, Coho, Steelhead, Chum, Sockeye
 * esu_dps: name of the ESU
 * majorpopgroup: biological major group
 * commonpopname: common population name, generally a stream or river
@@ -61,9 +73,9 @@ colnames(columbia.river)
 ### Data plots
 
 Let's load one ESU and make a plot. Create a function.
-```{r}
+```{r plot-function}
 plotesu <- function(esuname){
-  df <- columbia.river %>% subset(esu_dps %in% esuname)
+  df <- esa.salmon %>% subset(esu_dps %in% esuname)
 ggplot(df, aes(x=spawningyear, y=log(value), color=majorpopgroup)) + 
   geom_point(size=0.2, na.rm = TRUE) + 
   theme(strip.text.x = element_text(size = 3)) +
@@ -74,23 +86,20 @@ ggplot(df, aes(x=spawningyear, y=log(value), color=majorpopgroup)) +
 ```
 
 ```{r}
-plotesu(esu[3])
+plotesu(esu[7])
 ```
 
 ```{r}
-plotesu(esu[4])
+plotesu(esu[11])
 ```
 
 ```{r}
-plotesu(esu[5])
+plotesu(esu[2])
 ```
 
-```{r}
-plotesu(esu[1])
-```
 
-```{r}
-df <- columbia.river %>% subset(species == "Chinook salmon")
+```{r plot-runs}
+df <- esa.salmon %>% subset(species == "Chinook salmon")
 ggplot(df, aes(x=spawningyear, y=log(value), color=run)) + 
   geom_point(size=0.2, na.rm = TRUE) +
   theme(strip.text.x = element_text(size = 3)) +
@@ -104,7 +113,7 @@ ggplot(df, aes(x=spawningyear, y=log(value), color=run)) +
 
 2. Evaluate support for the major population groups. Are the populations in the groups more correlated than outside the groups?
 
-3. Evaluate the evidence of cycling in the data. *We will talk about how to do this on the Tuesday after lab.*
+3. Evaluate the evidence of correlation of salmon returns with climate indices. *We will talk about how to do this on the Tuesday after lab.*
 
 
 ### Tips
@@ -165,15 +174,16 @@ Set up the data. We need the time series in a matrix with time across the column
 
 Load the data.
 ```{r}
-load(here::here("Lab-2", "Data_Images", "columbia-river.rda"))
+load("Data_Images/esa-salmon.rda")
 ```
 
 Wrangle the data.
 ```{r}
 library(dplyr)
-esuname <- esu[2]
+esunum <- which(esu == "Steelhead (Upper Columbia River DPS)")
+esuname <- esu[esunum]
 
-dat <- columbia.river %>% 
+dat <- esa.salmon %>% 
   subset(esu_dps == esuname) %>% # get only this ESU
   mutate(log.spawner = log(value)) %>% # create a column called log.spawner
   select(esapopname, spawningyear, log.spawner) %>% # get just the columns that I need
@@ -271,7 +281,7 @@ for(i in 1:4){
 }
 ```
 
-But let's go through how we might include cycles. We are going to include cycles with frequency 3, 4, and 5, choosem to reflect steelhead returning after 3, 4 or 5 years.
+But let's go through how we might include cycles. We are going to include cycles with frequency 3, 4, and 5, choosen to reflect steelhead returning after 3, 4 or 5 years.
 
 ```{r}
 TT <- dim(dat87)[2] #number of time steps

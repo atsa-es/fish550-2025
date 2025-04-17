@@ -16,7 +16,7 @@ Describe what data set you will work with and any subsetting you decided on. For
 
 Load the data.
 ```{r}
-load(here::here("Lab-2", "Data_Images", "columbia-river.rda"))
+load(here::here("Lab-2", "Data_Images", "esa-salmon.rda"))
 ```
 
 Wrangle the data.

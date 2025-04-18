@@ -1,7 +1,7 @@
 ---
-title: Team X - Lab 1
+title: Team 3 - Lab 1
 subtitle: Forecasting with ARIMA and ETS models
-author: "Name 1, Name 2, Name 3"
+author: "Ben Makhlouf"
 date: April XX, 2025
 output: 
   html_document:
@@ -9,6 +9,256 @@ output:
     toc: true
     toc_float: true
 ---
+
+##### Questions to address 
+
+# Broad Goal : Compare forecast accuracy of ARIMA using yearly vs Monthly data. 
+
+# Steps: 
+1. Load the data 
+   - Filter the data to only be Washington + Oregon
+   
+2. Test stationarity 
+   - Show a quick ACF and PACF plots.
+3. Fit an ARIMA model using Autoarima to monthly and yearly training data (80%)
+4. Forecast using the fitted ARIMA model (with plot)
+5. Run diagnostics 
+6. Forecast using accuracy()
+7. Compare accuracy of the two models using RMSE, MAE, MAPE, and MASE
+
+# First, load the data 
+
+```{r message=FALSE, warning=FALSE}
+# if you need to install
+# install.packages('atsalibrary', repos = c('https://atsa-es.r-universe.dev', 'https://cloud.r-project.org'))
+library(atsalibrary) # This is ALL the data 
+
+# This is the monthly data 
+chinook.month <- chinook.month %>%
+  mutate(Date = as.Date(paste(Year, Month, "01", sep = "-"), format = "%Y-%b-%d"))
+
+chinook.monthWA<- chinook.month %>%
+  filter(State %in% c("WA"))
+
+# Plot to check we only have Washington and Oregon. Some missing values, thats ok
+ggplot(chinook.monthWA, aes(x = Date, y = log.metric.tons)) +
+  geom_line() +
+  facet_wrap(~ State, ncol = 1) +  # 3 panels vertically
+  labs(title = "Monthly Chinook Salmon Landings",
+       x = "Date",
+       y = "Log(Metric Tons)") +
+  theme_minimal()
+
+
+# This is the yearly data 
+# for some reason they type out the full name. Weird. Ayways... 
+chinook.year <- chinook.year
+
+chinook.yearWA<- chinook.year %>%
+  filter(State %in% c("Washington"))
+
+ggplot(chinook.yearWA, aes(x = Year, y = log.metric.tons)) +
+  geom_line() +
+  facet_wrap(~ State, scales = "free_y") +
+  labs(
+    title = "Chinook Landings by State",
+    x = "Year",
+    y = "Log(Metric Tons)"
+  ) +
+  theme_minimal()
+
+```
+
+
+```{r}
+### Create a forecast using ARIMA and ETS models for Washington using both monthly and yearly data 
+
+# Forecast package
+library(forecast)
+
+# Convert yearly Washington data to time series, both starting at 1990
+wa_yearly <- chinook.yearWA %>% 
+  arrange(Year) %>%
+  pull(log.metric.tons)
+
+# what is the first date 
+firstyear<- chinook.yearWA %>%
+  arrange(Year) %>%
+  pull(Year) %>%
+  min()
+
+print(firstyear)
+
+wa_yearly_ts <- ts(wa_yearly, start = 1950, frequency = 1)
+
+
+# Create time series for monthly Washington data
+
+firstyearmonth<- chinook.monthWA %>%
+  arrange(Date) %>%
+  pull(Date) %>%
+  min()
+
+print(firstyearmonth)
+
+wa_monthly <- chinook.monthWA %>%
+  arrange(Date) %>%
+  pull(log.metric.tons)
+wa_monthly_ts <- ts(wa_monthly, start = c(1990,1), frequency = 12)
+
+plot(wa_monthly_ts)
+plot(wa_yearly_ts)
+
+# lets trim the data so they both start 1990 and end in 2015 
+wa_monthly_ts <- window(wa_monthly_ts, start = c(1990, 1), end = c(2015, 12))
+wa_yearly_ts <- window(wa_yearly_ts, start = 1990, end = 2015)
+
+#Plot to verify 
+plot(wa_monthly_ts, main = "Monthly Chinook Salmon Landings in Washington")
+plot(wa_yearly_ts, main = "Yearly Chinook Salmon Landings in Washington")
+
+## Split the data into testing and training data. Testing is up to 2010 
+wa_monthly_train <- window(wa_monthly_ts, end = c(2010, 12))
+wa_monthly_test <- window(wa_monthly_ts, start = c(2011, 1))
+
+wa_yearly_train <- window(wa_yearly_ts, end = 2010)
+wa_yearly_test <- window(wa_yearly_ts, start = 2011)
+
+plot(wa_monthly_test, main = "Monthly Chinook Salmon Landings in Washington - Training Data")
+plot(wa_yearly_test, main = "Yearly Chinook Salmon Landings in Washington - Training Data")
+
+####### Now, we're ready to forecast 
+
+```
+
+```{r}
+
+# use autoarima to fit arima 
+monthfit<- auto.arima(wa_monthly_train)
+yearfit<- auto.arima(wa_yearly_train)
+
+# look at the models 
+summary(monthfit)
+## ARIMA(1,0,0)(0,1,2)[12]
+# non seasonal component: Arima(1,0,0) # AR Model with no differencing 
+# seasonal component: Arima (0,1,2)[12] - 1 seasonal difference and 2 seasonal moving average terms. 
+# 12 month seasonality 
+# Drift term (trend)
+# slight long-term decline 
+
+
+summary(yearfit)
+# ARIMA(1,0,0 with non-zero mean)
+# non seasonal AR 1 model 
+# No seasonal component 
+# Stronger correlation with the previous years data (.669)
+# Also suggests slightly downward trend (-0.0037)
+
+# fit Holt to year 
+fitYearHolt<- forecast::holt(wa_yearly_train)
+
+
+```
+
+#Diagnostics 
+```{r}
+
+forecast::ndiffs(wa_monthly_ts, test = "kpss")
+forecast::nsdiffs(wa_monthly_ts, test = "ads")
+
+```
+
+
+
+
+Great, model is trained up. Lets forecast 
+
+```{r}
+YearFit<- forecast::auto.arima(wa_yearly_train)
+MonthFit<- forecast::auto.arima(wa_monthly_train)
+
+yearforecast<- forecast::forecast(YearFit)
+monthforecast<- forecast::forecast(MonthFit, h = 12) 
+
+plot(yearforecast, main = "Yearly Chinook Salmon Landings in Washington")
+#points(wa_yearly_test) not working... 
+
+plot(monthforecast, main = "Monthly Chinook Salmon Landings in Washington")
+#points(wa_monthly_test) not working.. 
+
+# Use Holt and Holt-winters to test ETS 
+
+# Holt-Winters for monthly data
+#fitMonthHoltWint<- forecast::holt(wa_monthly_train)
+#MonthHWForecast<- forecast(fitMonthHoltWint, h = 12)
+
+# fit holt to yearly 
+fitYearHolt<- forecast::holt(wa_yearly_train)
+YearHoltForecast<- forecast(fitYearHolt)
+
+plot(YearHoltForecast, main = "Yearly Chinook Salmon Landings in Washington - Holt")
+
+```
+Testing Forecast Fit 
+```{r}
+
+########### 
+########### ARIMA 
+### 
+
+# Month
+accuracy(monthforecast, wa_monthly_test)
+
+#  ME      RMSE       MAE      MPE     MAPE      MASE        ACF1 Theil's U
+# Training set -0.02184778 0.9954557 0.6554148     -Inf      Inf 0.9092448 -0.07884648        NA
+# Test set      0.14756882 0.9190212 0.6894202 22.77132 43.16707 0.9564199  0.22153911 0.6305218
+
+# Year
+accuracy(yearforecast, wa_yearly_test)
+
+#                      ME      RMSE       MAE        MPE     MAPE      MASE         ACF1 Theil's U
+# Training set -0.0247061 0.2505295 0.2007125 -0.4458757 2.735247 0.9375834 -0.007278968        NA
+# Test set      0.3564054 0.4265469 0.3564054  4.4324755 4.432476 1.6648677  0.469532636  2.401485
+
+# Month 
+#NA, NOT WORKING 
+
+# Year 
+accuracy(YearHoltForecast, wa_yearly_test)
+
+#                      ME      RMSE       MAE        MPE     MAPE      MASE         ACF1 Theil's U
+# Training set -0.0247061 0.2505295 0.2007125 -0.4458757 2.735247 0.9375834 -0.007278968        NA
+# Test set      0.3564054 0.4265469 0.3564054  4.4324755 4.432476 1.6648677  0.469532636  2.401485
+
+
+```
+
+
+
+
+
+
+
+
+# Create ARIMA models
+wa_yearly_arima <- auto.arima(wa_yearly_ts)
+wa_monthly_arima <- auto.arima(wa_monthly_ts, seasonal = TRUE)
+
+# Create ETS models
+wa_yearly_ets <- ets(wa_yearly_ts)
+wa_monthly_ets <- ets(wa_monthly_ts)
+
+# Generate fo
+
+
+
+
+
+
+```
+
+
+
 
 # Data
 

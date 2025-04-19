@@ -261,3 +261,26 @@ WAvalue.compoundfc <- WAlands.compoundfc*WAprice.fc$mean
 WAvalue.compoundfc
 WAvalue.fc$mean
 WAvalue.test
+
+# plotting
+#CA
+plot(CAvalue.compoundfc)
+points(CAvalue.test)
+
+plot(CAvalue.fc$mean)
+points(CAvalue.test)
+
+#OR
+plot(ORvalue.compoundfc)
+points(ORvalue.test)
+
+plot(ORvalue.fc$mean)
+points(ORvalue.test)
+
+#WA
+plot(WAvalue.compoundfc)
+points(WAvalue.test)
+
+plot(WAvalue.fc$mean)
+points(WAvalue.test)
+

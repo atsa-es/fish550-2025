@@ -49,11 +49,11 @@ for (i in 1:length(ts_lengths)) {
   
   month_train[[i]] = window(month_ts,
                             start = c(1980, 1),
-                            end   = c(1980 + ts_lengths[i], 1))
+                            end   = c(1980 + ts_lengths[i], 12))
  
   month_test[[i]]  = window(month_ts,
                             start = c(1980 + ts_lengths[i] + 1, 1),
-                            end = c(2019, 1))
+                            end = c(2019, 12))
    
 }
 
@@ -81,7 +81,11 @@ n_years_test = list()
 for (i in 1:length(month_train)) n_years_test[[i]] = nrow(month_test[[i]])
 
 
+### Write up ###
 
+## Question outline ##
+## Methods ##
+## Results ##
 
 
 

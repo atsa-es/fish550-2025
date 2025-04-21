@@ -1,7 +1,7 @@
 ---
 title: Team X - Lab 2
 subtitle: MARSS models
-author: "Name 1, Name 2, Name 3"
+author: "Ben Makhlouf" 
 date: April XX, 2025
 output: 
   html_document:
@@ -17,11 +17,110 @@ Describe what data set you will work with and any subsetting you decided on. For
 Load the data.
 ```{r}
 load(here::here("Lab-2", "Data_Images", "esa-salmon.rda"))
+library(tidyr)
 ```
 
 Wrangle the data.
 
-**Add your wrangling code here**
+```{r}
+library(dplyr)
+# Our group was assigned only Steelhead. 
+SteelheadAll<- esa.salmon %>%
+  filter(species=="Steelhead")
+
+
+# Plot all Summer Steelhead faceted by ESA group and log transformed value 
+library(ggplot2)
+
+Stl_plot<- SteelheadAll %>%
+  mutate(log_value=log(value)) %>%
+  ggplot(aes(x=spawningyear, y=log_value, color = run)) +
+  geom_point() +
+  facet_wrap(~esapopname) +
+  theme_bw() +
+  labs(title="Summer Steelhead by ESA group", x="Year", y="Log Abundance")
+
+
+### To simplify, lets use just the summer 
+
+Stl<- SteelheadAll %>%
+  filter(run=="Summer")
+
+# To simplify names, remove "Steelhead" and "Summer" from esapopname
+Stl$esapopname<- gsub("Steelhead", "", Stl$esapopname)
+Stl$esapopname<- gsub("- summer", "", Stl$esapopname)
+
+
+Stl<- Stl %>%
+  select(spawningyear, esapopname, value) %>%
+  pivot_wider(names_from = esapopname, values_from = value)
+
+Years<- Stl$spawningyear
+
+# Remove years 
+Stl<- Stl %>%
+  select(-spawningyear)
+
+# Transpose the data so that each column is a different year and each row is a different population
+Stl<- t(Stl)
+
+# Add the years back in as the column names
+colnames(Stl)<- Years
+
+# Make sure the columns are ordered by year 
+Stl<- Stl[, order(as.numeric(colnames(Stl)))]
+
+```
+
+Models 
+
+# Hypotheses to test 
+
+#################
+### Hypothesis 1 
+
+## Description
+# All populations behave the same, no difference in sample error/variance 
+# All populations have the same trend (U)
+# Unconstrained (Q) 
+
+## Parameter matrix 
+
+################
+### Hypothesis 2 
+
+################
+### Hypothesis 3 
+
+################
+### Hypothesis 4 
+
+
+```{r}
+
+
+```
+
+
+
+
+
+
+
+esa.salmon
+
+### Get the steelhead data 
+
+
+### Fill in the missing years
+
+
+### Look to see if there appears to be trends. 
+# could be grouped by Season 
+# could be grouped by Region 
+##### Upper , lower 
+##### Distance Based 
+
 
 # General Questions
 

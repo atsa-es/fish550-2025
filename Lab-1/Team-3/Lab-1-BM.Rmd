@@ -40,6 +40,9 @@ chinook.month <- chinook.month %>%
 chinook.monthWA<- chinook.month %>%
   filter(State %in% c("WA"))
 
+
+
+
 # Plot to check we only have Washington and Oregon. Some missing values, thats ok
 ggplot(chinook.monthWA, aes(x = Date, y = log.metric.tons)) +
   geom_line() +
@@ -108,6 +111,9 @@ wa_monthly_ts <- ts(wa_monthly, start = c(1990,1), frequency = 12)
 
 plot(wa_monthly_ts)
 plot(wa_yearly_ts)
+
+
+
 
 # lets trim the data so they both start 1990 and end in 2015 
 wa_monthly_ts <- window(wa_monthly_ts, start = c(1990, 1), end = c(2015, 12))

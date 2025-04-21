@@ -1,0 +1,166 @@
+---
+title: Team 1  - Lab 1
+subtitle: Forecasting with ARIMA and ETS models
+author: "Anna Sulc, Brian McGreal, Name 3"
+date: April 21, 2025
+output: 
+  html_document:
+    code-folding: true
+    toc: true
+    toc_float: true
+---
+
+```{r}
+library(atsalibrary)
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+library(forecast)
+```
+
+#Data
+
+This lab used data with salmon landings in 6 different states for each month for each year from . States were Alaska, California, Oregon, Michigan, Pennsylvania, Washington. Due to sparse data, Pennsylvania and Michigan were excluded from the analysis.
+
+Times series were created at a yearly resolution and monthly resolution depending on the research question being asked.
+
+#Data Exploration and Plotting
+
+##Yearly Data
+
+```{r}
+
+chinook.year.filtered <- chinook.year %>%
+  filter(!State %in% c("Michigan", "Pennsylvania"))
+
+ggplot(chinook.year.filtered, aes(x = Year, y = metric.tons)) +
+  geom_line() +
+  facet_wrap(~ State, ncol = 2, scales = "free_y") +
+  labs(
+    title = "Chinook Landings by State",
+    x = "Year",
+    y = "Log(Metric Tons)"
+  ) +
+  theme_minimal()
+
+
+# Create the time series 
+dat_CA <- ts(chinook.year.filtered$log.metric.tons[chinook.year.filtered$State == "California"], start = chinook.year.filtered$Year[chinook.year.filtered$State == "California"][1], )
+dat_WA <-ts(chinook.year.filtered$log.metric.tons[chinook.year.filtered$State == "Washington"], start = chinook.year.filtered$Year[chinook.year.filtered$State == "Washington"][1], )
+dat_AK <-ts(chinook.year.filtered$log.metric.tons[chinook.year.filtered$State == "Alaska"], start = chinook.year.filtered$Year[chinook.year.filtered$State == "Alaska"][1], )
+dat_OR <- ts(chinook.year.filtered$log.metric.tons[chinook.year.filtered$State == "Oregon"], start = chinook.year.filtered$Year[chinook.year.filtered$State == "Oregon"][1], )
+
+
+```
+
+Check the type of relationship we are dealing with to formulate research questions. We checked the ACF and PACF using a custom function.
+
+```{r}
+check_acf <- function(ts_list, area_names) {
+  # ts_list: a list of 4 time series (e.g., list(ts_CA, ts_OR, ts_WA, ts_AK))
+  # area_names: character vector of 4 names (e.g., c("California", "Oregon", "Washington", "Alaska"))
+  
+  if (length(ts_list) != 4 | length(area_names) != 4) {
+    stop("Provide exactly 4 time series and 4 area names.")
+  }
+  
+  par(mfrow = c(4, 2), mar = c(3, 3, 3, 1))  # 4 rows, 2 columns layout
+  
+  for (i in 1:4) {
+    ts <- na.interp(ts_list[[i]])
+    
+    # ACF plot
+    acf(ts, main = paste("ACF -", area_names[i]))
+    
+    # PACF plot
+    pacf(ts, main = paste("PACF -", area_names[i]))
+  }
+  
+  # Reset layout to default
+  par(mfrow = c(1,1))
+}
+
+
+list_area <- list(dat_AK,dat_CA,dat_OR,dat_WA)
+area_names <- c("California", "Oregon", "Washington", "Alaska")
+
+check_acf(ts_list = list_area,area_names)
+```
+
+We also checked the differencing necessary for each series
+
+##Monthly Data
+
+```{r}
+ch_month <- chinook.month %>%
+  filter(!State %in% c("Michigan", "Pennsylvania"))
+
+
+```
+
+#Questions and Initial Plan
+
+For this data set, our team decided to ask a question focused on each aspect of the modeling process: data quality, model performance and real-life application. As a result, we formulated three research questions, each assigned to a team member. Following initial analysis, we hoped to bring our results together in a summary paragraph sharing what we had learned about the modelling process. Our questions were:
+
+1.   How does model predictive ability change when models are trained on a data set from a different state?
+
+2.   How forecast accuracy change with different kinds of data masking (regular intervals, windows, targeted drops, etc)? (data type - yearly and yearly monthly)
+
+3.  When is the best time to sell fish (highest value per metric ton? What is the best way to predict this - do you combine the value and metric tons first or predict separately?
+
+##What Actually Happened...
+
+We were disappointed by results for questions one and two but chose
+
+#Results
+
+##Training and Forecasting Using Different Areas - Nicole
+
+##Models with Differing Blind Spots - Anna
+
+###Initial Step - Forecasting with Maximum Knowledge
+
+I started with a simple arima
+
+```{r}
+
+arima_ff <- function(ts_list, labels = NULL) {
+  if (is.null(labels)) {
+    labels <- paste("Series", 1:length(ts_list))
+  }
+  
+  par(mfrow = c(2, 2), mar = c(4, 4, 3, 2))  # 2x2 panel layout
+  
+  for (i in 1:length(ts_list)) {
+    ts_data <- ts_list[[i]]
+    
+    # Set training and testing data
+    train <- window(ts_data, start = start(ts_data), end = c(start(ts_data)[1] + 20))
+    test  <- window(ts_data, start = c(start(ts_data)[1] + 20), end = c(start(ts_data)[1] + 66))
+    
+    # Fit ARIMA and forecast
+    model <- auto.arima(train)
+    fc <- forecast(model, h = 3)
+    
+    # Plot forecast and compare
+    plot(fc, main = paste("Forecast -", labels[i]), ylab = "Value", xlab = "Time")
+    points(test, col = "red", pch = 16)
+  }
+  
+  par(mfrow = c(1, 1))  # Reset layout
+}
+
+arima_ff(list_area,area_names)
+```
+
+###Block Dropping - What
+
+###Data Sparsity - Every 2 years and every other year
+
+#Practical Application - When Do I Want To Sell My Catch? - Brian
+
+#Contributions
+
+Contributions: 
+
+Each member of the team took on one issue and completed the code and the analysis. Halfway through, we consulted other team members for feedback and adjust analysis based on the joint discussion. All team members participated in the lab write up and review the results.

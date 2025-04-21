@@ -1,8 +1,10 @@
 # load packages
 library(atsalibrary)
+# library(ggfortify)
 library(ggplot2)
 library(patchwork)
 library(tidyverse)
+library(zoo)
 
 ## STUFF FROM .rmd
 # create date column (first of each month)
@@ -172,6 +174,46 @@ WAvalue.ts <- ts(WAchinook.month$value.usd, start=c(1990,1),
 WAvalue.train <- window(WAvalue.ts, c(1990, 1), c(2020, 12))
 WAvalue.test <- window(WAvalue.ts, c(2021, 1), c(2022, 12))
 
+# some diagnostica
+## Differencing and stationarity
+ndiffs(CAlands.train)
+ndiffs(CAprice.train)
+ndiffs(CAvalue.train)
+
+ndiffs(ORlands.train)
+ndiffs(ORprice.train)
+ndiffs(ORvalue.train)
+
+ndiffs(WAlands.train)
+ndiffs(WAprice.train)
+ndiffs(WAvalue.train)
+
+## ACF plots
+acf(CAlands.train, main= "California Landings ACF", na.action = na.pass, las = 1/12)
+acf(CAprice.train, main= "California Prices ACF", na.action = na.pass, las = 1/12)
+acf(CAvalue.train, main= "California Values ACF", na.action = na.pass, las = 1/12)
+
+acf(ORlands.train, main= "Oregon Landings ACF", na.action = na.pass, las = 1/12)
+acf(ORprice.train, main= "Oregon Prices ACF", na.action = na.pass, las = 1/12)
+acf(ORvalue.train, main= "Oregon Values ACF", na.action = na.pass, las = 1/12)
+
+acf(WAlands.train, main= "Washington Landings ACF", na.action = na.pass, las = 1/12)
+acf(WAprice.train, main= "Washington Prices ACF", na.action = na.pass, las = 1/12)
+acf(WAvalue.train, main= "Washington Values ACF", na.action = na.pass, las = 1/12)
+
+#PACF
+pacf(CAlands.train, main= "California Landings pACF", na.action = na.pass, las = 1/12)
+pacf(CAprice.train, main= "California Prices pACF", na.action = na.pass, las = 1/12)
+pacf(CAvalue.train, main= "California Values pACF", na.action = na.pass, las = 1/12)
+
+pacf(ORlands.train, main= "Oregon Landings pACF", na.action = na.pass, las = 1/12)
+pacf(ORprice.train, main= "Oregon Prices pACF", na.action = na.pass, las = 1/12)
+pacf(ORvalue.train, main= "Oregon Values pACF", na.action = na.pass, las = 1/12)
+
+pacf(WAlands.train, main= "Washington Landings pACF", na.action = na.pass, las = 1/12)
+pacf(WAprice.train, main= "Washington Prices pACF", na.action = na.pass, las = 1/12)
+pacf(WAvalue.train, main= "Washington Values pACF", na.action = na.pass, las = 1/12)
+
 # set up forecasts
 #CA
 CAlands.fit <- forecast::auto.arima(CAlands.train)
@@ -261,3 +303,144 @@ WAvalue.compoundfc <- WAlands.compoundfc*WAprice.fc$mean
 WAvalue.compoundfc
 WAvalue.fc$mean
 WAvalue.test
+
+# plotting
+#CA
+plot(CAvalue.compoundfc)
+points(CAvalue.test)
+
+plot(CAvalue.fc$mean)
+points(CAvalue.test)
+
+#OR
+plot(ORvalue.compoundfc)
+points(ORvalue.test)
+
+plot(ORvalue.fc$mean)
+points(ORvalue.test)
+
+#WA
+plot(WAvalue.compoundfc)
+points(WAvalue.test)
+
+plot(WAvalue.fc$mean)
+points(WAvalue.test)
+
+## NEW SNADBOX (pt. 2)
+# plotting this bs with ggplot
+class(WAvalue.fc$mean)
+df <- data.frame(date=as.Date(as.yearmon(time(WAvalue.fc$mean))), Y=as.matrix(WAvalue.fc$mean))
+test <- data.frame(date=as.Date(as.yearmon(time(WAvalue.test))), Y=as.matrix(WAvalue.test))
+ggplot(data=df, aes(x=date, y=Y)) + 
+  geom_line() +
+  geom_point(data=test, aes(x=date, y=Y)) +
+  theme_classic()
+
+WA.test <- data.frame(date=as.Date(as.yearmon(time(WAvalue.test))), Y=as.matrix(WAvalue.test))
+OR.test <- data.frame(date=as.Date(as.yearmon(time(ORvalue.test))), Y=as.matrix(ORvalue.test))
+
+# making interacted forecasts with CI
+#WA
+time = as.Date(as.yearmon(time(WAlands.fc$mean)))
+landed <- c(exp(WAlands.fc$mean))
+landed.lb80 <- c(exp(WAlands.fc$lower[,1]))
+landed.lb95 <- c(exp(WAlands.fc$lower[,2]))
+landed.ub80 <- c(exp(WAlands.fc$upper[,1]))
+landed.ub95 <- c(exp(WAlands.fc$upper[,2]))
+prices <- c(WAprice.fc$mean)
+prices.lb80 <- c(WAprice.fc$lower[,1])
+prices.lb95 <- c(WAprice.fc$lower[,2])
+prices.ub80 <- c(WAprice.fc$upper[,1])
+prices.ub95 <- c(WAprice.fc$upper[,2])
+
+WA.df <- data.frame(time, 
+                 landed, landed.lb80, landed.lb95, landed.ub80, landed.ub95,
+                 prices, prices.lb80, prices.lb95, prices.ub80, prices.ub95)
+WA.df$value <- WA.df$landed*WA.df$prices
+
+nsim <- 10000
+for (i in 1:24) {
+  forecast.landed80 <- runif(nsim, WA.df$landed.lb80[i], WA.df$landed.ub80[i])
+  forecast.prices80 <- runif(nsim, WA.df$prices.lb80[i], WA.df$prices.ub80[i])
+  products80 <- forecast.landed80*forecast.prices80
+  WA.df$value_lb80[i] <- quantile(products80, 0.025)
+  WA.df$value_ub80[i] <- quantile(products80, 0.975)
+  
+  forecast.landed95 <- runif(nsim, WA.df$landed.lb95[i], WA.df$landed.ub95[i])
+  forecast.prices95 <- runif(nsim, WA.df$prices.lb95[i], WA.df$prices.ub95[i])
+  products95 <- forecast.landed95*forecast.prices95
+  WA.df$value_lb95[i] <- quantile(products95, 0.025)
+  WA.df$value_ub95[i] <- quantile(products95, 0.975)
+}
+
+ggplot(data = WA.df, aes(x=time, y=value)) +
+  geom_ribbon(aes(ymin = value_lb95, ymax = value_ub95), fill = "pink", alpha = 0.5) +
+  geom_ribbon(aes(ymin = value_lb80, ymax = value_ub80), fill = "skyblue1", alpha = 0.5) +
+  geom_line() +
+  geom_point(data=WA.test, aes(x=date, y=Y)) +
+  labs(x = "",
+       y='Value',
+       title='Forecasted value of WA Chinook landings',
+       subtitle='2021-22') +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.01))) + 
+  theme_classic()
+
+#WA
+plot(WAvalue.compoundfc, main="Washington Chinook Compound Value Forecast", ylab="Compound Value Forecast", xlab="")
+points(WAvalue.test)
+
+plot(WAvalue.fc$mean, main="Washington Chinook Reported Value Forecast", ylab="Reported Value Forecast", xlab="")
+points(WAvalue.test)
+
+#OR
+time = as.Date(as.yearmon(time(ORlands.fc$mean)))
+landed <- c(exp(ORlands.fc$mean))
+landed.lb80 <- c(exp(ORlands.fc$lower[,1]))
+landed.lb95 <- c(exp(ORlands.fc$lower[,2]))
+landed.ub80 <- c(exp(ORlands.fc$upper[,1]))
+landed.ub95 <- c(exp(ORlands.fc$upper[,2]))
+prices <- c(ORprice.fc$mean)
+prices.lb80 <- c(ORprice.fc$lower[,1])
+prices.lb95 <- c(ORprice.fc$lower[,2])
+prices.ub80 <- c(ORprice.fc$upper[,1])
+prices.ub95 <- c(ORprice.fc$upper[,2])
+
+OR.df <- data.frame(time, 
+                    landed, landed.lb80, landed.lb95, landed.ub80, landed.ub95,
+                    prices, prices.lb80, prices.lb95, prices.ub80, prices.ub95)
+OR.df$value <- OR.df$landed*OR.df$prices
+
+nsim <- 10000
+for (i in 1:24) {
+  forecast.landed80 <- runif(nsim, OR.df$landed.lb80[i], OR.df$landed.ub80[i])
+  forecast.prices80 <- runif(nsim, OR.df$prices.lb80[i], OR.df$prices.ub80[i])
+  products80 <- forecast.landed80*forecast.prices80
+  OR.df$value_lb80[i] <- quantile(products80, 0.025)
+  OR.df$value_ub80[i] <- quantile(products80, 0.975)
+  
+  forecast.landed95 <- runif(nsim, OR.df$landed.lb95[i], OR.df$landed.ub95[i])
+  forecast.prices95 <- runif(nsim, OR.df$prices.lb95[i], OR.df$prices.ub95[i])
+  products95 <- forecast.landed95*forecast.prices95
+  OR.df$value_lb95[i] <- quantile(products95, 0.025)
+  OR.df$value_ub95[i] <- quantile(products95, 0.975)
+}
+
+ggplot(data = OR.df, aes(x=time, y=value)) +
+  geom_ribbon(aes(ymin = value_lb95, ymax = value_ub95), fill = "pink", alpha = 0.5) +
+  geom_ribbon(aes(ymin = value_lb80, ymax = value_ub80), fill = "skyblue1", alpha = 0.5) +
+  geom_line() +
+  geom_point(data=OR.test, aes(x=date, y=Y)) +
+  labs(x = "",
+       y='Value',
+       title='Forecasted value of OR Chinook landings',
+       subtitle='2021-22') +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.01))) + 
+  theme_classic()
+
+#OR
+plot(ORvalue.compoundfc, main="Oregon Chinook Compound Value Forecast", ylab="Compound Value Forecast", xlab="")
+points(ORvalue.test)
+
+plot(ORvalue.fc$mean, main="Oregon Chinook Reported Value Forecast", ylab="Reported Value Forecast", xlab="")
+points(ORvalue.test)
+

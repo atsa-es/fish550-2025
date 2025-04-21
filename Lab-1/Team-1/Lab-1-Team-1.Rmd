@@ -1,0 +1,509 @@
+---
+title: "Team 1 - Lab 1"
+author: "Nicole, Brian, Anna"
+date: "April 21, 2025"
+output:
+  pdf_document:
+    toc: yes
+  html_document:
+    code-folding: yes
+    toc: yes
+    toc_float: yes
+subtitle: Forecasting with ARIMA and ETS models
+---
+
+# Data
+
+Discuss what parts of the data sets you will work with.
+
+# Question your team will address
+
+What model structure best fits the different states and regions (Total and Pacific Northwest) represented in the yearly data set? How does forecasting accuracy compare across these regions?
+How does model performance change when you drop years? 
+This failed so start dropping months - address Brian’s real issue of moving from a seasonal model to a non seasonal (CA) because of data dropouts)
+Practical Application: You might want to know when you can get the most value out of your catch - how does the value per ton change over time? 
+
+
+# Method you will use
+
+## Initial plan
+
+
+## What you actually did
+
+Example, "We were able to do our plan fairly quickly, so after writing the basic code. We compared the accuracy of forecasts for different time periods using 20-years for training and 5-year forecasts each time. We compared the RMSE, MAE, and MAPE accuracy measures."
+
+# Diagnostics and preliminary exploration
+
+To address question 1, we subset the data for each west coast state, Pacific Northwest which includes WA, OR, and CA, and the total of all states combined, into a training data set and test data set. The training data sets spanned the years 1950-2005, and the test data set was 2006-2016. When we plotted the data (Figure 1), there was no obvious problems with stationarity. There might be a slight downwards trend, and there are a few gaps in the California data, but it is not immediately obvious if the data is non-stationary.
+
+```{r, include=FALSE}
+## Packages
+library(atsalibrary)
+library(dplyr)
+library(ggplot2)
+library(zoo)
+par(mfrow=c(1,1))
+#Filter and plot data
+data(chinook)
+chinook.year<-chinook.year %>%
+  filter(!State %in% c("Michigan", "Pennsylvania"))
+
+## Subset test and training data for each region
+# Washington
+dat <- chinook.year %>%
+  filter(State == "Washington") %>%
+  mutate(lnreturns = log.metric.tons,
+         year = Year) %>%
+  select(year, lnreturns)
+wats <- ts(dat$lnreturns, start=dat$year[1])
+watrain <- window(wats, dat$year[1], dat$year[1]+55)
+watest <- window(wats, dat$year[1]+56, dat$year[1]+66)
+testlength<-length(watest)
+# Oregon
+dat <- chinook.year %>%
+  filter(State == "Oregon") %>%
+  mutate(lnreturns = log.metric.tons,
+         year = Year) %>%
+  select(year, lnreturns)
+orts <- ts(dat$lnreturns, start=dat$year[1])
+ortrain <- window(orts, dat$year[1], dat$year[1]+56)
+ortest <- window(orts, dat$year[1]+56, dat$year[1]+66)
+# California
+dat <- chinook.year %>%
+  filter(State == "California") %>%
+  mutate(lnreturns = log.metric.tons,
+         year = Year) %>%
+  select(year, lnreturns)
+cats <- ts(dat$lnreturns, start=dat$year[1])
+catrain <- window(cats, dat$year[1], dat$year[1]+55)
+catest <- window(cats, dat$year[1]+56, dat$year[1]+66)
+# PNW Region
+chinook.pnw.total <- chinook.year %>%
+  filter(!State == "Alaska")%>%
+  mutate(metric.tons = exp(log.metric.tons)) %>%  # undo the log
+  group_by(Year) %>%
+  summarise(
+    total.metric.tons = sum(metric.tons, na.rm = TRUE),
+    log.total.metric.tons = log(total.metric.tons)
+  )
+dat <- chinook.pnw.total %>%
+  mutate(lnreturns = log.total.metric.tons,
+         year = Year) %>%
+  select(year, lnreturns)
+pnwts <- ts(dat$lnreturns, start=dat$year[1])
+pnwtrain <- window(pnwts, dat$year[1], dat$year[1]+55)
+pnwtest <- window(pnwts, dat$year[1]+56, dat$year[1]+66)
+# Alaska
+dat <- chinook.year %>%
+  filter(State=="Alaska") %>%
+  mutate(lnreturns = log.metric.tons,
+         year = Year) %>%
+  select(year, lnreturns)
+akts <- ts(dat$lnreturns, start=dat$year[1])
+aktrain <- window(akts, dat$year[1], dat$year[1]+55)
+aktest <- window(akts, dat$year[1]+56, dat$year[1]+66)
+
+chinook.total <- chinook.year %>%
+  filter(State%in%c("California", "Alaska", "Oregon", "Washington")) %>%
+  mutate(metric.tons = exp(log.metric.tons)) %>%  # undo the log
+  group_by(Year) %>%
+  summarise(
+    total.metric.tons = sum(metric.tons, na.rm = TRUE),
+    log.total.metric.tons = log(total.metric.tons)
+  )
+dat <- chinook.total %>%
+  mutate(lnreturns = log.total.metric.tons,
+         year = Year) %>%
+  select(year, lnreturns)
+totalts<-ts(dat$lnreturns, start=dat$year[1])
+totaltrain <- window(totalts, dat$year[1], dat$year[1]+55)
+totaltest <- window(totalts, dat$year[1]+56, dat$year[1]+66)
+
+```
+
+
+```{r, echo=FALSE}
+ggplot(chinook.year, aes(x = Year, y = log.metric.tons, color = State)) +
+  geom_line() +
+  labs(
+    title = "Chinook Landings by State",
+    x = "Year",
+    y = "Log(Metric Tons)"
+  ) +
+  theme_minimal()
+```
+
+
+## Use ACF and PACF
+
+```{r, echo=FALSE}
+par(mfrow=c(2,2))
+acf(catrain, main= "California ACF")
+acf(aktrain, main="Alaska ACF")
+acf(watrain, main="Washington ACF")
+acf(ortrain,main="Oregon ACF")
+
+
+pacf(catrain, main= "California pACF")
+pacf(aktrain, main="Alaska pACF")
+pacf(watrain, main="Washington pACF")
+pacf(ortrain,main="Oregon pACF")
+
+acf(pnwtrain, main= "PNW ACF")
+acf(totaltrain, main="Total ACF")
+pacf(pnwtrain, main= "PNW pACF")
+pacf(totaltrain, main="Total pACF")
+```
+
+What did you learn? Also try decomposition.
+*I might need help interpreting these plots*
+
+## Test for stationarity
+
+When we run ndiffs on the states’ data, Oregon, Washington, the Pacific Northwest region determined one first-difference is required to make the data stationary.
+
+```{r, echo=FALSE}
+akndiffs<-ndiffs(aktrain)
+candiffs<-ndiffs(catrain)
+orndiffs<-ndiffs(ortrain)
+wandiffs<-ndiffs(watrain)
+totalndiffs<-ndiffs(totaltrain)
+pnwndiffs<-ndiffs(pnwtrain)
+
+ndiffsresults<-matrix(data=c(akndiffs, candiffs, orndiffs, wandiffs, totalndiffs, pnwndiffs), ncol=6, nrow=1)
+colnames(ndiffsresults)<-c("Alaksa", "California", "Oregon", "Washington", "Total", "PNW")
+print(ndiffsresults)
+```
+
+# Results
+We fit multiple ARIMA and Holt models to the yearly time series data for each state, the PNW region (WA, OR, CA), and the total chinook landings for all states combined. ARIMA models where p, d, or q were greater than 1 had significantly higher AIC values than more parsimonious ARIMA models and are excluded from this write-up. We then forecasted 10 years of data using the six ARIMA models, tested the forecasts against the test data for each region. Using root mean squared error, we selected the best fit model for each state or region. The Holt model was the best fit for Alaska, California, and the Pacific Northwest region. An ARIMA(1,0,0) model was the best fit for Washington and Oregon. An ARIMA(0,1,0) model was the best fit for the entire Pacific Coast chinook landing data (log metric tons). See the figures below for the six regional time series and forecasts from the best fit model for each. We will also provide a brief interpretation of the best fit models, and check of the residuals using a Ljung-Box test. 
+
+
+```{r, echo=FALSE}
+auto.arima(aktrain) # returned (1,0 0)
+akts.arima.0<-arima(aktrain, order=c(0,0,0))
+akts.arima.1<-arima(aktrain, order=c(0,1,0))
+akts.arima.2<-arima(aktrain, order=c(1,0,0)) #auto-arima model
+akts.arima.3<-arima(aktrain, order=c(1,1,0))
+akts.arima.4<-arima(aktrain, order=c(1,1,1))
+akts.holt<-ets(aktrain, model="AAN")
+
+# California
+auto.arima(catrain) # returned (0,1,0)
+cats.arima.0<-arima(catrain, order=c(0,0,0))
+cats.arima.1<-arima(catrain, order=c(0,1,0))#auto-arima model
+cats.arima.2<-arima(catrain, order=c(1,0,0))
+cats.arima.3<-arima(catrain, order=c(1,1,0))
+cats.arima.4<-arima(catrain, order=c(1,1,1))
+cats.holt<-ets(catrain, model="AAN")
+
+# Oregon 
+auto.arima(ortrain) # returned (0,1,0)
+orts.arima.0<-arima(ortrain, order=c(0,0,0))
+orts.arima.1<-arima(ortrain, order=c(0,1,0))#auto-arima model
+orts.arima.2<-arima(ortrain, order=c(1,0,0)) 
+orts.arima.3<-arima(ortrain, order=c(1,1,0))
+orts.arima.4<-arima(ortrain, order=c(1,1,1))
+orts.holt<-ets(ortrain, model="AAN")
+
+# Washington
+auto.arima(watrain) # returned (0,1,0)
+wats.arima.0<-arima(watrain, order=c(0,0,0))
+wats.arima.1<-arima(watrain, order=c(0,1,0))#auto-arima model
+wats.arima.2<-arima(watrain, order=c(1,0,0)) 
+wats.arima.3<-arima(watrain, order=c(1,1,0))
+wats.arima.4<-arima(watrain, order=c(1,1,1))
+wats.holt<-ets(watrain, model="AAN")
+
+# PNW
+auto.arima(pnwtrain) # returned (0,1,0)
+pnwts.arima.0<-arima(pnwtrain, order=c(0,0,0))
+pnwts.arima.1<-arima(pnwtrain, order=c(0,1,0)) #auto-arima model
+pnwts.arima.2<-arima(pnwtrain, order=c(1,0,0)) 
+pnwts.arima.3<-arima(pnwtrain, order=c(1,1,0))
+pnwts.arima.4<-arima(pnwtrain, order=c(1,1,1))
+pnwts.holt<-ets(pnwtrain, model="AAN")
+
+# Total
+# Total
+auto.arima(totaltrain)
+totalts.arima.0<-arima(totaltrain, order=c(0,0,0))
+totalts.arima.1<-arima(totaltrain, order=c(0,1,0)) #auto-arima model
+totalts.arima.2<-arima(totaltrain, order=c(1,0,0)) 
+totalts.arima.3<-arima(totaltrain, order=c(1,1,0))
+totalts.arima.4<-arima(totaltrain, order=c(1,1,1))
+totalts.holt<-ets(totaltrain, model="AAN")
+
+## Forecasting for each model at each location
+# Alaska
+ak.forecast.0<-forecast(akts.arima.0, h=testlength)
+ak.forecast.1<-forecast(akts.arima.1, h=testlength)
+ak.forecast.2<-forecast(akts.arima.2, h=testlength)
+ak.forecast.3<-forecast(akts.arima.3, h=testlength)
+ak.forecast.4<-forecast(akts.arima.4, h=testlength)
+ak.forecast.5<-forecast(akts.holt, h=testlength) #Holt model
+
+# California
+ca.forecast.0<-forecast(cats.arima.0, h=testlength)
+ca.forecast.1<-forecast(cats.arima.1, h=testlength)
+ca.forecast.2<-forecast(cats.arima.2, h=testlength)
+ca.forecast.3<-forecast(cats.arima.3, h=testlength)
+ca.forecast.4<-forecast(cats.arima.4, h=testlength)
+ca.forecast.5<-forecast(cats.holt, h=testlength)
+
+# Oregon
+or.forecast.0<-forecast(orts.arima.0, h=testlength)
+or.forecast.1<-forecast(orts.arima.1, h=testlength)
+or.forecast.2<-forecast(orts.arima.2, h=testlength)
+or.forecast.3<-forecast(orts.arima.3, h=testlength)
+or.forecast.4<-forecast(orts.arima.4, h=testlength)
+or.forecast.5<-forecast(orts.holt, h=testlength)
+
+#Washington
+wa.forecast.0<-forecast(wats.arima.0, h=testlength)
+wa.forecast.1<-forecast(wats.arima.1, h=testlength)
+wa.forecast.2<-forecast(wats.arima.2, h=testlength)
+wa.forecast.3<-forecast(wats.arima.3, h=testlength)
+wa.forecast.4<-forecast(wats.arima.4, h=testlength)
+wa.forecast.5<-forecast(wats.holt, h=testlength)
+
+# PNW
+pnw.forecast.0<-forecast(pnwts.arima.0, h=testlength)
+pnw.forecast.1<-forecast(pnwts.arima.1, h=testlength)
+pnw.forecast.2<-forecast(pnwts.arima.2, h=testlength)
+pnw.forecast.3<-forecast(pnwts.arima.3, h=testlength)
+pnw.forecast.4<-forecast(pnwts.arima.4, h=testlength)
+pnw.forecast.5<-forecast(pnwts.holt, h=testlength)
+
+# Total
+total.forecast.0<-forecast(totalts.arima.0, h=testlength)
+total.forecast.1<-forecast(totalts.arima.1, h=testlength)
+total.forecast.2<-forecast(totalts.arima.2, h=testlength)
+total.forecast.3<-forecast(totalts.arima.3, h=testlength)
+total.forecast.4<-forecast(totalts.arima.4, h=testlength)
+total.forecast.5<-forecast(totalts.holt, h=testlength)
+```
+
+#### Alaska
+The best fit model for the Alaska chinook landing data was a Holt model with the following equation:
+$y_t=l_{t-1}+b_{t-1}+\epsilon_t$\
+$l_t=l_{t-1}+b_{t-1}+0.9999*\epsilon_t$\
+$b_t =b_{t-1} + 0.0001*\epsilon_t$ 
+This model indicates a slight downward trend that remains fairly consistent over time (beta=0.0001), and gives almost all weight to the most recent observations (alpha=0.9999).
+
+```{r, echo=FALSE}
+aktest.0<-accuracy(ak.forecast.0, aktest)
+aktest.1<-accuracy(ak.forecast.1, aktest)
+aktest.2<-accuracy(ak.forecast.2, aktest)
+aktest.3<-accuracy(ak.forecast.3, aktest)
+aktest.4<-accuracy(ak.forecast.4, aktest)
+aktest.5<-accuracy(ak.forecast.5, aktest)
+ak.forecast.summary<-matrix(data=c(aktest.0[2, "RMSE"],aktest.1[2,"RMSE"], aktest.2[2,"RMSE"],
+                                   aktest.3[2,"RMSE"], aktest.4[2, "RMSE"],
+                                   aktest.5[2, "RMSE"]), nrow=1, ncol=6)
+colnames(ak.forecast.summary)<-c("0,0,0", "0,1,0", "1,0,0", "1,1,0", "1,1,1", "Holt")
+rownames(ak.forecast.summary)<-c("RMSE")
+print(ak.forecast.summary) #The Holt model had lowest RMSE
+checkresiduals(akts.holt)
+```
+
+#### California
+The best fit model for California was also a Holt model with the following equation:
+$y_t=l_{t-1}+b_{t-1}+\epsilon_t$
+$l_t=l_{t-1}+b_{t-1}+0.0005*\epsilon_t$
+$b_t=b_{t-1}+0.0005*\epsilon_t$ 
+
+The model indicates a slightly declining trend, but small beta value (beta=0.0005) suggest the level and trend are relatively stable over time. The model also puts very little weight on recent observations (alpha=0.0005).
+
+```{r, echo=FALSE}
+# California
+catest.0<-accuracy(ca.forecast.0, catest)
+catest.1<-accuracy(ca.forecast.1, catest)
+catest.2<-accuracy(ca.forecast.2, catest)
+catest.3<-accuracy(ca.forecast.3, catest)
+catest.4<-accuracy(ca.forecast.4, catest)
+catest.5<-accuracy(ca.forecast.5, catest)
+ca.forecast.summary<-matrix(data=c(catest.0[2,"RMSE"],catest.1[2,"RMSE"], catest.2[2,"RMSE"],
+                                   catest.3[2,"RMSE"], catest.4[2, "RMSE"],
+                                   catest.5[2, "RMSE"]), nrow=1, ncol=6)
+colnames(ca.forecast.summary)<-c("0,0,0","0,1,0", "1,0,0", "1,1,0", "1,1,1", "Holt")
+rownames(ca.forecast.summary)<-c("RMSE")
+print(ca.forecast.summary) #The Holt had the most accurate forecast
+checkresiduals(cats.holt)
+```
+#### Oregon
+The best fit model for Oregon was a first-order ARIMA model with no differencing and no moving average. The time series is stationary and auto-correlated around a mean of 7.5190, with observations being moderately dependent on recent values (ar1<1).
+$y_t=0.7303*y_{t-1}+2.026+\epsilon_t$
+$\epsilon_t~N(0,\sigma^2=0.1876)$
+
+```{r, echo=FALSE}
+ortest.0<-accuracy(or.forecast.0, ortest)
+ortest.1<-accuracy(or.forecast.1, ortest)
+ortest.2<-accuracy(or.forecast.2, ortest)
+ortest.3<-accuracy(or.forecast.3, ortest)
+ortest.4<-accuracy(or.forecast.4, ortest)
+ortest.5<-accuracy(or.forecast.5, ortest)
+
+or.forecast.summary<-matrix(data=c(ortest.0[2,"RMSE"], ortest.1[2,"RMSE"], ortest.2[2,"RMSE"],
+                                   ortest.3[2,"RMSE"], ortest.4[2, "RMSE"],
+                                   ortest.5[2, "RMSE"]), nrow=1, ncol=6)
+colnames(or.forecast.summary)<-c("0,0,0","0,1,0", "1,0,0", "1,1,0", "1,1,1", "Holt")
+rownames(or.forecast.summary)<-c("RMSE")
+print(or.forecast.summary) #The ARIMA(1,0,0) model had the best forecast
+checkresiduals(orts.arima.2)
+```
+
+#### Washington
+Like Oregon, the best fit model for Washington was a first-order ARIMA model with no differencing and not moving average. The values differ slightly, with Washington having a slightly higher average than Oregon (intercept=7.9066), and autoregression component (ar1) of 0.8878, meaning the series shows strong positive correlation.
+
+$y_t=0.8878*y_{t-1}+0.8871+\epsilon_t$
+$\epsilon_t~N(0,\sigma^2=0.0436)$
+```{r, echo=FALSE}
+watest.0<-accuracy(wa.forecast.0, watest)
+watest.1<-accuracy(wa.forecast.1, watest)
+watest.2<-accuracy(wa.forecast.2, watest)
+watest.3<-accuracy(wa.forecast.3, watest)
+watest.4<-accuracy(wa.forecast.4, watest)
+watest.5<-accuracy(wa.forecast.5, watest)
+wa.forecast.summary<-matrix(data=c(watest.0[2,"RMSE"], watest.1[2,"RMSE"], watest.2[2,"RMSE"],
+                                   watest.3[2,"RMSE"], watest.4[2, "RMSE"],
+                                   watest.5[2, "RMSE"]), nrow=1, ncol=6)
+colnames(wa.forecast.summary)<-c("0,0,0","0,1,0", "1,0,0", "1,1,0", "1,1,1", "Holt")
+rownames(wa.forecast.summary)<-c("RMSE")
+print(wa.forecast.summary) #The ARIMA(1,0,0) model had the best forecast
+checkresiduals(wats.arima.2)
+```
+#### PNW Region
+The model that best fit the Pacific Northwest region as a whole was a Holt model with the following equation:
+$y_t=l_{t-1}+b_{t-1}+\epsilon_t$\
+$l_t=l_{t-1}+b_{t-1}+0.9619*\epsilon_t$\
+$b_t =b_{t-1} + 0.0001*\epsilon_t$ 
+
+The small beta value suggests that the trend is stable over time, and the alpha value being close to 1 indicates that the model assigns greater weight to recent observations. The model has identified a slightly negative trend in chinook landings over time (b=-0.0108).
+
+```{r, echo=FALSE}
+
+# PNW
+pnwtest.0<-accuracy(pnw.forecast.0, pnwtest)
+pnwtest.1<-accuracy(pnw.forecast.1, pnwtest)
+pnwtest.2<-accuracy(pnw.forecast.2, pnwtest)
+pnwtest.3<-accuracy(pnw.forecast.3, pnwtest)
+pnwtest.4<-accuracy(pnw.forecast.4, pnwtest)
+pnwtest.5<-accuracy(pnw.forecast.5, pnwtest)
+pnw.forecast.summary<-matrix(data=c(pnwtest.0[2,"RMSE"], pnwtest.1[2,"RMSE"], pnwtest.2[2,"RMSE"],
+                                   pnwtest.3[2,"RMSE"], pnwtest.4[2, "RMSE"],
+                                   pnwtest.5[2, "RMSE"]), nrow=1, ncol=6)
+colnames(pnw.forecast.summary)<-c("0,0,0","0,1,0", "1,0,0", "1,1,0", "1,1,1", "Holt")
+rownames(pnw.forecast.summary)<-c("RMSE")
+print(pnw.forecast.summary) #The Holt model had lowest RMSE
+checkresiduals(pnwts.holt)
+```
+
+#### Total chinook landings
+The best fit model for total chinook landings was a first-order ARIMA with first difference since the data was non-stationary, and no seasonality:
+$y_t = 0.8878*y_{t-1}+0.8871+\epsilon_t$\
+$\epsilon_t~N(0,\sigma^2=0.0436)$\
+
+The alpha value suggests weak, negative autocorrelation, but it is not statistically significant.
+```{r, echo=FALSE}
+totaltest.0<-accuracy(total.forecast.0, totaltest)
+totaltest.1<-accuracy(total.forecast.1, totaltest)
+totaltest.2<-accuracy(total.forecast.2, totaltest)
+totaltest.3<-accuracy(total.forecast.3, totaltest)
+totaltest.4<-accuracy(total.forecast.4, totaltest)
+totaltest.5<-accuracy(total.forecast.5, totaltest)
+total.forecast.summary<-matrix(data=c(totaltest.0[2,"RMSE"], totaltest.1[2,"RMSE"], totaltest.2[2,"RMSE"],
+                                   totaltest.3[2,"RMSE"], totaltest.4[2, "RMSE"],
+                                   totaltest.5[2, "RMSE"]), nrow=1, ncol=6)
+colnames(total.forecast.summary)<-c("0,0,0","0,1,0", "1,0,0", "1,1,0", "1,1,1", "Holt")
+rownames(total.forecast.summary)<-c("RMSE")
+print(total.forecast.summary)
+checkresiduals(totalts.arima.3)
+
+# Plotting best forecast from each region
+# Alaska
+par(mfrow=c(3,2))
+plot(ak.forecast.5, main="Alaksa Chinook Landings", 
+     ylab="Log Volume Biometric Tons", xlab="Year")
+points(aktest, pch=20)
+# California
+plot(ca.forecast.5, main="California Chinook Landings", 
+     ylab="Log Volume Biometric Tons", xlab="Year")
+points(catest, pch=20)
+# Oregon
+plot(or.forecast.2, main="Oregon Chinook Landings", 
+     ylab="Log Volume Biometric Tons", xlab="Year")
+points(ortest, pch=20)
+# Washington
+plot(wa.forecast.2, main="Washington Chinook Landings", 
+     ylab="Log Volume Biometric Tons", xlab="Year")
+points(watest, pch=20)
+# PNW
+plot(pnw.forecast.5, main="PNW Chinook Landings", 
+     ylab="Log Volume Biometric Tons", xlab="Year")
+points(pnwtest, pch=20)
+#Total
+plot(total.forecast.3, main="Total Chinook Landings", ylab="Log Volume Biometric Tons", xlab="Year")
+points(totaltest, pch=20)
+```
+
+In summary, none of these models contained a seasonality component. The model structure differed slightly between regions, but none of the models found significant changes in trend over time. Many of them behaved functionally like a random walk. 
+
+*Forecasting Accuracy Comparison*
+
+```{r, echo=FALSE}
+forecastrmse<-matrix(nrow=6, ncol=6)
+rownames(forecastrmse)<-c("AK Forecast", "CA Forecast", 
+                         "OR Forecast", "WA Forecast", "PNW Forecast", "Total Forecast")
+colnames(forecastrmse)<-c("AK Model", "CA Model", 
+                         "OR Model", "WA Model", "PNW Model", "Total Model")
+forecastrmse[1,1]<-accuracy(ak.forecast.5, aktest)[2, "RMSE"]
+forecastrmse[1,2]<-accuracy(ca.forecast.5, aktest)[2, "RMSE"]
+forecastrmse[1,3]<-accuracy(or.forecast.2, aktest)[2, "RMSE"]
+forecastrmse[1,4]<-accuracy(wa.forecast.2, aktest)[2, "RMSE"]
+forecastrmse[1,5]<-accuracy(pnw.forecast.5, aktest)[2, "RMSE"]
+forecastrmse[1,6]<-accuracy(total.forecast.3, aktest)[2, "RMSE"]
+forecastrmse[2,1]<-accuracy(ak.forecast.5, catest)[2, "RMSE"]
+forecastrmse[2,2]<-accuracy(ca.forecast.5, catest)[2, "RMSE"]
+forecastrmse[2,3]<-accuracy(or.forecast.2, catest)[2, "RMSE"]
+forecastrmse[2,4]<-accuracy(wa.forecast.2, catest)[2, "RMSE"]
+forecastrmse[2,5]<-accuracy(pnw.forecast.5, catest)[2, "RMSE"]
+forecastrmse[2,6]<-accuracy(total.forecast.3, catest)[2, "RMSE"]
+forecastrmse[3,1]<-accuracy(ak.forecast.5, ortest)[2, "RMSE"]
+forecastrmse[3,2]<-accuracy(ca.forecast.5, ortest)[2, "RMSE"]
+forecastrmse[3,3]<-accuracy(or.forecast.2, ortest)[2, "RMSE"]
+forecastrmse[3,4]<-accuracy(wa.forecast.2, ortest)[2, "RMSE"]
+forecastrmse[3,5]<-accuracy(pnw.forecast.5,ortest)[2, "RMSE"]
+forecastrmse[3,6]<-accuracy(total.forecast.3, ortest)[2, "RMSE"]
+forecastrmse[4,1]<-accuracy(ak.forecast.5, watest)[2, "RMSE"]
+forecastrmse[4,2]<-accuracy(ca.forecast.5, watest)[2, "RMSE"]
+forecastrmse[4,3]<-accuracy(or.forecast.2, watest)[2, "RMSE"]
+forecastrmse[4,4]<-accuracy(wa.forecast.2, watest)[2, "RMSE"]
+forecastrmse[4,5]<-accuracy(pnw.forecast.5,watest)[2, "RMSE"]
+forecastrmse[4,6]<-accuracy(total.forecast.3, watest)[2, "RMSE"]
+forecastrmse[5,1]<-accuracy(ak.forecast.5, pnwtest)[2, "RMSE"]
+forecastrmse[5,2]<-accuracy(ca.forecast.5, pnwtest)[2, "RMSE"]
+forecastrmse[5,3]<-accuracy(or.forecast.2, pnwtest)[2, "RMSE"]
+forecastrmse[5,4]<-accuracy(wa.forecast.2, pnwtest)[2, "RMSE"]
+forecastrmse[5,5]<-accuracy(pnw.forecast.5,pnwtest)[2, "RMSE"]
+forecastrmse[5,6]<-accuracy(total.forecast.3, pnwtest)[2, "RMSE"]
+forecastrmse[6,1]<-accuracy(ak.forecast.5, totaltest)[2, "RMSE"]
+forecastrmse[6,2]<-accuracy(ca.forecast.5, totaltest)[2, "RMSE"]
+forecastrmse[6,3]<-accuracy(or.forecast.2, totaltest)[2, "RMSE"]
+forecastrmse[6,4]<-accuracy(wa.forecast.2, totaltest)[2, "RMSE"]
+forecastrmse[6,5]<-accuracy(pnw.forecast.5,totaltest)[2, "RMSE"]
+forecastrmse[6,6]<-accuracy(total.forecast.3, totaltest)[2, "RMSE"]
+print(forecastrmse)
+```
+
+
+# Discussion
+In summary, none of these models contained a seasonality component. The model structure differed slightly between regions, but none of the models found significant changes in trend over time. Many of them behaved functionally like a random walk. 
+
+When we compared forecasting accuracy between models fit to one region against test data from another region, we found some interesting results. In some cases, another state’s forecasted data was a better fit than the best fit model for that state. This was the case for Alaska, whose test data was more accurately forecasted by the ARIMA model fit to the Washington data. Only the Washington and Oregon model forecasts were the best fit for their state’s test data. This is the opposite of what I would have expected, given our original hypothesis that Washington and Oregon’s time series look very similar. I would have expected forecasts from these two states to not be accurate when tested against other states’ data, since California and Alaska’s data looked different, but the Washington and Oregon models performed fairly well across the board. The large regional models (PNW and total) did not perform well, which does support the idea that forecasts for salmon fisheries should be made on smaller regional scales that are ecologically relevant to salmon populations.
+
+# Description of each team member's contributions
+
+Each member of the team took on one issue and completed the code and the analysis. Halfway through, we consulted other team members for feedback and adjust analysis based on the joint discussion. All team members participated in the lab write up and review the results.
+

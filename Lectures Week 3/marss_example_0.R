@@ -24,6 +24,7 @@ n <- nrow(dat) - 1
 # https://atsa-es.github.io/atsa-labs/sec-mss-a-single-well-mixed-population.html
 # Fit a model with one underlying state (population process)
 # All sites having different observation variance
+
 mod.list.0 <- list(
   B = matrix(1), 
   U = matrix("u"), 
@@ -32,13 +33,16 @@ mod.list.0 <- list(
   A = "scaling", 
   R = "diagonal and unequal", 
   x0 = matrix("mu"), tinitx = 0)
+
 fit.0 <- MARSS(dat, model = mod.list.0)
+
 #there is one u and q because just 1 x
 # Look at the plots
 # Plot 1. Model fitted Y + CI
 # Plot 2. States - That's the population estimate
 # Last plot. Model innovations residuals ACF
 autoplot(fit.0)
+
 #xtT is x at time t conditioned on data from 1 to T (all the data)
 #fitted is model prediction of the data
 

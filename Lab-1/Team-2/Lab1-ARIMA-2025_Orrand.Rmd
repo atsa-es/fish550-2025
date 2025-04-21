@@ -198,110 +198,103 @@ train
 ```{r}
 
 ```
-#Code to work on comparing models from chatGPT
-## My Analysis: Washington ARIMA vs ETS
 
-```{r load-washington-data}
-library(atsalibrary)
-library(dplyr)
-library(ggplot2)
-library(forecast)
-
-dat <- chinook.year %>%
-  filter(State == "Washington") %>%
+```{r}
+```{r define-clean-chinookts}
+chinook.month.wc <- chinook.month %>%
+  group_by(Year, Month) %>%
+  summarise(metric.tons = sum(metric.tons, na.rm = TRUE), .groups = "drop") %>%
   mutate(
-    lnreturns = log.metric.tons,
-    year = Year
+    log.metric.tons = ifelse(metric.tons <= 0, NA, log(metric.tons)),
+    Date = as.Date(paste(Year, Month, "01", sep = "-"), format = "%Y-%m-%d")
   ) %>%
-  dplyr::select(year, lnreturns)
+  arrange(Date)
 
-head(dat)
-```
+chinookts <- ts(
+  chinook.month.wc$log.metric.tons,
+  start = c(1990, 1),
+  frequency = 12
+)
 
-
-```{r}
-## Splitting Train and Test Data
-
-```{r split-train-test}
-# Create the time series object
-datts <- ts(dat$lnreturns, start = dat$year[1], frequency = 1)  
-
-# Train: 1950 - 1989
-train <- window(datts, start = 1950, end = 1989)
-
-# Test: 1990 - 2019
-test <- window(datts, start = 1990, end = 2019)
-
-# Look at your train data
-train
-
-# Look at your test data
-test
-```
-
-
-```{r}
-## Fitting ARIMA model to WA Train Data
-
-```{r fit-arima}
-# Fit ARIMA model
-mod_arima <- auto.arima(train)
-
-# Look at the model details
-mod_arima
-```
-
-
-```{r}
-## Fitting ETS model to WA Train Data
-
-```{r fit-ets}
-# Fit ETS model
-mod_ets <- ets(train)
-
-# Look at the model details
-mod_ets
 ```
 
 ```{r}
-## Forecasting with ARIMA and ETS Models
+```{r fit-auto-arima-class}
+traindat <- window(chinookts, start = c(1990, 10), end = c(1998, 12))
+mod_class <- auto.arima(traindat)
+mod_class
+```
 
-```{r forecast-arima-ets}
-# Load plotting tools
-library(ggplot2)
+```{r}
+## Manual ARIMA(1,1,1) model
+
+```{r fit-manual-arima-111}
+mod_manual_111 <- Arima(traindat, order = c(1,1,1))
+mod_manual_111
+```
+
+```{r}
+## Manual ARIMA(2,0,0) model
+
+```{r fit-manual-arima-200}
+mod_manual_200 <- Arima(traindat, order = c(2,0,0))
+mod_manual_200
+```
+
+```{r}
+## Forecast all models 1 year ahead
+
+```{r forecast-all-models}
 library(forecast)
 
-# Forecast next 27 years (1990 to 2016 is 27 years)
-fc_arima <- forecast(mod_arima, h = length(test))
-fc_ets   <- forecast(mod_ets, h = length(test))
+fc_class <- forecast(mod_class, h = 12)
+fc_111   <- forecast(mod_manual_111, h = 12)
+fc_200   <- forecast(mod_manual_200, h = 12)
+```
 
-# Plot ARIMA forecast vs actual
-autoplot(fc_arima) +
-  autolayer(test, series = "Actual", color = "black") +
-  ggtitle("ARIMA Forecast vs Actual (WA Salmon)") +
+```{r}
+## Plot all forecasts together
+
+```{r plot-forecast-comparison}
+autoplot(fc_class) +
+  autolayer(fc_111$mean, series = "ARIMA(1,1,1)", color = "red") +
+  autolayer(fc_200$mean, series = "ARIMA(2,0,0)", color = "blue") +
+  ggtitle("Forecast Comparison: Auto ARIMA vs Manual Models") +
+  ylab("Log(Metric Tons)") +
+  xlab("Time") +
   theme_minimal()
+```
 
-# Plot ETS forecast vs actual
-autoplot(fc_ets) +
-  autolayer(test, series = "Actual", color = "black") +
-  ggtitle("ETS Forecast vs Actual (WA Salmon)") +
+```{r}
+```{r plot-auto-arima}
+autoplot(fc_class) +
+  ggtitle("Auto ARIMA Forecast") +
+  ylab("Log(Metric Tons)") +
   theme_minimal()
 ```
 
 ```
-```{r}
-## Step 6: Measuring Forecast Accuracy
 
-```{r accuracy-arima-ets}
-library(forecast)
-
-# Calculate accuracy for ARIMA model
-accuracy(fc_arima, test)
-
-# Calculate accuracy for ETS model
-accuracy(fc_ets, test)
 ```
- 
+```{r}
+```{r plot-manual-111}
+autoplot(fc_111) +
+  ggtitle("Manual ARIMA(1,1,1) Forecast") +
+  ylab("Log(Metric Tons)") +
+  theme_minimal()
+```
+
+```
+
+```
+```{r}
+```{r plot-manual-200}
+autoplot(fc_200) +
+  ggtitle("Manual ARIMA(2,0,0) Forecast") +
+  ylab("Log(Metric Tons)") +
+  theme_minimal()
+```
+
 ```
 
 ```

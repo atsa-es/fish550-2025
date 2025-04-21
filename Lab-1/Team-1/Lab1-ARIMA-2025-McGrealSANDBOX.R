@@ -174,6 +174,46 @@ WAvalue.ts <- ts(WAchinook.month$value.usd, start=c(1990,1),
 WAvalue.train <- window(WAvalue.ts, c(1990, 1), c(2020, 12))
 WAvalue.test <- window(WAvalue.ts, c(2021, 1), c(2022, 12))
 
+# some diagnostica
+## Differencing and stationarity
+ndiffs(CAlands.train)
+ndiffs(CAprice.train)
+ndiffs(CAvalue.train)
+
+ndiffs(ORlands.train)
+ndiffs(ORprice.train)
+ndiffs(ORvalue.train)
+
+ndiffs(WAlands.train)
+ndiffs(WAprice.train)
+ndiffs(WAvalue.train)
+
+## ACF plots
+acf(CAlands.train, main= "California Landings ACF")
+acf(CAprice.train, main= "California Prices ACF")
+acf(CAvalue.train, main= "California Values ACF")
+
+acf(ORlands.train, main= "Oregon Landings ACF")
+acf(ORprice.train, main= "Oregon Prices ACF")
+acf(ORvalue.train, main= "Oregon Values ACF")
+
+acf(WAlands.train, main= "Washington Landings ACF")
+acf(WAprice.train, main= "Washington Prices ACF")
+acf(WAvalue.train, main= "Washington Values ACF")
+
+#PACF
+pacf(CAlands.train, main= "California Landings PACF")
+pacf(CAprice.train, main= "California Prices PACF")
+pacf(CAvalue.train, main= "California Values PACF")
+
+pacf(ORlands.train, main= "Oregon Landings PACF")
+pacf(ORprice.train, main= "Oregon Prices PACF")
+pacf(ORvalue.train, main= "Oregon Values PACF")
+
+pacf(WAlands.train, main= "Washington Landings PACF")
+pacf(WAprice.train, main= "Washington Prices PACF")
+pacf(WAvalue.train, main= "Washington Values PACF")
+
 # set up forecasts
 #CA
 CAlands.fit <- forecast::auto.arima(CAlands.train)
@@ -346,10 +386,10 @@ ggplot(data = WA.df, aes(x=time, y=value)) +
   theme_classic()
 
 #WA
-plot(WAvalue.compoundfc)
+plot(WAvalue.compoundfc, main="Washington Chinook Compound Value Forecast", ylab="Compound Value Forecast", xlab="")
 points(WAvalue.test)
 
-plot(WAvalue.fc$mean)
+plot(WAvalue.fc$mean, main="Washington Chinook Reported Value Forecast", ylab="Reported Value Forecast", xlab="")
 points(WAvalue.test)
 
 #OR
@@ -398,9 +438,9 @@ ggplot(data = OR.df, aes(x=time, y=value)) +
   theme_classic()
 
 #OR
-plot(ORvalue.compoundfc)
+plot(ORvalue.compoundfc, main="Oregon Chinook Compound Value Forecast", ylab="Compound Value Forecast", xlab="")
 points(ORvalue.test)
 
-plot(ORvalue.fc$mean)
+plot(ORvalue.fc$mean, main="Oregon Chinook Reported Value Forecast", ylab="Reported Value Forecast", xlab="")
 points(ORvalue.test)
 

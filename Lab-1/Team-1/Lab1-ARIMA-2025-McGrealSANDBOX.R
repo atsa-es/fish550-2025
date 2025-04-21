@@ -189,30 +189,30 @@ ndiffs(WAprice.train)
 ndiffs(WAvalue.train)
 
 ## ACF plots
-acf(CAlands.train, main= "California Landings ACF")
-acf(CAprice.train, main= "California Prices ACF")
-acf(CAvalue.train, main= "California Values ACF")
+acf(CAlands.train, main= "California Landings ACF", na.action = na.pass, las = 1/12)
+acf(CAprice.train, main= "California Prices ACF", na.action = na.pass, las = 1/12)
+acf(CAvalue.train, main= "California Values ACF", na.action = na.pass, las = 1/12)
 
-acf(ORlands.train, main= "Oregon Landings ACF")
-acf(ORprice.train, main= "Oregon Prices ACF")
-acf(ORvalue.train, main= "Oregon Values ACF")
+acf(ORlands.train, main= "Oregon Landings ACF", na.action = na.pass, las = 1/12)
+acf(ORprice.train, main= "Oregon Prices ACF", na.action = na.pass, las = 1/12)
+acf(ORvalue.train, main= "Oregon Values ACF", na.action = na.pass, las = 1/12)
 
-acf(WAlands.train, main= "Washington Landings ACF")
-acf(WAprice.train, main= "Washington Prices ACF")
-acf(WAvalue.train, main= "Washington Values ACF")
+acf(WAlands.train, main= "Washington Landings ACF", na.action = na.pass, las = 1/12)
+acf(WAprice.train, main= "Washington Prices ACF", na.action = na.pass, las = 1/12)
+acf(WAvalue.train, main= "Washington Values ACF", na.action = na.pass, las = 1/12)
 
 #PACF
-pacf(CAlands.train, main= "California Landings PACF")
-pacf(CAprice.train, main= "California Prices PACF")
-pacf(CAvalue.train, main= "California Values PACF")
+pacf(CAlands.train, main= "California Landings pACF", na.action = na.pass, las = 1/12)
+pacf(CAprice.train, main= "California Prices pACF", na.action = na.pass, las = 1/12)
+pacf(CAvalue.train, main= "California Values pACF", na.action = na.pass, las = 1/12)
 
-pacf(ORlands.train, main= "Oregon Landings PACF")
-pacf(ORprice.train, main= "Oregon Prices PACF")
-pacf(ORvalue.train, main= "Oregon Values PACF")
+pacf(ORlands.train, main= "Oregon Landings pACF", na.action = na.pass, las = 1/12)
+pacf(ORprice.train, main= "Oregon Prices pACF", na.action = na.pass, las = 1/12)
+pacf(ORvalue.train, main= "Oregon Values pACF", na.action = na.pass, las = 1/12)
 
-pacf(WAlands.train, main= "Washington Landings PACF")
-pacf(WAprice.train, main= "Washington Prices PACF")
-pacf(WAvalue.train, main= "Washington Values PACF")
+pacf(WAlands.train, main= "Washington Landings pACF", na.action = na.pass, las = 1/12)
+pacf(WAprice.train, main= "Washington Prices pACF", na.action = na.pass, las = 1/12)
+pacf(WAvalue.train, main= "Washington Values pACF", na.action = na.pass, las = 1/12)
 
 # set up forecasts
 #CA

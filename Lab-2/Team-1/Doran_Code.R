@@ -126,3 +126,4 @@ decliningpop<-subset(cohoU, cohoU<0)
 #geographical?
 
 #### Question 3####
+

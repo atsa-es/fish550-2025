@@ -12,36 +12,39 @@ output:
 subtitle: Forecasting with ARIMA and ETS models
 ---
 
+```{r setup, include=FALSE} 
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+```
+
+\newpage
 # Data
 
-Discuss what parts of the data sets you will work with.
+This lab used annual data recording salmon landings in six different US states covering the period from 1950 to 2016: Alaska, California, Oregon, Michigan, Pennsylvania, and Washington. Due to sparse data, Pennsylvania and Michigan were excluded from the analysis. Monthly data recording salmon landings as well as the value of fish landed was used from Washington, Oregon, and California covering the period from 1990 to 2022. 
 
-# Question your team will address
+# Research Questions
 
-What model structure best fits the different states and regions (Total and Pacific Northwest) represented in the yearly data set? How does forecasting accuracy compare across these regions?
-How does model performance change when you drop years? 
-This failed so start dropping months - address Brian’s real issue of moving from a seasonal model to a non seasonal (CA) because of data dropouts)
-Practical Application: You might want to know when you can get the most value out of your catch - how does the value per ton change over time? 
+1. What model structure best fits the different states and regions (Total and Pacific Northwest) represented in the yearly data set? How does forecasting accuracy compare across these regions?
 
+2. How does model performance change when sections of the time series are dropped? 
 
-# Method you will use
+3. How does forecasting monthly value of catch compare with separate forecasts of monthly landings and prices being interacted to find overall value?
+
+# Methods
 
 ## Initial plan
+We initially planned to fit ARIMA and ETS models to the different states and compare which model structure best fit each state or region. Noting the similarities between Washington and Oregon’s time series data, we also wanted to compare forecast accuracy for models trained on different data sets (e.g. compare Washington’s forecast accuracy on Oregon’s test data). We also planned on recovering monthly prices by dividing the value of fish landed by the landed weight in order to assess the efficiency of forecasting approaches.
 
+# Diagnostics and preliminary exploration - Question 1
+To address question 1, we subset the data for each west coast state, Pacific Northwest which includes WA, OR, and CA, and the total of all states combined, into a training data set and test data set. The training data sets spanned the years 1950-2005, and the test data set was 2006-2016. When we plotted the data there were no obvious problems with stationarity. There might be a slight downwards trend, and there are a few gaps in the California data, but it is not immediately obvious if the data is non-stationary.
 
-## What you actually did
-
-Example, "We were able to do our plan fairly quickly, so after writing the basic code. We compared the accuracy of forecasts for different time periods using 20-years for training and 5-year forecasts each time. We compared the RMSE, MAE, and MAPE accuracy measures."
-
-# Diagnostics and preliminary exploration
-
-To address question 1, we subset the data for each west coast state, Pacific Northwest which includes WA, OR, and CA, and the total of all states combined, into a training data set and test data set. The training data sets spanned the years 1950-2005, and the test data set was 2006-2016. When we plotted the data (Figure 1), there was no obvious problems with stationarity. There might be a slight downwards trend, and there are a few gaps in the California data, but it is not immediately obvious if the data is non-stationary.
 
 ```{r, include=FALSE}
 ## Packages
 library(atsalibrary)
 library(dplyr)
 library(ggplot2)
+library(patchwork)
+library(tidyverse)
 library(zoo)
 par(mfrow=c(1,1))
 #Filter and plot data
@@ -154,6 +157,7 @@ acf(pnwtrain, main= "PNW ACF")
 acf(totaltrain, main="Total ACF")
 pacf(pnwtrain, main= "PNW pACF")
 pacf(totaltrain, main="Total pACF")
+par(mfrow=c(1,1))
 ```
 
 What did you learn? Also try decomposition.
@@ -176,7 +180,163 @@ colnames(ndiffsresults)<-c("Alaksa", "California", "Oregon", "Washington", "Tota
 print(ndiffsresults)
 ```
 
+# Diagnostics and preliminary exploration - Question 3
+Preliminary analysis of question 2 involved first recovering price data and then plotting monthly landings, prices, and total value for all three states represented. 
+
+```{r, echo=FALSE}
+# create date column (first of each month)
+chinook.month <- chinook.month %>%
+  mutate(Date = as.Date(paste(Year, Month, "01", sep = "-"), format = "%Y-%b-%d"))
+
+# back out price (US$/ton)
+chinook.month$price <- chinook.month$value.usd/chinook.month$metric.tons
+
+# plot with price by state
+landings.monthly <- ggplot(chinook.month, aes(x = Date, y = log.metric.tons)) +
+  geom_line() +
+  facet_wrap(~ State, nrow = 1) +  # 3 panels vertically
+  labs(title = "Monthly Chinook Salmon Landings",
+       x = "Date",
+       y = "Log(m. tons)") +
+  theme_minimal()
+
+chinook.month[sapply(chinook.month, is.infinite)] <- NA
+chinook.month <- chinook.month %>% mutate_all(~ifelse(is.nan(.), NA, .))
+price.monthly <- ggplot(chinook.month, aes(x = Date, y = price)) +
+  geom_line() +
+  facet_wrap(~ State, nrow = 1) +  # 3 panels horizontal
+  labs(title = "Monthly Chinook Salmon Price",
+       x = "Date",
+       y = "US$/m. ton") +
+  theme_minimal()
+
+value.monthly <- ggplot(chinook.month, aes(x = Date, y = value.usd)) +
+  geom_line() +
+  facet_wrap(~ State, nrow = 1) +  # 3 panels horizontal
+  labs(title = "Monthly Chinook Salmon Value",
+       x = "Date",
+       y = "US$") +
+  theme_minimal()
+
+landings.monthly/price.monthly/value.monthly
+```
+
+Next, diagnostics were performed on these data, evaluating ACFs and pACFs checking ndiffs for stationarity.
+
+```{r, echo=FALSE}
+# set time series
+CAchinook.month <- subset(chinook.month, State == "CA")
+ORchinook.month <- subset(chinook.month, State == "OR")
+WAchinook.month <- subset(chinook.month, State == "WA")
+
+#CA
+CAlands.ts <- ts(CAchinook.month$log.metric.tons, start=c(1990,1),
+                 frequency = 12)
+CAlands.train <- window(CAlands.ts, c(1990, 1), c(2020, 12))
+CAlands.test <- window(CAlands.ts, c(2021, 1), c(2022, 12))
+
+CAprice.ts <- ts(CAchinook.month$price, start=c(1990,1),
+                 frequency = 12)
+CAprice.train <- window(CAprice.ts, c(1990, 1), c(2020, 12))
+CAprice.test <- window(CAprice.ts, c(2021, 1), c(2022, 12))
+
+CAvalue.ts <- ts(CAchinook.month$value.usd, start=c(1990,1),
+                 frequency = 12)
+CAvalue.train <- window(CAvalue.ts, c(1990, 1), c(2020, 12))
+CAvalue.test <- window(CAvalue.ts, c(2021, 1), c(2022, 12))
+
+#OR
+ORlands.ts <- ts(ORchinook.month$log.metric.tons, start=c(1990,1),
+                 frequency = 12)
+ORlands.train <- window(ORlands.ts, c(1990, 1), c(2020, 12))
+ORlands.test <- window(ORlands.ts, c(2021, 1), c(2022, 12))
+
+ORprice.ts <- ts(ORchinook.month$price, start=c(1990,1),
+                 frequency = 12)
+ORprice.train <- window(ORprice.ts, c(1990, 1), c(2020, 12))
+ORprice.test <- window(ORprice.ts, c(2021, 1), c(2022, 12))
+
+ORvalue.ts <- ts(ORchinook.month$value.usd, start=c(1990,1),
+                 frequency = 12)
+ORvalue.train <- window(ORvalue.ts, c(1990, 1), c(2020, 12))
+ORvalue.test <- window(ORvalue.ts, c(2021, 1), c(2022, 12))
+
+#WA
+WAlands.ts <- ts(WAchinook.month$log.metric.tons, start=c(1990,1),
+                 frequency = 12)
+WAlands.train <- window(WAlands.ts, c(1990, 1), c(2020, 12))
+WAlands.test <- window(WAlands.ts, c(2021, 1), c(2022, 12))
+
+WAprice.ts <- ts(WAchinook.month$price, start=c(1990,1),
+                 frequency = 12)
+WAprice.train <- window(WAprice.ts, c(1990, 1), c(2020, 12))
+WAprice.test <- window(WAprice.ts, c(2021, 1), c(2022, 12))
+
+WAvalue.ts <- ts(WAchinook.month$value.usd, start=c(1990,1),
+                 frequency = 12)
+WAvalue.train <- window(WAvalue.ts, c(1990, 1), c(2020, 12))
+WAvalue.test <- window(WAvalue.ts, c(2021, 1), c(2022, 12))
+```
+
+```{r, echo=FALSE}
+## Differencing and stationarity
+CAlandings <- ndiffs(CAlands.train)
+CAprices <- ndiffs(CAprice.train)
+CAvalue <- ndiffs(CAvalue.train)
+
+ORlandings <- ndiffs(ORlands.train)
+ORprices <- ndiffs(ORprice.train)
+ORvalue <- ndiffs(ORvalue.train)
+
+WAlandings <- ndiffs(WAlands.train)
+WAprices <- ndiffs(WAprice.train)
+WAvalue <- ndiffs(WAvalue.train)
+
+ndiffsresults<-matrix(data=c(CAlandings, CAprices, CAvalue, ORlandings, ORprices, ORvalue, WAlandings, WAprices, WAvalue), ncol=3, nrow=3)
+colnames(ndiffsresults) <- c("Landings", "Prices", "Value")
+rownames(ndiffsresults) <- c("CA", "OR", "WA")
+print(ndiffsresults)
+```
+
+
+```{r, echo=FALSE}
+## ACF plots
+par(mfrow=c(3,3))
+CAl_acf <- acf(CAlands.train, main= "California Landings ACF", na.action = na.pass)
+CAp_acf <- acf(CAprice.train, main= "California Prices ACF", na.action = na.pass)
+CAv_acf <- acf(CAvalue.train, main= "California Values ACF", na.action = na.pass)
+
+ORl_acf <- acf(ORlands.train, main= "Oregon Landings ACF", na.action = na.pass)
+ORp_acf <- acf(ORprice.train, main= "Oregon Prices ACF", na.action = na.pass)
+ORv_acf <- acf(ORvalue.train, main= "Oregon Values ACF", na.action = na.pass)
+
+WAl_acf <- acf(WAlands.train, main= "Washington Landings ACF", na.action = na.pass)
+WAp_acf <- acf(WAprice.train, main= "Washington Prices ACF", na.action = na.pass)
+WAv_acf <- acf(WAvalue.train, main= "Washington Values ACF", na.action = na.pass)
+
+#PACF
+CAl_pacf <- pacf(CAlands.train, main= "California Landings pACF", na.action = na.pass)
+CAp_pacf <- pacf(CAprice.train, main= "California Prices pACF", na.action = na.pass)
+CAv_pacf <- pacf(CAvalue.train, main= "California Values pACF", na.action = na.pass)
+
+ORl_pacf <- pacf(ORlands.train, main= "Oregon Landings pACF", na.action = na.pass)
+ORp_pacf <- pacf(ORprice.train, main= "Oregon Prices pACF", na.action = na.pass)
+ORv_pacf <- pacf(ORvalue.train, main= "Oregon Values pACF", na.action = na.pass)
+
+WAl_pacf <- pacf(WAlands.train, main= "Washington Landings pACF", na.action = na.pass)
+WAp_pacf <- pacf(WAprice.train, main= "Washington Prices pACF", na.action = na.pass)
+WAv_pacf <- pacf(WAvalue.train, main= "Washington Values pACF", na.action = na.pass)
+par(mfrow=c(1,1))
+```
+
+There is clear evidence of seasonal trends in the above plots, meaning any useful model will more than likely involve a seasonal component (sARIMA).
+
+Finally, data from each of three state-level time series was subsetted into training and testing data sets. Training data spanned the years from 1990 through 2020 while test data covers the years 2021 & 2022. 
+
 # Results
+
+## Question 1
+
 We fit multiple ARIMA and Holt models to the yearly time series data for each state, the PNW region (WA, OR, CA), and the total chinook landings for all states combined. ARIMA models where p, d, or q were greater than 1 had significantly higher AIC values than more parsimonious ARIMA models and are excluded from this write-up. We then forecasted 10 years of data using the six ARIMA models, tested the forecasts against the test data for each region. Using root mean squared error, we selected the best fit model for each state or region. The Holt model was the best fit for Alaska, California, and the Pacific Northwest region. An ARIMA(1,0,0) model was the best fit for Washington and Oregon. An ARIMA(0,1,0) model was the best fit for the entire Pacific Coast chinook landing data (log metric tons). See the figures below for the six regional time series and forecasts from the best fit model for each. We will also provide a brief interpretation of the best fit models, and check of the residuals using a Ljung-Box test. 
 
 
@@ -452,6 +612,8 @@ In summary, none of these models contained a seasonality component. The model st
 
 *Forecasting Accuracy Comparison*
 
+When we compared forecasting accuracy between models fit to one region against test data from another region, we found some interesting results. In some cases, another state’s forecasted data was a better fit than the best fit model for that state. This was the case for Alaska, whose test data was more accurately forecasted by the ARIMA model fit to the Washington data. Only the Washington and Oregon model forecasts were the best fit for their state’s test data. This is the opposite of what I would have expected, given our original hypothesis that Washington and Oregon’s time series look very similar. I would have expected forecasts from these two states to not be accurate when tested against other states’ data, since California and Alaska’s data looked different, but the Washington and Oregon models performed fairly well across the board. The large regional models (PNW and total) did not perform well, which does support the idea that forecasts for salmon fisheries should be made on smaller regional scales that are ecologically relevant to salmon populations. 
+
 ```{r, echo=FALSE}
 forecastrmse<-matrix(nrow=6, ncol=6)
 rownames(forecastrmse)<-c("AK Forecast", "CA Forecast", 
@@ -497,8 +659,162 @@ forecastrmse[6,6]<-accuracy(total.forecast.3, totaltest)[2, "RMSE"]
 print(forecastrmse)
 ```
 
+## Question 2
+
+The Forecast package's auto.arima function was used to determine which ARIMA models best fit the training data related to landings, prices, and value of fish landed. 
+
+```{r, echo=FALSE}
+#CA
+CAlands.fit <- forecast::auto.arima(CAlands.train)
+CAprice.fit <- forecast::auto.arima(CAprice.train)
+CAvalue.fit <- forecast::auto.arima(CAvalue.train)
+
+#OR
+ORlands.fit <- forecast::auto.arima(ORlands.train)
+ORprice.fit <- forecast::auto.arima(ORprice.train)
+ORvalue.fit <- forecast::auto.arima(ORvalue.train)
+
+#WA
+WAlands.fit <- forecast::auto.arima(WAlands.train)
+WAprice.fit <- forecast::auto.arima(WAprice.train)
+WAvalue.fit <- forecast::auto.arima(WAvalue.train)
+```
+
+```{r, echo=FALSE}
+CAlands.fit
+CAprice.fit
+CAvalue.fit
+
+ORlands.fit
+ORprice.fit
+ORvalue.fit
+
+WAlands.fit
+WAprice.fit
+WAvalue.fit
+```
+
+The models describing Chinook market data in California fail to find any seasonal trends, most likely due to data from California being much more scarce than data from Oregon and Washington. Moving forward California will be omitted from the process of forecasting landings, prices, and value.
+
+```{r}
+checkresiduals(ORlands.fit)
+```
+\newpage
+
+```{r}
+checkresiduals(ORprice.fit)
+```
+\newpage
+
+```{r}
+checkresiduals(ORvalue.fit)
+```
+\newpage
+
+```{r}
+checkresiduals(WAlands.fit)
+```
+\newpage
+
+```{r}
+checkresiduals(WAprice.fit)
+```
+\newpage
+
+```{r}
+checkresiduals(WAvalue.fit)
+```
+
+In general, models fitting landed weight, prices, and value show well behaved residuals distributed symmetrically around a mean of zero with little auto-correlation. The value models for both Oregon and Washington show the most autocorrelation and also a very tight distribution of error terms. 
+
+```{r, echo=FALSE}
+# project forecasts
+#CA
+CAlands.fc <- forecast::forecast(CAlands.fit, h=24)
+plot(CAlands.fc)
+points(CAlands.test)
+
+CAprice.fc <- forecast::forecast(CAprice.fit, h=24)
+plot(CAprice.fc)
+points(CAprice.test)
+
+CAvalue.fc <- forecast::forecast(CAvalue.fit, h=24)
+plot(CAvalue.fc)
+points(CAvalue.test)
+
+#OR
+ORlands.fc <- forecast::forecast(ORlands.fit, h=24)
+plot(ORlands.fc)
+points(ORlands.test)
+
+ORprice.fc <- forecast::forecast(ORprice.fit, h=24)
+plot(ORprice.fc)
+points(ORprice.test)
+
+ORvalue.fc <- forecast::forecast(ORvalue.fit, h=24)
+plot(ORvalue.fc)
+points(ORvalue.test)
+
+#WA
+WAlands.fc <- forecast::forecast(WAlands.fit, h=24)
+plot(WAlands.fc)
+points(WAlands.test)
+
+WAprice.fc <- forecast::forecast(WAprice.fit, h=24)
+plot(WAprice.fc)
+points(WAprice.test)
+
+WAvalue.fc <- forecast::forecast(WAvalue.fit, h=24)
+plot(WAvalue.fc)
+points(WAvalue.test)
+
+#comparing forecasts
+#CA
+CAlands.compoundfc <- exp(CAlands.fc$mean)
+CAvalue.compoundfc <- CAlands.compoundfc*CAprice.fc$mean
+CAvalue.compoundfc
+CAvalue.fc$mean
+CAvalue.test
+
+#OR
+ORlands.compoundfc <- exp(ORlands.fc$mean)
+ORvalue.compoundfc <- ORlands.compoundfc*ORprice.fc$mean
+ORvalue.compoundfc
+ORvalue.fc$mean
+ORvalue.test
+
+#WA
+WAlands.compoundfc <- exp(WAlands.fc$mean)
+WAvalue.compoundfc <- WAlands.compoundfc*WAprice.fc$mean
+WAvalue.compoundfc
+WAvalue.fc$mean
+WAvalue.test
+
+# plotting
+#CA
+plot(CAvalue.compoundfc)
+points(CAvalue.test)
+
+plot(CAvalue.fc$mean)
+points(CAvalue.test)
+
+#OR
+plot(ORvalue.compoundfc)
+points(ORvalue.test)
+
+plot(ORvalue.fc$mean)
+points(ORvalue.test)
+
+#WA
+plot(WAvalue.compoundfc)
+points(WAvalue.test)
+
+plot(WAvalue.fc$mean)
+points(WAvalue.test)
+```
 
 # Discussion
+
 In summary, none of these models contained a seasonality component. The model structure differed slightly between regions, but none of the models found significant changes in trend over time. Many of them behaved functionally like a random walk. 
 
 When we compared forecasting accuracy between models fit to one region against test data from another region, we found some interesting results. In some cases, another state’s forecasted data was a better fit than the best fit model for that state. This was the case for Alaska, whose test data was more accurately forecasted by the ARIMA model fit to the Washington data. Only the Washington and Oregon model forecasts were the best fit for their state’s test data. This is the opposite of what I would have expected, given our original hypothesis that Washington and Oregon’s time series look very similar. I would have expected forecasts from these two states to not be accurate when tested against other states’ data, since California and Alaska’s data looked different, but the Washington and Oregon models performed fairly well across the board. The large regional models (PNW and total) did not perform well, which does support the idea that forecasts for salmon fisheries should be made on smaller regional scales that are ecologically relevant to salmon populations.

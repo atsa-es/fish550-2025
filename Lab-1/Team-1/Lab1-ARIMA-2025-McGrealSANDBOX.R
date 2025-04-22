@@ -189,17 +189,19 @@ ndiffs(WAprice.train)
 ndiffs(WAvalue.train)
 
 ## ACF plots
-acf(CAlands.train, main= "California Landings ACF", na.action = na.pass, las = 1/12)
-acf(CAprice.train, main= "California Prices ACF", na.action = na.pass, las = 1/12)
-acf(CAvalue.train, main= "California Values ACF", na.action = na.pass, las = 1/12)
+CAl_acf <- acf(CAlands.train, main= "California Landings ACF", na.action = na.pass, las = 1/12)
+CAp_acf <- acf(CAprice.train, main= "California Prices ACF", na.action = na.pass, las = 1/12)
+CAv_acf <- acf(CAvalue.train, main= "California Values ACF", na.action = na.pass, las = 1/12)
 
-acf(ORlands.train, main= "Oregon Landings ACF", na.action = na.pass, las = 1/12)
-acf(ORprice.train, main= "Oregon Prices ACF", na.action = na.pass, las = 1/12)
-acf(ORvalue.train, main= "Oregon Values ACF", na.action = na.pass, las = 1/12)
+ORl_acf <- acf(ORlands.train, main= "Oregon Landings ACF", na.action = na.pass, las = 1/12)
+ORp_acf <- acf(ORprice.train, main= "Oregon Prices ACF", na.action = na.pass, las = 1/12)
+ORv_acf <- acf(ORvalue.train, main= "Oregon Values ACF", na.action = na.pass, las = 1/12)
 
-acf(WAlands.train, main= "Washington Landings ACF", na.action = na.pass, las = 1/12)
-acf(WAprice.train, main= "Washington Prices ACF", na.action = na.pass, las = 1/12)
-acf(WAvalue.train, main= "Washington Values ACF", na.action = na.pass, las = 1/12)
+WAl_acf <- acf(WAlands.train, main= "Washington Landings ACF", na.action = na.pass, las = 1/12)
+WAp_acf <- acf(WAprice.train, main= "Washington Prices ACF", na.action = na.pass, las = 1/12)
+WAv_acf <- acf(WAvalue.train, main= "Washington Values ACF", na.action = na.pass, las = 1/12)
+
+(CAl_acf + CAp_acf + CAv_acf)/(ORl_acf + ORp_acf + ORv_acf)/(WAl_acf + WAp_acf + WAv_acf)
 
 #PACF
 pacf(CAlands.train, main= "California Landings pACF", na.action = na.pass, las = 1/12)

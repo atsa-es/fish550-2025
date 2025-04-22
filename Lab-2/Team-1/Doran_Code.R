@@ -7,6 +7,9 @@ library(tidyverse)
 library(zoo)
 library(corrplot)
 
+#Load data
+load("~/Desktop/Time Series/fish550-205/Lab-2/Data_Images/esa-salmon.rda")
+
 ### Data exploration
 esu <- unique(esa.salmon$esu_dps)
 esunum <- which(esu == esu[7])

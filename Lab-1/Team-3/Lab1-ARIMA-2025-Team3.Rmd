@@ -33,17 +33,6 @@ chinook.year <- chinook.year
 chinook.year_filtered <- chinook.year %>%
   filter(State == "Washington")
 
-ggplot(chinook.year_filtered, aes(x = Year, y = log.metric.tons)) +
-  geom_line() +
-  facet_wrap(~ State, scales = "free_y") +
-  labs(
-    title = "Chinook Landings by State",
-    x = "Year",
-    y = "Log(Metric Tons)"
-  ) +
-  theme_minimal()
-
-
 # Quick plot of year 
 
 ggplot(chinook.year_filtered, aes(x = Year, y = log.metric.tons)) +
@@ -222,6 +211,22 @@ yearly_ets_forecast <- forecast(yearly_ets, h = length(yearly_test))
 monthly_arima_forecast <- forecast(monthly_arima, h = length(monthly_test))
 monthly_ets_forecast <- forecast(monthly_ets, h = length(monthly_test))
 
+# Plot forecasts
+plot1<-autoplot(yearly_arima_forecast)
+plot2<-autoplot(yearly_ets_forecast)
+
+plot3<-autoplot(monthly_arima_forecast)
+plot4<-autoplot(monthly_ets_forecast)
+
+# Put into a 4 plot panel 
+library(gridExtra)
+library(grid)
+library(ggplot2)
+
+grid.arrange(plot1, plot2, plot3, plot4, ncol = 2)
+
+
+
 ```
 
 
@@ -229,19 +234,41 @@ monthly_ets_forecast <- forecast(monthly_ets, h = length(monthly_test))
 ```{r}
 # Evaluate forecast accuracy
 yearly_arima_accuracy <- accuracy(yearly_arima_forecast, yearly_test)
+
+#                     ME      RMSE       MAE        MPE     MAPE      MASE      ACF1 Theil's U
+# Training set -0.01046748 0.2175570 0.1732156 -0.1712576 2.225795 0.9820193 0.0292464        NA
+# Test set     -0.07686666 0.2753066 0.2363580 -1.1236585 3.107135 1.3399954 0.5697271  1.139735
+
 yearly_ets_accuracy <- accuracy(yearly_ets_forecast, yearly_test)
 
+#                     ME      RMSE       MAE        MPE     MAPE      MASE       ACF1
+# Training set -0.01062423 0.2175548 0.1730609 -0.1731526 2.223930 0.9811418 0.02860653
+# Test set     -0.07683952 0.2752990 0.2363503 -1.1233035 3.107024 1.3399514 0.56972710
+             
 monthly_arima_accuracy <- accuracy(monthly_arima_forecast, monthly_test)
+
+#                     ME     RMSE       MAE  MPE MAPE      MASE         ACF1 Theil's U
+# Training set -0.0620450 1.314323 0.9435214 -Inf  Inf 0.8521606 -0.001970859        NA
+# Test set     -0.9640865 3.266402 2.5277314 -Inf  Inf 2.2829721  0.737652808         0
+
 monthly_ets_accuracy <- accuracy(monthly_ets_forecast, monthly_test)
 
-# Plot forecasts
-autoplot(yearly_arima_forecast)
-autoplot(yearly_ets_forecast)
-
-autoplot(monthly_arima_forecast)
-autoplot(monthly_ets_forecast)
+#                       ME     RMSE      MAE  MPE MAPE     MASE      ACF1 Theil's U
+# Training set  0.0008512003 1.653080 1.088517 -Inf  Inf 0.983116 0.3694314        NA
+# Test set     -1.8938374286 3.914736 2.998623 -Inf  Inf 2.708267 0.7424152         0
 
 ```
+
+The accuracy metrics show that for yearly data, ARIMA and ETS models performed nearly the same with a MAPE value of about 3.1%, indicating reasonably accurate forecasts. For the monthly data, the ARIMA model outperformed ETS with lower RMSE (3.27 vs 3.91) and MAE (2.53 vs 3.00)
+
+Visually, the plots suggest better monthly performance but the numerical metrics indicate higher absolute errors for monthly forecasts compared to yearly ones. It would be interesting to compare how each of these predictions preform on test data from the other dataset (i.e. do predictions made from monthly data preform better for yearly data)
+
+
+################ 
+################ Team Member Contributions 
+
+BM, EC, and TT all contributed code and analysis to the final analysis. EC wrote details about the initial plan and questions we addressed. TT added details about checking the residuals and the ACF/PACF plots, and wrote details about the results and discussion. BM wrote and organized final code and added details about Accuracy results. 
+
 
 
 
@@ -254,10 +281,12 @@ autoplot(monthly_ets_forecast)
 ###### Use ACF and PACF (TINA) 
 
 ###  Results and Discussion (TINA: FIT RESULTS , 
-                             Ben: Accuracy Results)
+                             Ben: Accuracy Results) DONE 
                              
-### Add in and comment out the accuracy results (BEN)
+### Add in and comment out the accuracy results (BEN) DONE
 
-# Team members contributions 
+# Team members contributions Done-ish 
+
+
 
 

@@ -12,36 +12,38 @@ output:
 subtitle: Forecasting with ARIMA and ETS models
 ---
 
+```{r setup, include=FALSE} 
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+```
+
+\newpage
 # Data
 
-Discuss what parts of the data sets you will work with.
+This lab used annual data recording salmon landings in six different US states covering the period from 1950 to 2016: Alaska, California, Oregon, Michigan, Pennsylvania, and Washington. Due to sparse data, Pennsylvania and Michigan were excluded from the analysis. Monthly data recording salmon landings as well as the value of fish landed was used from Washington, Oregon, and California covering the period from 1990 to 2022. 
 
-# Question your team will address
+# Research Questions
 
-What model structure best fits the different states and regions (Total and Pacific Northwest) represented in the yearly data set? How does forecasting accuracy compare across these regions?
-How does model performance change when you drop years? 
-This failed so start dropping months - address Brian’s real issue of moving from a seasonal model to a non seasonal (CA) because of data dropouts)
-Practical Application: You might want to know when you can get the most value out of your catch - how does the value per ton change over time? 
+1. What model structure best fits the different states and regions (Total and Pacific Northwest) represented in the yearly data set? How does forecasting accuracy compare across these regions?
 
+2. How does model performance change when sections of the time series are dropped? 
 
-# Method you will use
+3. How does forecasting monthly value of catch compare with separate forecasts of monthly landings and prices being interacted to find overall value?
 
-## Initial plan
+# Methods
 
+We initially planned to fit ARIMA and ETS models to the different states and compare which model structure best fit each state or region. Noting the similarities between Washington and Oregon’s time series data, we also wanted to compare forecast accuracy for models trained on different data sets (e.g. compare Washington’s forecast accuracy on Oregon’s test data). We also planned on recovering monthly prices by dividing the value of fish landed by the landed weight in order to assess the efficiency of forecasting approaches.
 
-## What you actually did
+## Question 1
+To address question 1, we subset the data for each west coast state, Pacific Northwest which includes WA, OR, and CA, and the total of all states combined, into a training data set and test data set. The training data sets spanned the years 1950-2005, and the test data set was 2006-2016. When we plotted the data there were no obvious problems with stationarity. There might be a slight downwards trend, and there are a few gaps in the California data, but it is not immediately obvious if the data is non-stationary.
 
-Example, "We were able to do our plan fairly quickly, so after writing the basic code. We compared the accuracy of forecasts for different time periods using 20-years for training and 5-year forecasts each time. We compared the RMSE, MAE, and MAPE accuracy measures."
-
-# Diagnostics and preliminary exploration
-
-To address question 1, we subset the data for each west coast state, Pacific Northwest which includes WA, OR, and CA, and the total of all states combined, into a training data set and test data set. The training data sets spanned the years 1950-2005, and the test data set was 2006-2016. When we plotted the data (Figure 1), there was no obvious problems with stationarity. There might be a slight downwards trend, and there are a few gaps in the California data, but it is not immediately obvious if the data is non-stationary.
 
 ```{r, include=FALSE}
 ## Packages
 library(atsalibrary)
 library(dplyr)
 library(ggplot2)
+library(patchwork)
+library(tidyverse)
 library(zoo)
 par(mfrow=c(1,1))
 #Filter and plot data
@@ -135,7 +137,7 @@ ggplot(chinook.year, aes(x = Year, y = log.metric.tons, color = State)) +
 ```
 
 
-## Use ACF and PACF
+#### Use ACF and PACF
 
 ```{r, echo=FALSE}
 par(mfrow=c(2,2))
@@ -143,7 +145,6 @@ acf(catrain, main= "California ACF")
 acf(aktrain, main="Alaska ACF")
 acf(watrain, main="Washington ACF")
 acf(ortrain,main="Oregon ACF")
-
 
 pacf(catrain, main= "California pACF")
 pacf(aktrain, main="Alaska pACF")
@@ -154,12 +155,10 @@ acf(pnwtrain, main= "PNW ACF")
 acf(totaltrain, main="Total ACF")
 pacf(pnwtrain, main= "PNW pACF")
 pacf(totaltrain, main="Total pACF")
+par(mfrow=c(1,1))
 ```
 
-What did you learn? Also try decomposition.
-*I might need help interpreting these plots*
-
-## Test for stationarity
+#### Test for stationarity
 
 When we run ndiffs on the states’ data, Oregon, Washington, the Pacific Northwest region determined one first-difference is required to make the data stationary.
 
@@ -176,7 +175,245 @@ colnames(ndiffsresults)<-c("Alaksa", "California", "Oregon", "Washington", "Tota
 print(ndiffsresults)
 ```
 
+## Question 2
+
+#### Yearly Data
+
+```{r, echo=FALSE}
+
+chinook.year.filtered <- chinook.year %>%
+  filter(!State %in% c("Michigan", "Pennsylvania"))
+
+ggplot(chinook.year.filtered, aes(x = Year, y = metric.tons)) +
+  geom_line() +
+  facet_wrap(~ State, ncol = 2, scales = "free_y") +
+  labs(
+    title = "Chinook Landings by State",
+    x = "Year",
+    y = "Log(Metric Tons)"
+  ) +
+  theme_minimal()
+
+
+# Create the time series 
+dat_CA <- ts(chinook.year.filtered$log.metric.tons[chinook.year.filtered$State == "California"], start = chinook.year.filtered$Year[chinook.year.filtered$State == "California"][1], )
+dat_WA <-ts(chinook.year.filtered$log.metric.tons[chinook.year.filtered$State == "Washington"], start = chinook.year.filtered$Year[chinook.year.filtered$State == "Washington"][1], )
+dat_AK <-ts(chinook.year.filtered$log.metric.tons[chinook.year.filtered$State == "Alaska"], start = chinook.year.filtered$Year[chinook.year.filtered$State == "Alaska"][1], )
+dat_OR <- ts(chinook.year.filtered$log.metric.tons[chinook.year.filtered$State == "Oregon"], start = chinook.year.filtered$Year[chinook.year.filtered$State == "Oregon"][1], )
+
+
+```
+
+Check the type of relationship we are dealing with to formulate research questions. We checked the ACF and PACF using a custom function.
+
+```{r, echo=FALSE}
+check_acf <- function(ts_list, area_names) {
+  # ts_list: a list of 4 time series (e.g., list(ts_CA, ts_OR, ts_WA, ts_AK))
+  # area_names: character vector of 4 names (e.g., c("California", "Oregon", "Washington", "Alaska"))
+  
+  if (length(ts_list) != 4 | length(area_names) != 4) {
+    stop("Provide exactly 4 time series and 4 area names.")
+  }
+  
+  par(mfrow = c(4, 2), mar = c(3, 3, 3, 1))  # 4 rows, 2 columns layout
+  
+  for (i in 1:4) {
+    ts <- na.interp(ts_list[[i]])
+    
+    # ACF plot
+    acf(ts, main = paste("ACF -", area_names[i]))
+    
+    # PACF plot
+    pacf(ts, main = paste("PACF -", area_names[i]))
+  }
+  
+  # Reset layout to default
+  par(mfrow = c(1,1))
+}
+
+
+list_area <- list(dat_AK,dat_CA,dat_OR,dat_WA)
+area_names <- c("California", "Oregon", "Washington", "Alaska")
+
+check_acf(ts_list = list_area,area_names)
+```
+
+We also checked the differencing necessary for each series.
+
+```{r, echo=FALSE}
+
+ndiffs(dat_CA, test='adf')
+ndiffs(dat_AK, test='adf') #diff 1
+ndiffs(dat_WA, test='adf') #diff 1
+ndiffs(dat_OR, test='adf')
+```
+
+#### Monthly Data
+
+```{r, echo=FALSE}
+ch_month <- chinook.month %>%
+  filter(!State %in% c("Michigan", "Pennsylvania"))
+
+
+```
+
+## Question 3
+Preliminary analysis of question 3 involved first recovering price data and then plotting monthly landings, prices, and total value for all three states represented. 
+
+```{r, echo=FALSE}
+# create date column (first of each month)
+chinook.month <- chinook.month %>%
+  mutate(Date = as.Date(paste(Year, Month, "01", sep = "-"), format = "%Y-%b-%d"))
+
+# back out price (US$/ton)
+chinook.month$price <- chinook.month$value.usd/chinook.month$metric.tons
+
+# plot with price by state
+landings.monthly <- ggplot(chinook.month, aes(x = Date, y = log.metric.tons)) +
+  geom_line() +
+  facet_wrap(~ State, nrow = 1) +  # 3 panels vertically
+  labs(title = "Monthly Chinook Salmon Landings",
+       x = "Date",
+       y = "Log(m. tons)") +
+  theme_minimal()
+
+chinook.month[sapply(chinook.month, is.infinite)] <- NA
+chinook.month <- chinook.month %>% mutate_all(~ifelse(is.nan(.), NA, .))
+price.monthly <- ggplot(chinook.month, aes(x = Date, y = price)) +
+  geom_line() +
+  facet_wrap(~ State, nrow = 1) +  # 3 panels horizontal
+  labs(title = "Monthly Chinook Salmon Price",
+       x = "Date",
+       y = "US$/m. ton") +
+  theme_minimal()
+
+value.monthly <- ggplot(chinook.month, aes(x = Date, y = value.usd)) +
+  geom_line() +
+  facet_wrap(~ State, nrow = 1) +  # 3 panels horizontal
+  labs(title = "Monthly Chinook Salmon Value",
+       x = "Date",
+       y = "US$") +
+  theme_minimal()
+
+landings.monthly/price.monthly/value.monthly
+```
+
+Next, diagnostics were performed on these data, evaluating ACFs and pACFs checking ndiffs for stationarity.
+
+```{r, echo=FALSE}
+# set time series
+CAchinook.month <- subset(chinook.month, State == "CA")
+ORchinook.month <- subset(chinook.month, State == "OR")
+WAchinook.month <- subset(chinook.month, State == "WA")
+
+#CA
+CAlands.ts <- ts(CAchinook.month$log.metric.tons, start=c(1990,1),
+                 frequency = 12)
+CAlands.train <- window(CAlands.ts, c(1990, 1), c(2020, 12))
+CAlands.test <- window(CAlands.ts, c(2021, 1), c(2022, 12))
+
+CAprice.ts <- ts(CAchinook.month$price, start=c(1990,1),
+                 frequency = 12)
+CAprice.train <- window(CAprice.ts, c(1990, 1), c(2020, 12))
+CAprice.test <- window(CAprice.ts, c(2021, 1), c(2022, 12))
+
+CAvalue.ts <- ts(CAchinook.month$value.usd, start=c(1990,1),
+                 frequency = 12)
+CAvalue.train <- window(CAvalue.ts, c(1990, 1), c(2020, 12))
+CAvalue.test <- window(CAvalue.ts, c(2021, 1), c(2022, 12))
+
+#OR
+ORlands.ts <- ts(ORchinook.month$log.metric.tons, start=c(1990,1),
+                 frequency = 12)
+ORlands.train <- window(ORlands.ts, c(1990, 1), c(2020, 12))
+ORlands.test <- window(ORlands.ts, c(2021, 1), c(2022, 12))
+
+ORprice.ts <- ts(ORchinook.month$price, start=c(1990,1),
+                 frequency = 12)
+ORprice.train <- window(ORprice.ts, c(1990, 1), c(2020, 12))
+ORprice.test <- window(ORprice.ts, c(2021, 1), c(2022, 12))
+
+ORvalue.ts <- ts(ORchinook.month$value.usd, start=c(1990,1),
+                 frequency = 12)
+ORvalue.train <- window(ORvalue.ts, c(1990, 1), c(2020, 12))
+ORvalue.test <- window(ORvalue.ts, c(2021, 1), c(2022, 12))
+
+#WA
+WAlands.ts <- ts(WAchinook.month$log.metric.tons, start=c(1990,1),
+                 frequency = 12)
+WAlands.train <- window(WAlands.ts, c(1990, 1), c(2020, 12))
+WAlands.test <- window(WAlands.ts, c(2021, 1), c(2022, 12))
+
+WAprice.ts <- ts(WAchinook.month$price, start=c(1990,1),
+                 frequency = 12)
+WAprice.train <- window(WAprice.ts, c(1990, 1), c(2020, 12))
+WAprice.test <- window(WAprice.ts, c(2021, 1), c(2022, 12))
+
+WAvalue.ts <- ts(WAchinook.month$value.usd, start=c(1990,1),
+                 frequency = 12)
+WAvalue.train <- window(WAvalue.ts, c(1990, 1), c(2020, 12))
+WAvalue.test <- window(WAvalue.ts, c(2021, 1), c(2022, 12))
+```
+
+```{r, echo=FALSE}
+## Differencing and stationarity
+CAlandings <- ndiffs(CAlands.train)
+CAprices <- ndiffs(CAprice.train)
+CAvalue <- ndiffs(CAvalue.train)
+
+ORlandings <- ndiffs(ORlands.train)
+ORprices <- ndiffs(ORprice.train)
+ORvalue <- ndiffs(ORvalue.train)
+
+WAlandings <- ndiffs(WAlands.train)
+WAprices <- ndiffs(WAprice.train)
+WAvalue <- ndiffs(WAvalue.train)
+
+ndiffsresults<-matrix(data=c(CAlandings, CAprices, CAvalue, ORlandings, ORprices, ORvalue, WAlandings, WAprices, WAvalue), ncol=3, nrow=3)
+colnames(ndiffsresults) <- c("Landings", "Prices", "Value")
+rownames(ndiffsresults) <- c("CA", "OR", "WA")
+print(ndiffsresults)
+```
+
+
+```{r, echo=FALSE}
+## ACF plots
+par(mfrow=c(3,3))
+CAl_acf <- acf(CAlands.train, main= "California Landings ACF", na.action = na.pass)
+CAp_acf <- acf(CAprice.train, main= "California Prices ACF", na.action = na.pass)
+CAv_acf <- acf(CAvalue.train, main= "California Values ACF", na.action = na.pass)
+
+ORl_acf <- acf(ORlands.train, main= "Oregon Landings ACF", na.action = na.pass)
+ORp_acf <- acf(ORprice.train, main= "Oregon Prices ACF", na.action = na.pass)
+ORv_acf <- acf(ORvalue.train, main= "Oregon Values ACF", na.action = na.pass)
+
+WAl_acf <- acf(WAlands.train, main= "Washington Landings ACF", na.action = na.pass)
+WAp_acf <- acf(WAprice.train, main= "Washington Prices ACF", na.action = na.pass)
+WAv_acf <- acf(WAvalue.train, main= "Washington Values ACF", na.action = na.pass)
+
+#PACF
+CAl_pacf <- pacf(CAlands.train, main= "California Landings pACF", na.action = na.pass)
+CAp_pacf <- pacf(CAprice.train, main= "California Prices pACF", na.action = na.pass)
+CAv_pacf <- pacf(CAvalue.train, main= "California Values pACF", na.action = na.pass)
+
+ORl_pacf <- pacf(ORlands.train, main= "Oregon Landings pACF", na.action = na.pass)
+ORp_pacf <- pacf(ORprice.train, main= "Oregon Prices pACF", na.action = na.pass)
+ORv_pacf <- pacf(ORvalue.train, main= "Oregon Values pACF", na.action = na.pass)
+
+WAl_pacf <- pacf(WAlands.train, main= "Washington Landings pACF", na.action = na.pass)
+WAp_pacf <- pacf(WAprice.train, main= "Washington Prices pACF", na.action = na.pass)
+WAv_pacf <- pacf(WAvalue.train, main= "Washington Values pACF", na.action = na.pass)
+par(mfrow=c(1,1))
+```
+
+There is clear evidence of seasonal trends in the above plots, meaning any useful model will more than likely involve a seasonal component (sARIMA).
+
+Finally, data from each of three state-level time series was subsetted into training and testing data sets. Training data spanned the years from 1990 through 2020 while test data covers the years 2021 & 2022. 
+
 # Results
+
+## Question 1
+
 We fit multiple ARIMA and Holt models to the yearly time series data for each state, the PNW region (WA, OR, CA), and the total chinook landings for all states combined. ARIMA models where p, d, or q were greater than 1 had significantly higher AIC values than more parsimonious ARIMA models and are excluded from this write-up. We then forecasted 10 years of data using the six ARIMA models, tested the forecasts against the test data for each region. Using root mean squared error, we selected the best fit model for each state or region. The Holt model was the best fit for Alaska, California, and the Pacific Northwest region. An ARIMA(1,0,0) model was the best fit for Washington and Oregon. An ARIMA(0,1,0) model was the best fit for the entire Pacific Coast chinook landing data (log metric tons). See the figures below for the six regional time series and forecasts from the best fit model for each. We will also provide a brief interpretation of the best fit models, and check of the residuals using a Ljung-Box test. 
 
 
@@ -452,6 +689,8 @@ In summary, none of these models contained a seasonality component. The model st
 
 *Forecasting Accuracy Comparison*
 
+When we compared forecasting accuracy between models fit to one region against test data from another region, we found some interesting results. In some cases, another state’s forecasted data was a better fit than the best fit model for that state. This was the case for Alaska, whose test data was more accurately forecasted by the ARIMA model fit to the Washington data. Only the Washington and Oregon model forecasts were the best fit for their state’s test data. This is the opposite of what we would have expected, given our original hypothesis that Washington and Oregon’s time series look very similar. We would have expected forecasts from these two states to not be accurate when tested against other states’ data, since California and Alaska’s data looked different, but the Washington and Oregon models performed fairly well across the board. The large regional models (PNW and total) did not perform well, which does support the idea that forecasts for salmon fisheries should be made on smaller regional scales that are ecologically relevant to salmon populations. 
+
 ```{r, echo=FALSE}
 forecastrmse<-matrix(nrow=6, ncol=6)
 rownames(forecastrmse)<-c("AK Forecast", "CA Forecast", 
@@ -497,13 +736,524 @@ forecastrmse[6,6]<-accuracy(total.forecast.3, totaltest)[2, "RMSE"]
 print(forecastrmse)
 ```
 
+## Question 2
+
+#### Initial Step - Forecasting with Maximum Knowledge (ARIMA, ETS and HW) 
+
+As part of our analysis process, We wanted to determine which model structure and respective function was best suited for our analysis. We started with a simple ARIMA model to see if the auto regressive process with full knowledge could be used to produce accurate forecasts. We used auto.arima to select the best model for each data set. We began with the yearly time series and found poor forecasting performance along with simple models so chose to pivot away to monthly data.
+
+```{r, echo=FALSE}
+
+#Yearly time series 
+arima_ff <- function(ts_list, labels) {
+  
+
+  results <- list()
+  par(mfrow = c(2, 2), mar = c(4, 4, 3, 2))  
+  
+  for (i in 1:length(ts_list)) {
+    ts_data <- ts_list[[i]]
+    
+    # Set training and testing data
+    train <- window(ts_data, start = start(ts_data), end = c(start(ts_data)[1] + 20))
+    test  <- window(ts_data, start = c(start(ts_data)[1] + 20), end = c(start(ts_data)[1] + 66))
+    
+    # Fit and forecast
+    model <- auto.arima(train)
+    pred <- forecast(model, h = 3)
+    acc <- accuracy(pred, test)
+    
+    model_type <- paste0("ARIMA(", paste(arimaorder(model), collapse = ","), ")")
+    
+      results[[i]] <- list(
+      Label = labels[i],
+      AIC = AIC(model),
+      BIC = BIC(model),
+      MAPE = acc[2, "MAPE"],
+      RMSE = acc[2, "RMSE"],
+      Model = model_type)
+    
+    # Plot forecast and compare
+    plot(pred, main = paste("Forecast -", labels[i]), ylab = "Value", xlab = "Time")
+    points(test, col = "red", pch = 16)
+  }
+  
+  par(mfrow = c(1, 1))  # Reset layout
+    final_results <- do.call(rbind, lapply(results, as.data.frame))
+  return(final_results)
+  
+}
+
+arima_ff(list_area,area_names)
+```
+
+Our results showed that with yearly data only CA had any autocorrelation in the data while WA and AK were simple random walks. This was demonstrated by the ballooning of the confidence intervals in the forecasts like we had seen in class.
+
+Given the poor results for the yearly time series (although true values still remained within the confidence intervals) we considered using a seasonal component to inform the forecast so shifted to exploring ETS and Holt-Winters models. We also re-ran the function for the monthly data
+
+```{r, echo=FALSE}
+
+# Create the time series 
+datmon_CA <- ts(ch_month$metric.tons[ch_month$State == "CA"], start = c(1, 1), frequency = 12 )
+datmon_WA <-ts(ch_month$metric.tons[ch_month$State == "WA"], start = c(1, 1), frequency = 12 )
+datmon_OR <- ts(ch_month$metric.tons[ch_month$State == "OR"], start = c(1, 1), frequency = 12 )
+
+list_area_month <- list(datmon_CA,datmon_OR,datmon_WA )
+area_names_m <- c("California", "Oregon", "Washington")
+
+
+ets_ff <- function(ts_list, labels = NULL) {
+
+  
+  par(mfrow = c(2, 2), mar = c(4, 4, 3, 2))  # 2x2 panel layout
+  results <- list()
+  for (i in 1:length(ts_list)) {
+    ts_data <- na.interp(ts_list[[i]])
+    
+    # Define train/test split (adjust if needed based on length of your data)
+    train <- window(ts_data, start = start(ts_data), end = c(start(ts_data)[1] + 20))
+    test  <- window(ts_data, start = c(start(ts_data)[1] + 20), end = c(start(ts_data)[1] + 66))
+    
+    # Fit ARIMA and forecast
+    model <- ets(train)
+    pred <- forecast(model, h = 2*12)
+    
+    acc <- accuracy(pred, test)
+    
+    # Plot forecast with test data
+    plot(pred, main = paste("Forecast -", labels[i]), ylab = "Value", xlab = "Time")
+    points(test, col = "red", pch = 16)
+    
+    results[[i]] <- list(
+      Label = labels[i],
+      AIC = AIC(model),
+      BIC = BIC(model),
+      MAPE = acc[2, "MAPE"],
+      RMSE = acc[2, "RMSE"],
+      Model = model$method)
+    
+  }
+  
+  
+  par(mfrow = c(1, 1))  # Reset plotting for later
+  final_results <- do.call(rbind, lapply(results, as.data.frame))
+  return(final_results)
+}
+
+
+ets_ff(list_area_month,area_names_m)
+```
+
+The ETS analysis with perfect knowledge produced three models with Additive Error, No Trend, Additive Seasonality (ANA). This indicates that data oscillates around a constant mean with seasonality but no other trends are detected. As a result, the model cannot forecast
+
+We also tried Holt-Winters to explore if model performance improved.
+
+```{r, echo=FALSE}
+
+hw_ff <- function(ts_list,labels) {
+
+  
+  par(mfrow = c(2, 2), mar = c(4, 4, 3, 2)) 
+  results <- list()
+  for (i in 1:length(ts_list)) {
+    ts_data <- na.interp(ts_list[[i]])
+    
+
+    train <- window(ts_data, start = start(ts_data), end = c(start(ts_data)[1] + 20))
+    test  <- window(ts_data, start = c(start(ts_data)[1] + 20), end = c(start(ts_data)[1] + 66))
+    
+    # Fit and forecast
+    model <- hw(train)
+
+    pred <- forecast(model, h = 2*12)
+    acc <- accuracy(pred, test)
+
+    
+    # Plot forecast with test data
+    plot(pred, main = paste("Forecast HW -", labels[i]), ylab = "Value", xlab = "Time")
+    points(test, col = "red", pch = 16)
+    
+    results[[labels[i]]] <- list(
+      model_structure = model$method,
+      accuracy_metrics = acc
+    )
+  }
+  
+  final_results <- do.call(rbind, lapply(results, as.data.frame))
+  par(mfrow = c(1, 1))  # Reset plotting for later
+
+  return(final_results)
+}
+
+
+
+hw_ff(list_area_month,area_names_m)
+
+
+```
+
+While Holt-Winters showed slight improvement the model also reverted to this seasonal trend around the mean. Given the simplicity of observing changes in ETS structure and performance, we chose to use that structure for the exercise is data loss to evaluate whether data loss may change model structure.
+
+#### Impacts of missing data
+
+In this section, we explored the impacts of dropping a window of data. In this case, we choose to drop 33 years of data. Originally, our plan was to place this function in a larger loop with windows that changed sizes and moved along the time series but this goal proved to be too ambitious for the length of this lab and with the issues we discovered along the way. We settled on using this window to demonstrate impacts of missing data
+
+```{r, echo=FALSE}
+
+#block size is how much is dropped, drop_start is where it happens
+ets_ff_sensitivity <- function(ts_list, labels = NULL, block_size, drop_start) {
+  
+
+  
+  results <- list()
+  par(mfrow = c(2, 2), mar = c(4, 4, 3, 2))  # Plot setup
+  
+  for (i in seq_along(ts_list)) {
+    ts_orig <- ts_list[[i]]
+    ts_mod <- ts_orig
+    
+    # Drop the block and interpolate the data
+    drop_end <- min(drop_start + block_size - 1, length(ts_mod))
+    ts_mod[drop_start:drop_end] <- NA
+    ts_clean <- na.interp(ts_mod)
+    
+    # Save original missing indexes for plotting
+    missing_idx <- which(is.na(ts_mod))
+    interpolated_times <- time(ts_clean)[missing_idx]
+    interpolated_values <- ts_clean[missing_idx]
+    
+    # Define time range
+    ts_times <- time(ts_clean)
+    
+    # Split into train/test
+    train <- window(ts_clean, start = start(ts_clean), end = c(start(ts_clean)[1] + 20))
+    test  <- window(ts_clean, start = c(start(ts_clean)[1] + 20), end = c(start(ts_clean)[1] + 66))
+    
+    # Fit ETS model
+    model <- ets(train, model = "ZZZ")
+    fc <- forecast(model, h = length(test))
+    
+    # Accuracy
+    acc <- accuracy(fc, test)
+    
+    # Store results so we can compare them later
+    results[[i]] <- list(
+      Label = labels[i],
+      AIC = AIC(model),
+      BIC = BIC(model),
+      MAPE = acc[2, "MAPE"],
+      RMSE = acc[2, "RMSE"],
+      Model = model$method
+    )
+    
+    # Plot forecast
+    plot(fc, main = paste(labels[i], "- Drop:", drop_start, "to", drop_end), ylab = "Value", xlab = "Time")
+    
+    # Learning to shade the dropped regions
+    drop_time_start <- ts_times[drop_start]
+    drop_time_end   <- ts_times[drop_end]
+    usr <- par("usr")  # plotting range
+    rect(xleft = drop_time_start, xright = drop_time_end,
+         ybottom = usr[3], ytop = usr[4],
+         col = rgb(0.9, 0.9, 0.9, 0.5), border = NA)
+    
+
+    
+    # Add test points and interpolated points
+    lines(test, col = "lightgreen")
+    points(interpolated_times, interpolated_values, col = "blue")
+    
+    # Re-plot forecast line on top
+    lines(fc$mean, col = "red")
+    
+
+    legend("topright",
+           legend = c("Forecast", "Test", "Interpolated", "Dropped"),
+           col = c("red", "lightgreen", "blue", rgb(0.9, 0.9, 0.9, 0.5)),
+           pch = c(NA, NA, 1, 15), lty = c(1, 1, NA, NA),
+           pt.cex = 0.7,  # Size of points/symbols
+           cex = 0.7,     # Size of text
+           bty = "n",     # No box
+           y.intersp = 0.7,  # Vertical spacing between lines
+           x.intersp = 0.5) 
+  }
+  
+  par(mfrow = c(1, 1))  # Reset plot layout
+  
+  # Compile results into a data frame
+  df_results <- do.call(rbind, lapply(results, as.data.frame))
+  return(df_results)
+}
+
+ets_ff_sensitivity(list_area_month, labels=area_names_m, drop_start = 30,block_size=96)
+
+
+```
+
+Dropping data was most consequential for the CA data set as data was already sparse. For the CA time series, the model structure changed compared to the control case of full knowledge where the model was no longer able to detect the same auto correlative trend (A,N,A) as it did originally. This was expected and partially motivated this exercise as Brian observed some of his models doing this so we hoped we could replicate a "switch" in model types once data became sparse.
+
+For the OR and WA data set, we observed that as data decreases, the models started to settle on a mean seasonal behavior. From a practical perspective, these models with such a large block of missing data could only be used to forecast a "general" behavior rather than accounting for any sort of variation that may have been present. In the case of Washington, as the model was trained on a period of exceptionally high data, it forecasts a seasonal trend that is more dramatic than the past fluctuations.
+
+#### Data Sparsity - Exclude All High Values
+
+Masking a block data can simulate a loss of funding, pause in project activities, etc. We hoped to explore a more persistent loss and chose to simulate how losing certain values across a data set impacts model results. If we decrease the magnitude of the seasonal trend, how will the model respond. For this case, we modified the function above to replace all values over 200 with an NA value that is then interpolated. The result is a dampened seasonal trend. Again, the objective was to see if this kind of data modification could cause for model specification changes and if these changes varied among models.
+
+```{r, echo=FALSE}
+ets_target_sensitivity <- function(ts_list, labels = NULL, block_size, drop_start, target) {
+  
+  if (is.null(labels)) {
+    labels <- paste("Series", 1:length(ts_list))
+  }
+  
+  results <- list()
+  par(mfrow = c(2, 2), mar = c(4, 4, 3, 2))  # Plot prep
+  
+  for (i in seq_along(ts_list)) {
+    ts_orig <- ts_list[[i]]
+    ts_mod <- ts_orig
+    
+    # Replace values above 200 with NA in the block 
+    drop_end <- min(length(ts_mod), drop_start + block_size - 1)  #-1 to make sure we're in bounds
+    ts_mod[drop_start:drop_end][ts_mod[drop_start:drop_end] > 200] <- NA
+    
+    # Interpolate the missing values in the modified data
+    ts_clean <- na.interp(ts_mod)
+    
+    # Save original missing indexes for plotting
+    miss_i <- which(is.na(ts_mod))
+    interpolated_times <- time(ts_clean)[miss_i]
+    interpolated_values <- ts_clean[miss_i]
+    
+    # Define time range for train/test
+    ts_times <- time(ts_clean)
+    
+    # Split into train/test
+    train <- window(ts_clean, start = start(ts_clean), end = c(start(ts_clean)[1] + 20))
+    test  <- window(ts_orig, start = c(start(ts_orig)[1] + 20), end = c(start(ts_orig)[1] + 66))
+    
+    # Fit model
+    model <- ets(train, model = "ZZZ")
+    pred <- forecast(model, h = length(test))
+    
+    # Accuracy stats
+    acc <- accuracy(pred, test)
+    
+    # Store results 
+    results[[i]] <- list(
+      Label = labels[i],
+      AIC = AIC(model),
+      BIC = BIC(model),
+      MAPE = acc[2, "MAPE"],
+      RMSE = acc[2, "RMSE"],
+      Model = model$method
+    )
+    
+    #True training set
+    plot(ts_orig, main = paste(labels[i], "- Drop:", target), ylab = "Value", xlab = "Time", col = "black")
+    #Interpolated values
+    lines(ts_clean, col = "blue", lwd = 2)  
+    
+    
+    # True values
+    lines(test, col = "lightgreen", pch = 16)
+    
+    # Forecasts
+    lines(pred$mean, col = "red")
+    
+    legend("topright", legend = c("Original", "Interpolated", "Forecast", "Test"),
+           col = c("black", "blue", "red", "lightgreen"),
+          lty = c(1, 1, 1, 1), pt.cex = 1.5, bty = "n")
+  }
+  
+  par(mfrow = c(1, 1))  
+  
+  # Data
+  df_results <- do.call(rbind, lapply(results, as.data.frame))
+  return(df_results)
+}
+
+# Example call to the function
+ets_target_sensitivity(list_area_month, labels = area_names_m, drop_start = 1, block_size = 33 * 12, target = 200)
+```
+
+The results of this modification proved to be impact model specification more than block elimination of data. We were surprised by this outcome as we would have expected these changes to conserve more of the original structure of the data compared to dropping a block as the seasonal component remains intact and only magnitude changes.
+
+However, this modification resulted in a (AAA), (ANA) and (MNM) model types. It seemed that only OR preserved the seasonal structure and was able to produce forecasts that may prove relevant for a practical application. The CA data produced an (AAA) model structure as the sparsity of the data prior to modification paired with the loss of values over 200 created a weak seasonal effect. This means the model had Additive Error, Additive Trend, Additive Seasonality or that seasonal trends over time are considered to be constant and predictable.The results for WA were most surprising as the large landings of salmon made it such that the greatest proportion of data was lost making the seasonal effect very weak. However, this model also changed to Multiplicative error with No trend, Multiplicative seasonality suggesting that even with the data loss the model would expect large changes in the data. Simultaneously the model also predicted the weakest seasonal trend. Perhaps the multiplicative relationship produced an very dampened prediction?
+
+#### Summarizing Results
+
+Finally, we consolidated all results into a data frame to examine how changes to the data affected model type and model performance.
+
+```{r, echo=FALSE}
+
+ets_full <- ets_ff(list_area_month,area_names_m)
+
+ets_sens <- ets_ff_sensitivity(list_area_month, labels=area_names_m, drop_start = 30,block_size=96)
+
+ets_targ_sens <- ets_target_sensitivity(list_area_month, labels = area_names_m, drop_start = 1, block_size = 33 * 12, target = 200)
+
+
+#Label each result for comparison
+ets_full$type <- "test"
+ets_sens$type <- "Block"
+ets_targ_sens$type <- "Target200"
+
+
+summary_sens <- rbind(ets_sens,ets_targ_sens,ets_full)
+
+summary_sens
+
+```
+
+The comparison shows that the best performing models by AIC are those that are subject to the targeted data drops. This is unsurprising as we dampened the variability in these data sets by eliminating high values. However, it is also this kind of data loss that made them the least realistic when forecasting and changed their structure. For the dropping of blocks of data, model performance was still higher than the test series by AIC, but RMSE proved worse. Model structure was also conserved compared to the initial series .
+
+## Question 3
+
+The Forecast package's auto.arima function was used to determine which ARIMA models best fit the training data related to landings, prices, and value of fish landed. 
+
+```{r, echo=FALSE}
+#CA
+CAlands.fit <- forecast::auto.arima(CAlands.train)
+CAprice.fit <- forecast::auto.arima(CAprice.train)
+CAvalue.fit <- forecast::auto.arima(CAvalue.train)
+
+#OR
+ORlands.fit <- forecast::auto.arima(ORlands.train)
+ORprice.fit <- forecast::auto.arima(ORprice.train)
+ORvalue.fit <- forecast::auto.arima(ORvalue.train)
+
+#WA
+WAlands.fit <- forecast::auto.arima(WAlands.train)
+WAprice.fit <- forecast::auto.arima(WAprice.train)
+WAvalue.fit <- forecast::auto.arima(WAvalue.train)
+```
+
+```{r, echo=FALSE}
+CAlands.fit
+CAprice.fit
+CAvalue.fit
+
+ORlands.fit
+ORprice.fit
+ORvalue.fit
+
+WAlands.fit
+WAprice.fit
+WAvalue.fit
+```
+
+The models describing Chinook market data in California fail to find any seasonal trends, most likely due to data from California being much more scarce than data from Oregon and Washington. Moving forward California will be omitted from the process of forecasting landings, prices, and value.
+
+```{r}
+checkresiduals(ORvalue.fit)
+```
+\newpage
+
+```{r}
+checkresiduals(WAvalue.fit)
+```
+
+In general, models fitting landed weight, prices, and value show well behaved residuals distributed symmetrically around a mean of zero with little auto-correlation. The value models for both Oregon and Washington show the most autocorrelation and also a very tight distribution of error terms. More 'well behaved' residual charts for landings and prices are not shown for brevity.
+
+```{r, echo=FALSE}
+# project forecasts
+
+#OR
+par(mfrow=c(2,1))
+ORlands.fc <- forecast::forecast(ORlands.fit, h=24)
+ORprice.fc <- forecast::forecast(ORprice.fit, h=24)
+ORvalue.fc <- forecast::forecast(ORvalue.fit, h=24)
+plot(ORvalue.fc, main="Forecast Value of Chinook Landed, Oregon")
+points(ORvalue.test)
+
+#WA
+WAlands.fc <- forecast::forecast(WAlands.fit, h=24)
+WAprice.fc <- forecast::forecast(WAprice.fit, h=24)
+WAvalue.fc <- forecast::forecast(WAvalue.fit, h=24)
+plot(WAvalue.fc, main="Forecast Value of Chinook Landed, Washington")
+points(WAvalue.test)
+par(mfrow=c(1,1))
+```
+
+The above figure shows forecasted value of Chinook landed in Washington and Oregon based on the values reported in the data, with test data represented . This will be contrasted with separate forecasts of landings and prices being interacted. 
+
+```{r, echo=FALSE}
+#comparing forecasts
+#OR
+ORlands.compoundfc <- exp(ORlands.fc$mean)
+ORvalue.compoundfc <- ORlands.compoundfc*ORprice.fc$mean
+ 
+#WA
+WAlands.compoundfc <- exp(WAlands.fc$mean)
+WAvalue.compoundfc <- WAlands.compoundfc*WAprice.fc$mean
+
+# plotting
+#OR
+par(mfrow=c(2,1))
+plot(ORvalue.fc$mean, main = "Forecast Value of Chinook Landed, Oregon", ylab = "", xlab = "")
+points(ORvalue.test)
+
+plot(ORvalue.compoundfc, main = "Interacted Forecasts, Chinook Landed and Prices, Oregon", ylab = "")
+points(ORvalue.test)
+
+#WA
+plot(WAvalue.fc$mean, main = "Forecast Value of Chinook Landed, Washington", ylab = "", xlab = "")
+points(WAvalue.test)
+
+plot(WAvalue.compoundfc, main = "Interacted Forecasts, Chinook Landed and Prices, Washington", ylab = "")
+points(WAvalue.test)
+par(mfrow=c(1,1))
+```
+
+Visually comparing the value forecast to the interacted forecasts of landings and prices it is clear that the interacted forecasts track the test data much better than the value forecast in Oregon. Visual inspection of data from Washington is not as clear, so we next compare mean square error. 
+
+```{r, echo=FALSE}
+OR <- data.frame(date=as.Date(as.yearmon(time(ORvalue.fc$mean))), 
+                 value=as.matrix(ORvalue.fc$mean),
+                 compound=as.matrix(ORvalue.compoundfc),
+                 test=as.matrix(ORvalue.test))
+
+OR$value_error <- (OR$test - OR$value)^2
+OR$compound_error <- (OR$test - OR$compound)^2
+
+MSE_ORvalue <- mean(OR$value_error, na.rm=TRUE)
+MSE_ORcompound <- mean(OR$compound_error, na.rm=TRUE)
+
+WA <- data.frame(date=as.Date(as.yearmon(time(WAvalue.fc$mean))), 
+                 value=as.matrix(WAvalue.fc$mean),
+                 compound=as.matrix(WAvalue.compoundfc),
+                 test=as.matrix(WAvalue.test))
+
+WA$value_error <- (WA$test - WA$value)^2
+WA$compound_error <- (WA$test - WA$compound)^2
+
+MSE_WAvalue <- mean(WA$value_error, na.rm=TRUE)
+MSE_WAcompound <- mean(WA$compound_error, na.rm=TRUE)
+
+forecastmse<-matrix(nrow=2, ncol=2)
+rownames(forecastmse)<-c("Oregon", "Washington")
+colnames(forecastmse)<-c("Value forecast", "Interacted forecast")
+forecastmse[1,1] <- MSE_ORvalue
+forecastmse[1,2] <- MSE_ORcompound
+forecastmse[2,1] <- MSE_WAvalue
+forecastmse[2,2] <- MSE_WAcompound
+print(forecastmse)
+```
+Comparing MSE we can see that the forecast of value of Chinook landed performs very slightly better than the interacted forecast in Washington, while the interacted forecast radically outperforms the value forecast for Oregon. 
 
 # Discussion
+
 In summary, none of these models contained a seasonality component. The model structure differed slightly between regions, but none of the models found significant changes in trend over time. Many of them behaved functionally like a random walk. 
 
-When we compared forecasting accuracy between models fit to one region against test data from another region, we found some interesting results. In some cases, another state’s forecasted data was a better fit than the best fit model for that state. This was the case for Alaska, whose test data was more accurately forecasted by the ARIMA model fit to the Washington data. Only the Washington and Oregon model forecasts were the best fit for their state’s test data. This is the opposite of what I would have expected, given our original hypothesis that Washington and Oregon’s time series look very similar. I would have expected forecasts from these two states to not be accurate when tested against other states’ data, since California and Alaska’s data looked different, but the Washington and Oregon models performed fairly well across the board. The large regional models (PNW and total) did not perform well, which does support the idea that forecasts for salmon fisheries should be made on smaller regional scales that are ecologically relevant to salmon populations.
+When we compared forecasting accuracy between models fit to one region against test data from another region, we found some interesting results. In some cases, another state’s forecasted data was a better fit than the best fit model for that state. This was the case for Alaska, whose test data was more accurately forecasted by the ARIMA model fit to the Washington data. Only the Washington and Oregon model forecasts were the best fit for their state’s test data. This is the opposite of what we would have expected, given our original hypothesis that Washington and Oregon’s time series look very similar. I would have expected forecasts from these two states to not be accurate when tested against other states’ data, since California and Alaska’s data looked different, but the Washington and Oregon models performed fairly well across the board. The large regional models (PNW and total) did not perform well, which does support the idea that forecasts for salmon fisheries should be made on smaller regional scales that are ecologically relevant to salmon populations.
 
-# Description of each team member's contributions
+Although we were unable to complete our initial objectives of completing a sensitivity analysis that allows us to explore what influences the way ETS and auto.arima select models, we were able to use the basic building blocks for these functions to gain insights on behavior if this was possible. We were able to understand how these models operate and see their limitations compared to other types of models we have encountered.
+
+If we had more time, we would have liked to explore different methods of data loss, perhaps focused more on proportions rather than a fixed value or different ways of replacing the data that was lost (drawing from a distribution, etc). Finally, our ideal of looping over these functions and changing the modification window would be a great next step. This exercise helped us reflect on the limitations of these models, especially given that we are more familiar with state space models so we perhaps overestimated the abilities of these model types.
+
+The comparison of forecasted value and the interaction of forecasted landings and prices yielded fruitful results. While the Washington value forecast very slightly outperformed the interacted forecast, in Orgeon interacting forecasts of landings and prices proved much more accurate than the forecast of value. This is likely because, while related, prices and landings each have their own tenancies that are subsumed into the value data. It seems reasonable for any agencies or researchers to walk through this two-step interaction approach when trying to project the value of landings into the future.
+
+# Team member contributions
 
 Each member of the team took on one issue and completed the code and the analysis. Halfway through, we consulted other team members for feedback and adjust analysis based on the joint discussion. All team members participated in the lab write up and review the results.
 

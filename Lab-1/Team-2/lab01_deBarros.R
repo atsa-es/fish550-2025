@@ -80,7 +80,6 @@ ggarrange(plotlist = plots, ncol = 2, nrow = 3)
 n_years_test = list()
 for (i in 1:length(month_train)) n_years_test[[i]] = nrow(month_test[[i]])
 
-
 ### Write up ###
 
 ## Question outline ##

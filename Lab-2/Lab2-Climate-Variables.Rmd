@@ -1,0 +1,74 @@
+---
+title: Climate Variables
+author: "E Holmes"
+date: "April 22, 2025"
+output:
+  html_document:
+    code-folding: yes
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+---
+
+```{r message=FALSE}
+library(tidyverse)
+options(dplyr.summarise.inform = FALSE)
+```
+
+## Climate Indices
+
+See also <https://psl.noaa.gov/data/atmoswrit/corr/timeseries/>
+
+| Index                            | Region                            | Influences                                         | Notes                                                                 | Data Source |
+|----------------------------------|------------------------------------|----------------------------------------------------|-----------------------------------------------------------------------|-------------|
+| **PDO** (Pacific Decadal Osc.)  | North Pacific                      | Ocean temps, productivity, stratification          | Warm phase → poor survival in Alaska, good in CA (and vice versa)    | [PDO CSV](https://www.ncei.noaa.gov/pub/data/cmb/ersst/v5/index/ersst.v5.pdo.dat) |
+| **ONI** (Oceanic Niño Index) | Equatorial Pacific (global effects) | Upwelling, SST, marine food web                    | El Niño often harmful for juvenile salmon on West Coast              | [ONI TXT](https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt) |
+| **NPGO** ([North Pacific Gyre Osc](https://www.o3d.org/npgo/)) | North Pacific                    | Salinity, nutrient flux, productivity              | Positively correlated with salmon survival (esp. CA Current)         | [NPGO TXT](https://www.o3d.org/npgo/data/NPGO.txt) |
+| Cold Pool Index | Bering Sea shelf  | Bottom temperature, habitat compression            | Cold pool extent influences migration, prey availability, and predation | [coldpool r package](https://github.com/afsc-gap-products/coldpool) |
+| **NEP SST** (NE Pacific SST)     | Coastal Alaska, BC, WA, OR, CA     | Marine heatwaves, thermal stress | associated with reduced survival  |  |
+| **Upwelling Index** (Bakun)      | California/Oregon coast            | Nutrient delivery, primary productivity            | Drives ocean growth conditions for smolts                            | [NOAA Upwelling](https://mjacox.com/upwelling-indices/) |
+| **PNA** (Pacific-North American) | North America/western U.S.         | Winter temps, river flow, snowpack                 | Influences freshwater survival, stream temperatures [info](https://www.climate.gov/news-features/understanding-climate/climate-variability-pacific-north-american-pattern)               | [PNA TXT](https://www.ncei.noaa.gov/access/monitoring/pna/) |
+| **MEI / MEIv2** (Multivariate ENSO Index) | ENSO-linked               | Broad atmospheric/ocean composite                  | More integrated than ONI; includes wind, pressure, SST               | [MEIv2 TXT](https://psl.noaa.gov/enso/mei/) |
+| West Coast Stream Flow |   |    |    | [Daily West Coast Stream Flow](https://noaa-nwfsc.github.io/Streamflow-Means-NWM/) |
+
+
+## Loading data
+
+This can be painful. Share your code in the class repo so others can use your work! [Post here](https://github.com/atsa-es/fish550-2025/discussions/4)
+
+```{r}
+pdo_url <- "https://www.ncei.noaa.gov/pub/data/cmb/ersst/v5/index/ersst.v5.pdo.dat"
+pdo <- read.table(pdo_url, skip = 2, header = FALSE, check.names = FALSE)
+pdo[pdo==99.99] <- NA
+pdo_vec <- as.numeric(t(pdo[, 2:13]))
+pdots <- ts(pdo_vec, freq=12, start=c(1854, 1))
+plot(pdots)
+```
+
+## Prepping your covariates for `MARSS()`
+
+You need a matrix:
+
+* Columns = time and number of columns must match your data
+* Rows = 1 row for each covariate
+
+**Example for PDO**
+
+Let's say we want to use the April-June average PDO.
+
+```{r}
+# col 1 is year
+years <- which(pdo[,1] %in% 2000:2025)
+spring_pdo <- rowMeans(pdo[years, 5:7], na.rm = TRUE)
+Cmat <- matrix(spring_pdo, nrow=1)
+Cmat
+```
+
+## Resources
+
+Chapter 7 MARSS models. ATSA Lab Book. <https://atsa-es.github.io/atsa-labs/chap-mss.html>
+
+Chapter 8 MARSS models with covariates. ATSA Lab Book. <https://atsa-es.github.io/atsa-labs/chap-msscov.html>
+
+Chapter 16 Modeling cyclic sockeye <https://atsa-es.github.io/atsa-labs/chap-cyclic-sockeye.html>

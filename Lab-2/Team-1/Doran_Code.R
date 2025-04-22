@@ -67,31 +67,52 @@ cohocolnames<-colnames(coho)
 #Part 1: Filling in NA values
 #use marss, save to object and get y-hat
 # `R="diagonal and equal"` and `A="scaling"
+# Fit with unbiased random walk
 mod.list<-list(
   R="diagonal and equal",
-  A="scaling"
+  Q="diagonal and equal",
+  A="scaling", 
+  U="zero"
 )
 obj<-MARSS(coho, mod.list)
 cohofit<-obj$states
 rownames(cohofit)<-tmp
 colnames(cohofit)<-cohocolnames
 head(cohofit)
-cohofit-coho
+#cohofit is the estimated "states" from an unbiased random walk
+
 ## Part 2: Estimates of decrease from historical abundance
-#random walk model, Z is a diagonal matrix
-cohoU<-coef(obj, type="matrix")$U
+#Fit with biased random walk
+mod.list<-list(
+  R="diagonal and equal",
+  Q="diagonal and equal",
+  A="scaling", 
+  U="equal"
+)
+cohofit.biased<-MARSS(coho, mod.list)
+#This biased random walk with equal U estimates U=0.0349
+
+#Unequal U biased random walk
+#Are sub-groups experiencing same trends over time?
+mod.list<-list(
+  R="diagonal and equal",
+  Q="diagonal and equal",
+  A="scaling", 
+  U="unequal"
+)
+coho.unequal<-MARSS(coho, mod.list)
+cohoU<-coef(coho.unequal, type="matrix")$U
 hist(cohoU, main="Coho Population Trends", xlab="U coefficient")
-colnames(cohoU)<-c("U")
 
 #Which populations are declining?
 decliningpop<-subset(cohoU, cohoU<0)
 #Salmon, coho (Oregon Coast ESU) Floras Creek/New River - fall
 #And Sixes River- fall are the only groups that are declining
 
-meantrend<-mean(cohoU)
-print(meantrend)
-#So on average, this ESU group is experiencing slight increases from historical
-#abundances (average U=0.0359 when fitting biased random walk models to ts data
+#So in general, this ESU group is experiencing slight increases from historical
+#abundances (average U=0.0359 when fitting biased random walk models to ts data). There is some variation
+#in population trends over time (see histogram above), but these models suggest the population has been 
+#fairly stable over time from 1990-2023
 
 #### Question 2####
 #Fit MARSS models with different population groupings assumptions and compare AIC

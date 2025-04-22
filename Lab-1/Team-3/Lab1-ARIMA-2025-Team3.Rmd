@@ -15,7 +15,19 @@ knitr::opts_chunk$set(warning = FALSE)
 # library(forecast)
 ```
 
-#We decided to look at just Washington data for this lab. To do so, we isolate yearly and monthly data from just the Washington subset. 
+#Initial Plan and What Actually Happened
+We will compare the accuracy of ARIMA models in yearly vs. monthly data, answering the question: Is the accuracy of monthly or yearly data better? To do this we will look only at the Washington data.
+To begin, we will test the stationarity of the yearly data and the monthly data.
+If either are not stationary, we will use differencing to make them stationary for the purposes of this analysis. After the data are stationary, we will fit an ARIMA and ETS model to the monthly data using AutoARIMA on the earliest 80% of the data.
+This will allow use to compare the accuracy of the ARIMA model in predicting the last 20% of the data to the actual data. After this is done, we will do the same to the yearly data. Then, we can use the accuracy function to compare the two methods. 
+
+We loaded the data and wrangled it, filtering it to only include the Washington data. This allowed us to compare between both the yearly and monthly data. From there we used the auto.arima() function, which auto-checked for stationarity for us. We needed to make the yearly data stationary by differencing it once. Then, we fit both ETS and arima models to both the monthly and yearly catch data from Washington. After fitting the models, we concluded that the monthly data forecast was more accurate than the yearly data forecast.`
+
+
+#Question Addressed
+1) Is an ARIMA model and/or an ETS model adequate for using monthly data and yearly data?
+2) Is the accuracy of forecasting with monthly data or yearly data "better"?
+
 
 # Step1,  load data and filter to Washington with basic plots
 
@@ -301,19 +313,6 @@ BM, EC, and TT all contributed code and analysis to the final analysis. EC wrote
 
 
 
-# What we need still 
-######## initial plan (EMMA)
-####### What we actually did (EMMA)
-####### Questions we address (EMMA)
-
-###### Use ACF and PACF (TINA) 
-
-###  Results and Discussion (TINA: FIT RESULTS , 
-                             Ben: Accuracy Results) DONE 
-                             
-### Add in and comment out the accuracy results (BEN) DONE
-
-# Team members contributions Done-ish 
 
 
 

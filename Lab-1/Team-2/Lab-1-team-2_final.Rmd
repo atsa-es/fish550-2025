@@ -144,10 +144,30 @@ chinook.month$Month2 = as.numeric(as.factor(chinook.month$Month))
 ### Splitting the data into different sets of training and testing data with varying lengths
 ```{r}
 
-month_ts = ts(chinook.month$log.metric.tons, start = c(1980, 1), frequency = 12)
+chinook.month.wc = chinook.month %>%
+  group_by(Year, Month) %>%
+  summarise(
+    metric.tons = sum(metric.tons, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    Date = as.Date(paste(Year, Month, "01", sep = "-"), format = "%Y-%b-%d"),
+    log.metric.tons = log(metric.tons)
+  ) %>%
+  arrange(Date)
+
+dat = chinook.month %>%
+    mutate(
+    lnreturns = log.metric.tons,
+    year = Year,
+    month = match(Month, month.abb) 
+  ) %>%
+  select(year, month, lnreturns)
+
+month_ts = ts(dat$lnreturns, start = c(1980, 1), frequency = 12)
 
 # Create test data with different ts lenghts
-ts_lengths = c(5,10,15,20,25)
+ts_lengths  = c(5,10,15,20,25)
 month_train = list()
 month_test  = list()
 for (i in 1:length(ts_lengths)) {
@@ -202,7 +222,7 @@ After discussing with my teammates and reviewing best results, I decided to foll
 
 ```{r ts-and-train-test-25yrs}
 # Create time series from monthly log data starting in 1980
-month_ts <- ts(chinook.month$log.metric.tons, start = c(1980, 1), frequency = 12)
+#month_ts <- ts(chinook.month$log.metric.tons, start = c(1980, 1), frequency = 12)
 
 # 25-year training: Jan 1980 – Dec 2004
 train_25 <- window(month_ts, start = c(1980, 1), end = c(2004, 12))

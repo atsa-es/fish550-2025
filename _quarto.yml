@@ -13,7 +13,7 @@ book:
     - index.qmd
     - part: ARIMA models
       chapters: 
-        - Lab-1/Lab1-ARIMA.Rmd
+        - Lab-1/Lab1-ARIMA-2025.Rmd
 #        - Lab-1/Final_Write_ups/Lab-1-team-1_final.Rmd
 #        - Lab-1/Final_Write_ups/Lab-1-team-2_final.Rmd
 #        - Lab-1/Final_Write_ups/Lab-1-team-3_final.Rmd
@@ -21,6 +21,7 @@ book:
     - part: MARSS Models
       chapters: 
         - Lab-2/Lab2-MARSS.Rmd
+        - Lab-2/Lab2-Climate-Variables.Rmd
         # - Lab-2/Final_Write_ups/Lab-2-team-1_final.Rmd
         # - Lab-2/Final_Write_ups/Lab-2-team-2_final.Rmd
         # - Lab-2/Final_Write_ups/Lab-2-team-3_final.Rmd

@@ -33,7 +33,7 @@ This lab used annual data recording salmon landings in six different US states c
 
 We initially planned to fit ARIMA and ETS models to the different states and compare which model structure best fit each state or region. Noting the similarities between Washington and Oregon’s time series data, we also wanted to compare forecast accuracy for models trained on different data sets (e.g. compare Washington’s forecast accuracy on Oregon’s test data). We also planned on recovering monthly prices by dividing the value of fish landed by the landed weight in order to assess the efficiency of forecasting approaches.
 
-## Diagnostics and preliminary exploration - Question 1
+## Question 1
 To address question 1, we subset the data for each west coast state, Pacific Northwest which includes WA, OR, and CA, and the total of all states combined, into a training data set and test data set. The training data sets spanned the years 1950-2005, and the test data set was 2006-2016. When we plotted the data there were no obvious problems with stationarity. There might be a slight downwards trend, and there are a few gaps in the California data, but it is not immediately obvious if the data is non-stationary.
 
 
@@ -175,7 +175,7 @@ colnames(ndiffsresults)<-c("Alaksa", "California", "Oregon", "Washington", "Tota
 print(ndiffsresults)
 ```
 
-## Diagnostics and preliminary exploration - Question 2
+## Question 2
 
 #### Yearly Data
 
@@ -257,7 +257,7 @@ ch_month <- chinook.month %>%
 
 ```
 
-## Diagnostics and preliminary exploration - Question 3
+## Question 3
 Preliminary analysis of question 3 involved first recovering price data and then plotting monthly landings, prices, and total value for all three states represented. 
 
 ```{r, echo=FALSE}

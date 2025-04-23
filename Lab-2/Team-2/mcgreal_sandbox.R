@@ -56,7 +56,7 @@ q.model <- "diagonal and equal"
 z.model <- "identity"
 a.model <- "zero"
 r.model <- "diagonal and equal" 
-x0.model <- "equal"
+x0.model <- "unequal"
 v0.model <- "zero"
 
 model.list <- list(
@@ -133,7 +133,9 @@ save(states_long, file="Lab-2/Team-2/ss1states_long.Rda")
 plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
   geom_line() +
   labs(x = "", 
-       y="State Estimate (standardized)",
-       title='Estimates of even year pink salmon peak returns in 36 Southeast Alaska streams') +
-  theme_classic()
+       y="State Estimate",
+       title='Spring Summer Chinook Abundance, Upper Columbia/Snake River') +
+  geom_ribbon(aes(ymin=lb, ymax=ub, fill=state), alpha=0.35, linetype=0) +
+  theme_classic() +
+  theme(legend.position="bottom")
 plot

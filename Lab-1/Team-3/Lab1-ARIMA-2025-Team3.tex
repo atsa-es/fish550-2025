@@ -1,0 +1,885 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{wrapfig}
+\usepackage{float}
+\usepackage{colortbl}
+\usepackage{pdflscape}
+\usepackage{tabu}
+\usepackage{threeparttable}
+\usepackage{threeparttablex}
+\usepackage[normalem]{ulem}
+\usepackage{makecell}
+\usepackage{xcolor}
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={Lab 1 Forecasting with ARIMA and ETS models},
+  pdfauthor={Team 3: Ben Mahklouf, Tina Tao, and Emma Christman},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\title{Lab 1 Forecasting with ARIMA and ETS models}
+\author{Team 3: Ben Mahklouf, Tina Tao, and Emma Christman}
+\date{}
+
+\begin{document}
+\maketitle
+
+{
+\setcounter{tocdepth}{2}
+\tableofcontents
+}
+\#Initial Plan and What Actually Happened We will compare the accuracy
+of ARIMA models in yearly vs.~monthly data, answering the question: Is
+the accuracy of monthly or yearly data better? To do this we will look
+only at the Washington data. To begin, we will test the stationarity of
+the yearly data and the monthly data.
+
+If either are not stationary, we will use differencing to make them
+stationary for the purposes of this analysis. After the data are
+stationary, we will fit an ARIMA and ETS model to the monthly data using
+AutoARIMA on the earliest 80\% of the data. This will allow use to
+compare the accuracy of the ARIMA model in predicting the last 20\% of
+the data to the actual data. After this is done, we will do the same to
+the yearly data. Then, we can use the accuracy function to compare the
+two methods.
+
+We loaded the data and wrangled it, filtering it to only include the
+Washington data. This allowed us to compare between both the yearly and
+monthly data. From there we used the auto.arima() function, which
+auto-checked for stationarity for us. We needed to make the yearly data
+stationary by differencing it once. Then, we fit both ETS and arima
+models to both the monthly and yearly catch data from Washington. After
+fitting the models, we concluded that the monthly data forecast was more
+accurate than the yearly data forecast.`
+
+\#Question Addressed 1) Is an ARIMA model and/or an ETS model adequate
+for using monthly data and yearly data? 2) Is the accuracy of
+forecasting with monthly data or yearly data ``better''?
+
+\section{Step1, load data and filter to Washington with basic
+plots}\label{step1-load-data-and-filter-to-washington-with-basic-plots}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Seperate the monthly and yearly data }
+\FunctionTok{library}\NormalTok{(atsalibrary) }\CommentTok{\# This is ALL the data }
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Loading required package: broom
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: corrplot
+\end{verbatim}
+
+\begin{verbatim}
+## corrplot 0.95 loaded
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: depmixS4
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: nnet
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: MASS
+\end{verbatim}
+
+\begin{verbatim}
+## 
+## Attaching package: 'MASS'
+\end{verbatim}
+
+\begin{verbatim}
+## The following object is masked from 'package:dplyr':
+## 
+##     select
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: Rsolnp
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: nlme
+\end{verbatim}
+
+\begin{verbatim}
+## 
+## Attaching package: 'nlme'
+\end{verbatim}
+
+\begin{verbatim}
+## The following object is masked from 'package:dplyr':
+## 
+##     collapse
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: forecast
+\end{verbatim}
+
+\begin{verbatim}
+## Registered S3 method overwritten by 'quantmod':
+##   method            from
+##   as.zoo.data.frame zoo
+\end{verbatim}
+
+\begin{verbatim}
+## 
+## Attaching package: 'forecast'
+\end{verbatim}
+
+\begin{verbatim}
+## The following object is masked from 'package:nlme':
+## 
+##     getResponse
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: fpp2
+\end{verbatim}
+
+\begin{verbatim}
+## -- Attaching packages ---------------------------------------------- fpp2 2.5 --
+\end{verbatim}
+
+\begin{verbatim}
+## v fma       2.5     v expsmooth 2.3
+\end{verbatim}
+
+\begin{verbatim}
+## -- Conflicts ------------------------------------------------- fpp2_conflicts --
+## x forecast::getResponse() masks nlme::getResponse()
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: ggmap
+\end{verbatim}
+
+\begin{verbatim}
+## i Google's Terms of Service: <https://mapsplatform.google.com>
+##   Stadia Maps' Terms of Service: <https://stadiamaps.com/terms-of-service/>
+##   OpenStreetMap's Tile Usage Policy: <https://operations.osmfoundation.org/policies/tiles/>
+## i Please cite ggmap if you use it! Use `citation("ggmap")` for details.
+## Loading required package: grid
+## 
+## Loading required package: gridExtra
+## 
+## 
+## Attaching package: 'gridExtra'
+## 
+## 
+## The following object is masked from 'package:dplyr':
+## 
+##     combine
+## 
+## 
+## Loading required package: Hmisc
+## 
+## 
+## Attaching package: 'Hmisc'
+## 
+## 
+## The following objects are masked from 'package:dplyr':
+## 
+##     src, summarize
+## 
+## 
+## The following objects are masked from 'package:base':
+## 
+##     format.pval, units
+## 
+## 
+## Loading required package: kableExtra
+## 
+## 
+## Attaching package: 'kableExtra'
+## 
+## 
+## The following object is masked from 'package:dplyr':
+## 
+##     group_rows
+## 
+## 
+## Loading required package: knitr
+## 
+## Loading required package: loo
+## 
+## This is loo version 2.8.0
+## 
+## - Online documentation and vignettes at mc-stan.org/loo
+## 
+## - As of v2.0.0 loo defaults to 1 core but we recommend using as many as possible. Use the 'cores' argument or set options(mc.cores = NUM_CORES) for an entire session. 
+## 
+## 
+## Attaching package: 'loo'
+## 
+## 
+## The following object is masked from 'package:fma':
+## 
+##     milk
+## 
+## 
+## Loading required package: magrittr
+## 
+## 
+## Attaching package: 'magrittr'
+## 
+## 
+## The following object is masked from 'package:ggmap':
+## 
+##     inset
+## 
+## 
+## The following object is masked from 'package:purrr':
+## 
+##     set_names
+## 
+## 
+## The following object is masked from 'package:tidyr':
+## 
+##     extract
+## 
+## 
+## Loading required package: MARSS
+## 
+## Loading required package: quantmod
+## 
+## Loading required package: xts
+## 
+## Loading required package: zoo
+## 
+## 
+## Attaching package: 'zoo'
+## 
+## 
+## The following objects are masked from 'package:base':
+## 
+##     as.Date, as.Date.numeric
+## 
+## 
+## 
+## ######################### Warning from 'xts' package ##########################
+## #                                                                             #
+## # The dplyr lag() function breaks how base R's lag() function is supposed to  #
+## # work, which breaks lag(my_xts). Calls to lag(my_xts) that you type or       #
+## # source() into this session won't work correctly.                            #
+## #                                                                             #
+## # Use stats::lag() to make sure you're not using dplyr::lag(), or you can add #
+## # conflictRules('dplyr', exclude = 'lag') to your .Rprofile to stop           #
+## # dplyr from breaking base R's lag() function.                                #
+## #                                                                             #
+## # Code in packages is not affected. It's protected by R's namespace mechanism #
+## # Set `options(xts.warn_dplyr_breaks_lag = FALSE)` to suppress this warning.  #
+## #                                                                             #
+## ###############################################################################
+## 
+## 
+## Attaching package: 'xts'
+## 
+## 
+## The following objects are masked from 'package:dplyr':
+## 
+##     first, last
+## 
+## 
+## Loading required package: TTR
+## 
+## 
+## Attaching package: 'quantmod'
+## 
+## 
+## The following object is masked from 'package:Hmisc':
+## 
+##     Lag
+## 
+## 
+## Loading required package: RCurl
+## 
+## 
+## Attaching package: 'RCurl'
+## 
+## 
+## The following object is masked from 'package:tidyr':
+## 
+##     complete
+## 
+## 
+## Loading required package: reshape2
+## 
+## 
+## Attaching package: 'reshape2'
+## 
+## 
+## The following object is masked from 'package:tidyr':
+## 
+##     smiths
+## 
+## 
+## Loading required package: rmarkdown
+## 
+## Loading required package: tseries
+## 
+## Loading required package: urca
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# This is the monthly data }
+\NormalTok{chinook.month }\OtherTok{\textless{}{-}}\NormalTok{ chinook.month }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{Date =} \FunctionTok{as.Date}\NormalTok{(}\FunctionTok{paste}\NormalTok{(Year, Month, }\StringTok{"01"}\NormalTok{, }\AttributeTok{sep =} \StringTok{"{-}"}\NormalTok{), }\AttributeTok{format =} \StringTok{"\%Y{-}\%b{-}\%d"}\NormalTok{))}
+
+\NormalTok{chinook.month }\OtherTok{\textless{}{-}}\NormalTok{ chinook.month }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{filter}\NormalTok{(State }\SpecialCharTok{\%in\%} \FunctionTok{c}\NormalTok{(}\StringTok{"WA"}\NormalTok{))}
+
+\NormalTok{chinook.year }\OtherTok{\textless{}{-}}\NormalTok{ chinook.year }
+
+\NormalTok{chinook.year\_filtered }\OtherTok{\textless{}{-}}\NormalTok{ chinook.year }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{filter}\NormalTok{(State }\SpecialCharTok{==} \StringTok{"Washington"}\NormalTok{)}
+
+\CommentTok{\# Quick plot of year }
+
+\FunctionTok{ggplot}\NormalTok{(chinook.year\_filtered, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ Year, }\AttributeTok{y =}\NormalTok{ log.metric.tons)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_line}\NormalTok{() }\SpecialCharTok{+}
+  \FunctionTok{facet\_wrap}\NormalTok{(}\SpecialCharTok{\textasciitilde{}}\NormalTok{ State, }\AttributeTok{ncol =} \DecValTok{1}\NormalTok{) }\SpecialCharTok{+}  \CommentTok{\# 3 panels vertically}
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"Monthly Chinook Salmon Landings"}\NormalTok{,}
+       \AttributeTok{x =} \StringTok{"Date"}\NormalTok{,}
+       \AttributeTok{y =} \StringTok{"Log(Metric Tons)"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{theme\_minimal}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Lab1-ARIMA-2025-Team3_files/figure-latex/unnamed-chunk-2-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Quick plot of month }
+
+\FunctionTok{ggplot}\NormalTok{(chinook.month, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ Date, }\AttributeTok{y =}\NormalTok{ log.metric.tons)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_line}\NormalTok{() }\SpecialCharTok{+}
+  \FunctionTok{facet\_wrap}\NormalTok{(}\SpecialCharTok{\textasciitilde{}}\NormalTok{ State, }\AttributeTok{ncol =} \DecValTok{1}\NormalTok{) }\SpecialCharTok{+}  \CommentTok{\# 3 panels vertically}
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"Monthly Chinook Salmon Landings"}\NormalTok{,}
+       \AttributeTok{x =} \StringTok{"Date"}\NormalTok{,}
+       \AttributeTok{y =} \StringTok{"Log(Metric Tons)"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{theme\_minimal}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Lab1-ARIMA-2025-Team3_files/figure-latex/unnamed-chunk-2-2.pdf}
+
+\section{Step2, check stationarity and
+differencing}\label{step2-check-stationarity-and-differencing}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{yearly }\OtherTok{\textless{}{-}}\NormalTok{ chinook.year\_filtered }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{arrange}\NormalTok{(Year) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{pull}\NormalTok{(log.metric.tons)}
+
+\NormalTok{yearly\_ts }\OtherTok{\textless{}{-}} \FunctionTok{ts}\NormalTok{(yearly, }\AttributeTok{start =} \DecValTok{1950}\NormalTok{, }\AttributeTok{end =} \DecValTok{2016}\NormalTok{, }\AttributeTok{frequency =} \DecValTok{1}\NormalTok{)}
+
+
+\NormalTok{monthly}\OtherTok{\textless{}{-}}\NormalTok{ chinook.month }\SpecialCharTok{\%\textgreater{}\%}
+  \CommentTok{\#change log metric tons inf to NA}
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{log.metric.tons =} \FunctionTok{ifelse}\NormalTok{(log.metric.tons }\SpecialCharTok{==} \ConstantTok{Inf}\NormalTok{, }\ConstantTok{NA}\NormalTok{, log.metric.tons)) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{log.metric.tons =} \FunctionTok{ifelse}\NormalTok{(log.metric.tons }\SpecialCharTok{==} \SpecialCharTok{{-}}\ConstantTok{Inf}\NormalTok{, }\ConstantTok{NA}\NormalTok{, log.metric.tons)) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{filter}\NormalTok{(}\SpecialCharTok{!}\FunctionTok{is.na}\NormalTok{(log.metric.tons))}
+
+\NormalTok{monthly }\OtherTok{\textless{}{-}}\NormalTok{ monthly }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{arrange}\NormalTok{(Date) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{pull}\NormalTok{(log.metric.tons)}
+
+\CommentTok{\# Are there NAs in monthly }
+\CommentTok{\# remove NA}
+
+\NormalTok{monthly\_ts }\OtherTok{\textless{}{-}} \FunctionTok{ts}\NormalTok{(monthly, }\AttributeTok{start =} \FunctionTok{c}\NormalTok{(}\DecValTok{1990}\NormalTok{,}\DecValTok{1}\NormalTok{), }\AttributeTok{frequency =} \DecValTok{12}\NormalTok{)}
+
+
+\DocumentationTok{\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#}
+
+\CommentTok{\# Check the need to difference the data }
+
+\FunctionTok{adf.test}\NormalTok{(yearly\_ts)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+##  Augmented Dickey-Fuller Test
+## 
+## data:  yearly_ts
+## Dickey-Fuller = -2.5627, Lag order = 4, p-value = 0.3467
+## alternative hypothesis: stationary
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Augmented Dickey{-}Fuller Test}
+\CommentTok{\# }
+\CommentTok{\# data:  yearly\_ts}
+\CommentTok{\# Dickey{-}Fuller = {-}2.5627, Lag order = 4, p{-}value = 0.3467}
+\CommentTok{\# alternative hypothesis: stationary}
+
+\CommentTok{\# Not stationary, p value greater than .01 }
+
+
+\FunctionTok{adf.test}\NormalTok{(monthly\_ts)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+##  Augmented Dickey-Fuller Test
+## 
+## data:  monthly_ts
+## Dickey-Fuller = -9.6198, Lag order = 7, p-value = 0.01
+## alternative hypothesis: stationary
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Augmented Dickey{-}Fuller Test}
+\CommentTok{\# }
+\CommentTok{\# data:  monthly\_ts}
+\CommentTok{\# Dickey{-}Fuller = {-}9.6198, Lag order = 7, p{-}value = 0.01}
+\CommentTok{\# alternative hypothesis: stationary}
+
+\CommentTok{\# These data ARE Stationary }
+
+\DocumentationTok{\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#}
+
+\CommentTok{\# We can run the ndiff to see how many differences we would need to get to stationarity }
+
+\FunctionTok{ndiffs}\NormalTok{(yearly\_ts)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 1
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# [1], we need to difference ONCE, we expect the middle number in autoarima to be 1 }
+\end{Highlighting}
+\end{Shaded}
+
+\subsubsection{Step 3, explore correlation and autocorrelation using ACF
+and
+PACF}\label{step-3-explore-correlation-and-autocorrelation-using-acf-and-pacf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{acf}\NormalTok{(yearly\_ts, }\AttributeTok{lag.max =} \DecValTok{20}\NormalTok{, }\AttributeTok{main =} \StringTok{"ACF of Yearly Chinook Salmon Landings in Washington"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Lab1-ARIMA-2025-Team3_files/figure-latex/unnamed-chunk-4-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# The ACF plot shows a tails off structure}
+\FunctionTok{pacf}\NormalTok{(yearly\_ts, }\AttributeTok{lag.max =} \DecValTok{20}\NormalTok{, }\AttributeTok{main =} \StringTok{"PACF of Yearly Chinook Salmon Landings in Washington"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Lab1-ARIMA-2025-Team3_files/figure-latex/unnamed-chunk-4-2.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# The PACF plot show a cuts off structure after lag=1}
+\CommentTok{\# These are AR(1) model characteristics}
+\CommentTok{\# Combining with results from the above stationary test, we expect an ARIMA(1,1,0) model to fit the yearly Chinook Salmon Landings in Washington}
+
+\FunctionTok{acf}\NormalTok{(monthly\_ts, }\AttributeTok{lag.max =} \DecValTok{36}\NormalTok{, }\AttributeTok{main =} \StringTok{"ACF of Monthly Chinook Salmon Landings in Washington"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Lab1-ARIMA-2025-Team3_files/figure-latex/unnamed-chunk-4-3.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# We observe a clear deterministic seasonal pattern and expect a big negative coefficient for AR component}
+\FunctionTok{pacf}\NormalTok{(monthly\_ts, }\AttributeTok{lag.max =} \DecValTok{36}\NormalTok{, }\AttributeTok{main =} \StringTok{"PACF of Monthly Chinook Salmon Landings in Washington"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Lab1-ARIMA-2025-Team3_files/figure-latex/unnamed-chunk-4-4.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Several correlation patterns are detected and there is a strong correlation with lag=2}
+\CommentTok{\# Choosing the optimal p and q value may need to be done by comparing AIC and BIC values, which is expected to be conducted in auto.arima function}
+\end{Highlighting}
+\end{Shaded}
+
+\subsubsection{Step 4, fit ARIMA and ETS models using created training
+and test sets on the monthly and yearly
+data}\label{step-4-fit-arima-and-ets-models-using-created-training-and-test-sets-on-the-monthly-and-yearly-data}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Create training and test sets (80\% training, 20\% test)}
+\NormalTok{yearly\_train\_end }\OtherTok{\textless{}{-}} \FunctionTok{floor}\NormalTok{(}\FloatTok{0.8} \SpecialCharTok{*} \FunctionTok{length}\NormalTok{(yearly\_ts))}
+\NormalTok{yearly\_train }\OtherTok{\textless{}{-}} \FunctionTok{window}\NormalTok{(yearly\_ts, }\AttributeTok{end =} \FunctionTok{time}\NormalTok{(yearly\_ts)[yearly\_train\_end])}
+\NormalTok{yearly\_test }\OtherTok{\textless{}{-}} \FunctionTok{window}\NormalTok{(yearly\_ts, }\AttributeTok{start =} \FunctionTok{time}\NormalTok{(yearly\_ts)[yearly\_train\_end }\SpecialCharTok{+} \DecValTok{1}\NormalTok{])}
+
+\NormalTok{monthly\_train\_end }\OtherTok{\textless{}{-}} \FunctionTok{floor}\NormalTok{(}\FloatTok{0.8} \SpecialCharTok{*} \FunctionTok{length}\NormalTok{(monthly\_ts))}
+\NormalTok{monthly\_train }\OtherTok{\textless{}{-}} \FunctionTok{window}\NormalTok{(monthly\_ts, }\AttributeTok{end =} \FunctionTok{time}\NormalTok{(monthly\_ts)[monthly\_train\_end])}
+\NormalTok{monthly\_test }\OtherTok{\textless{}{-}} \FunctionTok{window}\NormalTok{(monthly\_ts, }\AttributeTok{start =} \FunctionTok{time}\NormalTok{(monthly\_ts)[monthly\_train\_end }\SpecialCharTok{+} \DecValTok{1}\NormalTok{])}
+
+\CommentTok{\# Delete monthly\_train\_end}
+\FunctionTok{rm}\NormalTok{(monthly\_train\_end)}
+\CommentTok{\# Delete yearly\_train\_end}
+\FunctionTok{rm}\NormalTok{(yearly\_train\_end)}
+
+\CommentTok{\# Fit ARIMA model to training data}
+\NormalTok{yearly\_arima }\OtherTok{\textless{}{-}} \FunctionTok{auto.arima}\NormalTok{(yearly\_train)}
+\CommentTok{\# Series: yearly\_train }
+\CommentTok{\# The model result suggests an random walk ARIMA(0,1,0) instead of ARIMA(1,1,0), because the AR(1) coefficient might be small or not statistically significant}
+\CommentTok{\# }
+\CommentTok{\# sigma\^{}2 = 0.04824:  log likelihood = 5.04}
+\CommentTok{\# AIC={-}8.07   AICc={-}7.99   BIC={-}6.12}
+
+\NormalTok{monthly\_arima }\OtherTok{\textless{}{-}} \FunctionTok{auto.arima}\NormalTok{(monthly\_train)}
+
+\CommentTok{\# Series: monthly\_train }
+\CommentTok{\# ARIMA(2,0,2) with non{-}zero mean }
+\CommentTok{\# }
+\CommentTok{\# Coefficients:}
+\CommentTok{\#          ar1      ar2      ma1     ma2    mean}
+\CommentTok{\#       1.6522  {-}0.9335  {-}1.1833  0.4651  3.2705}
+\CommentTok{\# s.e.  0.0423   0.0444   0.1831  0.1728  0.0830}
+\CommentTok{\# }
+\CommentTok{\# sigma\^{}2 = 2.048:  log likelihood = {-}526.49}
+\CommentTok{\# AIC=1064.98   AICc=1065.27   BIC=1087.14}
+
+
+\CommentTok{\# Fit ETS models}
+\NormalTok{yearly\_ets }\OtherTok{\textless{}{-}} \FunctionTok{ets}\NormalTok{(yearly\_train)}
+
+\CommentTok{\# ETS(A,N,N) }
+\CommentTok{\# }
+\CommentTok{\# Call:}
+\CommentTok{\# ets(y = yearly\_train)}
+\CommentTok{\# }
+\CommentTok{\#   Smoothing parameters:}
+\CommentTok{\#     alpha = 0.9999 }
+\CommentTok{\# }
+\CommentTok{\#   Initial states:}
+\CommentTok{\#     l = 8.2942 }
+\CommentTok{\# }
+\CommentTok{\#   sigma:  0.2218}
+\CommentTok{\# }
+\CommentTok{\#      AIC     AICc      BIC }
+\CommentTok{\# 54.74317 55.23297 60.65405 }
+
+\NormalTok{monthly\_ets }\OtherTok{\textless{}{-}} \FunctionTok{ets}\NormalTok{(monthly\_train)}
+
+\CommentTok{\# ETS(A,N,N) }
+\CommentTok{\# }
+\CommentTok{\# Call:}
+\CommentTok{\# ets(y = monthly\_train)}
+\CommentTok{\# }
+\CommentTok{\#   Smoothing parameters:}
+\CommentTok{\#     alpha = 0.9999 }
+\CommentTok{\# }
+\CommentTok{\#   Initial states:}
+\CommentTok{\#     l = 3.2657 }
+\CommentTok{\# }
+\CommentTok{\#   sigma:  1.8451}
+\CommentTok{\# }
+\CommentTok{\#      AIC     AICc      BIC }
+\CommentTok{\# 2058.871 2058.953 2069.952 }
+\end{Highlighting}
+\end{Shaded}
+
+\subsubsection{Step 5, model performance residual
+diagnostics}\label{step-5-model-performance-residual-diagnostics}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{checkresiduals}\NormalTok{(yearly\_arima)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Lab1-ARIMA-2025-Team3_files/figure-latex/unnamed-chunk-6-1.pdf}
+
+\begin{verbatim}
+## 
+##  Ljung-Box test
+## 
+## data:  Residuals from ARIMA(0,1,0)
+## Q* = 5.659, df = 10, p-value = 0.8431
+## 
+## Model df: 0.   Total lags used: 10
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# ACF of residuals shows no significant autocorrelation and looks like a normal distribution, indicating a very good fit}
+\FunctionTok{checkresiduals}\NormalTok{(monthly\_arima)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Lab1-ARIMA-2025-Team3_files/figure-latex/unnamed-chunk-6-2.pdf}
+
+\begin{verbatim}
+## 
+##  Ljung-Box test
+## 
+## data:  Residuals from ARIMA(3,0,4)(0,1,1)[12]
+## Q* = 30.958, df = 16, p-value = 0.01362
+## 
+## Model df: 8.   Total lags used: 24
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# ACF of residuals have two autocorrelation spikes but could be random weird thing and looks like a normal distribution, indicating a relative good fit}
+\FunctionTok{checkresiduals}\NormalTok{(yearly\_ets)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Lab1-ARIMA-2025-Team3_files/figure-latex/unnamed-chunk-6-3.pdf}
+
+\begin{verbatim}
+## 
+##  Ljung-Box test
+## 
+## data:  Residuals from ETS(A,N,N)
+## Q* = 5.6202, df = 10, p-value = 0.8461
+## 
+## Model df: 0.   Total lags used: 10
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# ACF of residuals shows no significant autocorrelation and looks like a normal distribution, indicating a good fit}
+\FunctionTok{checkresiduals}\NormalTok{(monthly\_ets)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Lab1-ARIMA-2025-Team3_files/figure-latex/unnamed-chunk-6-4.pdf}
+
+\begin{verbatim}
+## 
+##  Ljung-Box test
+## 
+## data:  Residuals from ETS(A,N,A)
+## Q* = 253.79, df = 24, p-value < 2.2e-16
+## 
+## Model df: 0.   Total lags used: 24
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# ACF of residuals shows several significant autocorrelations though looks like a normal distribution, indicating a poor fit}
+
+\DocumentationTok{\#\# In general, the ARIMA models seem to fit better than the ETS models for both yearly and monthly data.}
+\end{Highlighting}
+\end{Shaded}
+
+\subsubsection{Step 6, forecast}\label{step-6-forecast}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Generate forecasts for the test period}
+\NormalTok{yearly\_arima\_forecast }\OtherTok{\textless{}{-}} \FunctionTok{forecast}\NormalTok{(yearly\_arima, }\AttributeTok{h =} \FunctionTok{length}\NormalTok{(yearly\_test))}
+\NormalTok{yearly\_ets\_forecast }\OtherTok{\textless{}{-}} \FunctionTok{forecast}\NormalTok{(yearly\_ets, }\AttributeTok{h =} \FunctionTok{length}\NormalTok{(yearly\_test))}
+
+\NormalTok{monthly\_arima\_forecast }\OtherTok{\textless{}{-}} \FunctionTok{forecast}\NormalTok{(monthly\_arima, }\AttributeTok{h =} \FunctionTok{length}\NormalTok{(monthly\_test))}
+\NormalTok{monthly\_ets\_forecast }\OtherTok{\textless{}{-}} \FunctionTok{forecast}\NormalTok{(monthly\_ets, }\AttributeTok{h =} \FunctionTok{length}\NormalTok{(monthly\_test))}
+
+\CommentTok{\# Plot forecasts}
+\NormalTok{plot1}\OtherTok{\textless{}{-}}\FunctionTok{autoplot}\NormalTok{(yearly\_arima\_forecast)}
+\NormalTok{plot2}\OtherTok{\textless{}{-}}\FunctionTok{autoplot}\NormalTok{(yearly\_ets\_forecast)}
+
+\NormalTok{plot3}\OtherTok{\textless{}{-}}\FunctionTok{autoplot}\NormalTok{(monthly\_arima\_forecast)}
+\NormalTok{plot4}\OtherTok{\textless{}{-}}\FunctionTok{autoplot}\NormalTok{(monthly\_ets\_forecast)}
+
+\CommentTok{\# Put into a 4 plot panel }
+\FunctionTok{library}\NormalTok{(gridExtra)}
+\FunctionTok{library}\NormalTok{(grid)}
+\FunctionTok{library}\NormalTok{(ggplot2)}
+
+\FunctionTok{grid.arrange}\NormalTok{(plot1, plot2, plot3, plot4, }\AttributeTok{ncol =} \DecValTok{2}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Lab1-ARIMA-2025-Team3_files/figure-latex/unnamed-chunk-7-1.pdf}
+
+\subsection{Accuracy metrics}\label{accuracy-metrics}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Evaluate forecast accuracy}
+\NormalTok{yearly\_arima\_accuracy }\OtherTok{\textless{}{-}} \FunctionTok{accuracy}\NormalTok{(yearly\_arima\_forecast, yearly\_test)}
+
+\CommentTok{\#                     ME      RMSE       MAE        MPE     MAPE      MASE      ACF1 Theil\textquotesingle{}s U}
+\CommentTok{\# Training set {-}0.01046748 0.2175570 0.1732156 {-}0.1712576 2.225795 0.9820193 0.0292464        NA}
+\CommentTok{\# Test set     {-}0.07686666 0.2753066 0.2363580 {-}1.1236585 3.107135 1.3399954 0.5697271  1.139735}
+
+\NormalTok{yearly\_ets\_accuracy }\OtherTok{\textless{}{-}} \FunctionTok{accuracy}\NormalTok{(yearly\_ets\_forecast, yearly\_test)}
+
+\CommentTok{\#                     ME      RMSE       MAE        MPE     MAPE      MASE       ACF1}
+\CommentTok{\# Training set {-}0.01062423 0.2175548 0.1730609 {-}0.1731526 2.223930 0.9811418 0.02860653}
+\CommentTok{\# Test set     {-}0.07683952 0.2752990 0.2363503 {-}1.1233035 3.107024 1.3399514 0.56972710}
+             
+\NormalTok{monthly\_arima\_accuracy }\OtherTok{\textless{}{-}} \FunctionTok{accuracy}\NormalTok{(monthly\_arima\_forecast, monthly\_test)}
+
+\CommentTok{\#                     ME     RMSE       MAE  MPE MAPE      MASE         ACF1 Theil\textquotesingle{}s U}
+\CommentTok{\# Training set {-}0.0620450 1.314323 0.9435214 {-}Inf  Inf 0.8521606 {-}0.001970859        NA}
+\CommentTok{\# Test set     {-}0.9640865 3.266402 2.5277314 {-}Inf  Inf 2.2829721  0.737652808         0}
+
+\NormalTok{monthly\_ets\_accuracy }\OtherTok{\textless{}{-}} \FunctionTok{accuracy}\NormalTok{(monthly\_ets\_forecast, monthly\_test)}
+
+\CommentTok{\#                       ME     RMSE      MAE  MPE MAPE     MASE      ACF1 Theil\textquotesingle{}s U}
+\CommentTok{\# Training set  0.0008512003 1.653080 1.088517 {-}Inf  Inf 0.983116 0.3694314        NA}
+\CommentTok{\# Test set     {-}1.8938374286 3.914736 2.998623 {-}Inf  Inf 2.708267 0.7424152         0}
+\end{Highlighting}
+\end{Shaded}
+
+\subsection{Results and Discussion}\label{results-and-discussion}
+
+The accuracy metrics show that for yearly data, ARIMA and ETS models
+performed nearly the same with a MAPE value of about 3.1\%, indicating
+reasonably accurate forecasts. For the monthly data, the ARIMA model
+outperformed ETS with lower RMSE (3.27 vs 3.91) and MAE (2.53 vs 3.00)
+
+Visually, the plots suggest better monthly performance but the numerical
+metrics indicate higher absolute errors for monthly forecasts compared
+to yearly ones. It would be interesting to compare how each of these
+predictions preform on test data from the other dataset (i.e.~do
+predictions made from monthly data preform better for yearly data).
+Similarly, it would be interesting to compare the results here to that
+of the data from California, which is made complicated by the different
+range of time series values. We questioned the legitimacy of our methods
+for fitting an ARIMA to the yearly data, as the model suggests that the
+predicted catch for the next years is equal to the last year's catch.
+This held true with some back-of-the envelope calculations using the
+same methods on the California and Oregon data. Specifically, we
+question the fact that the forecast plot visually shows no variation
+that would typically be associated with a random walk, rather
+forecasting a straight line with no variation.
+
+\#\#Team Member Contributions
+
+BM, EC, and TT all contributed code, question design, and analysis to
+the final work presented here. EC wrote details about the initial plan
+and questions we addressed, and how the plan was carried out, as well as
+added details to the discussion section. TT added details about checking
+the residuals and the ACF/PACF plots, and wrote details about the
+results and discussion. BM wrote and organized final code and added
+details about Accuracy results.
+
+\end{document}

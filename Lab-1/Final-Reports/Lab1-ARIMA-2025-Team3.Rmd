@@ -1,11 +1,13 @@
 ---
-title: Lab 1 Forecasting with ARIMA and ETS models
-author: Eli Holmes
-output: 
+title: "Lab 1 Forecasting with ARIMA and ETS models"
+author: 'Team 3: Ben Mahklouf, Tina Tao, and Emma Christman'
+output:
   html_document:
     code-folding: true
     toc: true
     toc_float: true
+  pdf_document:
+    toc: true
 ---
 
 ```{r include=FALSE}
@@ -16,8 +18,8 @@ knitr::opts_chunk$set(warning = FALSE)
 ```
 
 #Initial Plan and What Actually Happened
-We will compare the accuracy of ARIMA models in yearly vs. monthly data, answering the question: Is the accuracy of monthly or yearly data better? To do this we will look only at the Washington data.
-To begin, we will test the stationarity of the yearly data and the monthly data.
+We will compare the accuracy of ARIMA models in yearly vs. monthly data, answering the question: Is the accuracy of monthly or yearly data better? To do this we will look only at the Washington data. To begin, we will test the stationarity of the yearly data and the monthly data.
+
 If either are not stationary, we will use differencing to make them stationary for the purposes of this analysis. After the data are stationary, we will fit an ARIMA and ETS model to the monthly data using AutoARIMA on the earliest 80% of the data.
 This will allow use to compare the accuracy of the ARIMA model in predicting the last 20% of the data to the actual data. After this is done, we will do the same to the yearly data. Then, we can use the accuracy function to compare the two methods. 
 
@@ -124,7 +126,7 @@ adf.test(monthly_ts)
 
 #############################
 
-# wE can run the ndiff to see how many differences we would need to get to stationarity 
+# We can run the ndiff to see how many differences we would need to get to stationarity 
 
 ndiffs(yearly_ts)
 
@@ -134,7 +136,6 @@ ndiffs(yearly_ts)
 ### Step 3, explore correlation and autocorrelation using ACF and PACF 
 
 ```{r}
-### ACF PACF HERE
 acf(yearly_ts, lag.max = 20, main = "ACF of Yearly Chinook Salmon Landings in Washington")
 # The ACF plot shows a tails off structure
 pacf(yearly_ts, lag.max = 20, main = "PACF of Yearly Chinook Salmon Landings in Washington")
@@ -148,7 +149,7 @@ pacf(monthly_ts, lag.max = 36, main = "PACF of Monthly Chinook Salmon Landings i
 # Several correlation patterns are detected and there is a strong correlation with lag=2
 # Choosing the optimal p and q value may need to be done by comparing AIC and BIC values, which is expected to be conducted in auto.arima function
 ```
-### Step 4, fit ARIMA and ETS models
+### Step 4, fit ARIMA and ETS models using created training and test sets on the monthly and yearly data
 
 ```{r}
 
@@ -299,15 +300,14 @@ monthly_ets_accuracy <- accuracy(monthly_ets_forecast, monthly_test)
 
 ```
 
+## Results and Discussion
 The accuracy metrics show that for yearly data, ARIMA and ETS models performed nearly the same with a MAPE value of about 3.1%, indicating reasonably accurate forecasts. For the monthly data, the ARIMA model outperformed ETS with lower RMSE (3.27 vs 3.91) and MAE (2.53 vs 3.00)
 
-Visually, the plots suggest better monthly performance but the numerical metrics indicate higher absolute errors for monthly forecasts compared to yearly ones. It would be interesting to compare how each of these predictions preform on test data from the other dataset (i.e. do predictions made from monthly data preform better for yearly data)
+Visually, the plots suggest better monthly performance but the numerical metrics indicate higher absolute errors for monthly forecasts compared to yearly ones. It would be interesting to compare how each of these predictions preform on test data from the other dataset (i.e. do predictions made from monthly data preform better for yearly data). Similarly, it would be interesting to compare the results here to that of the data from California, which is made complicated by the different range of time series values. We questioned the legitimacy of our methods for fitting an ARIMA to the yearly data, as the model suggests that the predicted catch for the next years is equal to the last year's catch. This held true with some back-of-the envelope calculations using the same methods on the California and Oregon data. Specifically, we question the fact that the forecast plot visually shows no variation that would typically be associated with a random walk, rather forecasting a straight line with no variation.
 
+##Team Member Contributions 
 
-################ 
-################ Team Member Contributions 
-
-BM, EC, and TT all contributed code and analysis to the final analysis. EC wrote details about the initial plan and questions we addressed. TT added details about checking the residuals and the ACF/PACF plots, and wrote details about the results and discussion. BM wrote and organized final code and added details about Accuracy results. 
+BM, EC, and TT all contributed code, question design, and analysis to the final work presented here. EC wrote details about the initial plan and questions we addressed, and how the plan was carried out, as well as added details to the discussion section. TT added details about checking the residuals and the ACF/PACF plots, and wrote details about the results and discussion. BM wrote and organized final code and added details about Accuracy results.
 
 
 

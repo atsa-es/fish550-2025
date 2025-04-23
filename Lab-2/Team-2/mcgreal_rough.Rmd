@@ -1,9 +1,0 @@
----
-title: "mcgreal_rough"
-output: html_document
----
-
-```{r message=FALSE}
-library(MARSS)
-library(tidyverse)
-```

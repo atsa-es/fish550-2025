@@ -10,7 +10,7 @@ output:
     toc_float: true
 ---
 
-```{r message=TRUE, warning=TRUE, include=FALSE}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 library(atsalibrary)
 library(ggplot2)
 library(dplyr)
@@ -31,10 +31,7 @@ chinook.month <- chinook.month %>%
   mutate(Date = as.Date(paste(Year, Month, "01", sep = "-"), format = "%Y-%b-%d"),
     log.metric.tons = ifelse(metric.tons <= 0, NA, log(metric.tons)))
 
-# # Create time series from monthly log data starting in 1980
-# month_ts <- ts(chinook.month$log.metric.tons, start = c(1990, 1), frequency = 12)
-
-# Monthly data summed across states.
+# Monthly data summed across states
 chinook.month.wc <- chinook.month %>%
   group_by(Year, Month) %>%
   summarise(
@@ -51,38 +48,17 @@ chinook.month.wc <- chinook.month %>%
 month_wc_ts <- ts(chinook.month.wc$log.metric.tons, start = c(1990, 1), frequency = 12)
 ```
 
-# Question your team will address
+# Overview
+Our team used aggregated annual commercial landings data from Washington, Oregon, and California to fit ARIMA models. After initial data exploration, we assessed forecast accuracy by experimenting with various lengths for the training and test periods. We then evaluated the performance of different ARIMA models by testing a range of parameter combinations.
 
-What will your team do with the data? You can do many things with the data. The only constraints are that you
+To identify the optimal training period, we fit ARIMA models using 5, 10, 15, 20, and 25 years of data. After discussion, we selected a 25-year training period and generated forecasts for the following 18 years. Finally, we compared the forecasting accuracy of the different ARIMA configurations using RMSE, MAE, and MAPE as evaluation metrics.
 
-* fit ARIMA and ETS models. You can fit other models in addition to these if you want (lm, glm, gam, etc)
-* do diagnostics for ARIMA and ETS models
-* make forecasts
-* test how good your forecasts or compare forecasts (many options here)
-
-Example, "Our team decided to compare the accuracy of forecasts using best fit ARIMA models for WA, OR and CA commercial yearly landings. Our question is whether forecast accuracy is different for simple (1st order) versus 2nd to 4th order ARIMA models."
-
-ARIMA model forcast
-
-best combination of parameters of ARIMA and the performance of different test/training dataset.
-
-# Method you will use
-
-## Initial plan
-
-Describe what you plan to do to address your question.
-
-Example, "We will fit ARIMA models to 1960-1980 data and make 1981-1985  forecasts (5 year). We will compare the accuracy of the forecasts to the actual values. We will measure accuracy with mean squared error. We will use the forecast package to fit the ARIMA models with different AR orders (1st up to 4th order)."
-
-## What you actually did
-
-Example, "We were able to do our plan fairly quickly, so after writing the basic code. We compared the accuracy of forecasts for different time periods using 20-years for training and 5-year forecasts each time. We compared the RMSE, MAE, and MAPE accuracy measures."
 
 # Diagnostics and preliminary exploration (Lilac)
 
 ## Plot the data
 
-```{r}
+```{r warning=FALSE}
 # Plot with facets by State
 ggplot(chinook.month, aes(x = Date, y = log.metric.tons)) +
   geom_line() +
@@ -114,15 +90,42 @@ ggplot(chinook.month.wc, aes(x = Date, y = log.metric.tons)) +
 
 After aggregating the data across states, the resulting time series does not appear to be strictly stationary, though it shows greater stationarity from around 2000 onward. A strong and consistent seasonal pattern is clearly visible. The early 1990s are characterized by higher variability and a potential decline in the mean. From the 2000s forward, there is no obvious long-term upward or downward trend.
 
-One concern is the handling of missing (`NA`) values — currently, they are dropped. This could exaggerate seasonal differences, as a significant portion of the missing data occurs between November and April. While this may not be highly impactful (since Chinook landings are likely near zero in winter months anyway), it’s something to be mindful of moving forward.
+One concern is the handling of missing (`NA`) values — currently, they are treated as zeros during addition. This could exaggerate seasonal differences, as a significant portion of the missing data occurs between November and April, especially in CA data. While this may not be highly impactful (since Chinook landings are likely near zero in winter months anyway), it’s something to be mindful of moving forward.
 
 ## Use ACF and PACF
 
-Use the ACF and PACF plots to explore the time series. What did you learn? Also try decomposition.
+```{r}
+# ACF and PACF plots
+par(mfrow=c(1,2))
+acf(month_wc_ts, na.action = na.pass, las = 1)
+pacf(month_wc_ts, na.action = na.pass, las = 1)
+```
+
+The ACF plot shows clear positive spikes around lags 1 and 2 (about 12 and 24 months), along with strong negative spikes near lags 0.5 and 1.5 (around 6 and 18 months). Pattern keeps repeating and does not die out quickly, suggesting a non-stationary series with a clear annual seasonality.
+
+The PACF plot shows one large positive spike at the 1-month lag, with smaller but noticeable spikes up to lag 11, and then another big spike at lag 12, after which the spikes quickly drop off. This suggests that using an AR(1) model might be good enough for capturing the non-seasonal part of the data.
+
+### Decomposition
+
+Next, I will decompose the time series. Since `stl` cannot handle missing values, and the NAs in the data are sparse and not clustered, interpolation is a safe and appropriate solution. Therefore, I will fill the missing values using linear interpolation with `zoo::na.approx()`.
+
+```{r}
+# Fill missing values with linear interpolation
+month_wc_ts_filled <- na.approx(month_wc_ts)
+decomp_WA <- stl(month_wc_ts_filled, s.window = "periodic")
+plot(decomp_WA)
+```
+
+The additive decomposition shows that the time-series is dominated by a strong seasonal component that repeats the same saw-tooth shape every year. The underlying trend drifts downward overall, with notable upswings in the mid-2000s and again in the mid-2010s. The remainder series shows no obvious autocorrelation, recurring cycles, or variance that change with time - mostly white noise, with a few spikes.
 
 ## Test for stationarity
 
-Run tests using `forecast::ndiffs` and discuss any stationarity issues that are revealed.
+```{r}
+ndiffs(month_wc_ts) # non-seasonal stationary
+nsdiffs(month_wc_ts) # seasonal stationary
+```
+
+It appears that no differencing is required for the non-seasonal component. However, the seasonal component is non-stationary and requires one order of differencing.
 
 # Question, Method, Results, and Discussion
 
@@ -209,7 +212,7 @@ for (i in 1:length(month_train)) {
 
 As expected, increasing the number of years on the training data significantly impacts resulting forecasts such that they become more accurate and precise (less uncertain). These improvements are likely due to (1) improve parameter estimation, (2) improved detection of long-term patterns such as seasonality, and (3) decreasing influence of outliers as the training set grows.
 
-```{r}
+```{r warning=FALSE}
 
 ggarrange(plotlist = plots, ncol = 2, nrow = 3)
 
@@ -221,9 +224,6 @@ How does the structure of an ARIMA model affect its ability to forecast salmon l
 After discussing with my teammates and reviewing best results, I decided to follow Matheus' approach of training on a 25-year dataset, since our findings showed this time frame produced the most reliable forecasts. For my section of the lab, I will use the same framework for consistency across our analyses. My goal was to define a 25-year training set (1980–2004) and use it to fit multiple ARIMA models — starting with an automatically selected model using `auto.arima()`, followed by two manually specified ARIMA models. This allowed me to compare how model structure impacts forecast performance when applied to monthly Chinook salmon landings.
 
 ```{r ts-and-train-test-25yrs}
-# Create time series from monthly log data starting in 1980
-#month_ts <- ts(chinook.month$log.metric.tons, start = c(1980, 1), frequency = 12)
-
 # 25-year training: Jan 1980 – Dec 2004
 train_25 <- window(month_ts, start = c(1980, 1), end = c(2004, 12))
 
@@ -262,7 +262,7 @@ fc_manual_200 <- forecast(mod_manual_200, h = length(test_25))
 
 This plot shows the forecast from the auto ARIMA model overlaid with the actual observed data from the test period.The shaded area represents the model’s forecast uncertainty.This visual comparison helps us assess how closely the model captures the true pattern of Chinook landings.
 
-```{r plot-forecast-auto-25}
+```{r plot-forecast-auto-25, warning=FALSE}
 autoplot(fc_auto_25) +
   autolayer(test_25, series = "Observed", color = "black") +
   ggtitle("Auto ARIMA Forecast (25-Year Training)") +
@@ -272,7 +272,7 @@ autoplot(fc_auto_25) +
 
 This plot shows the forecast from the manual ARIMA(1,1,1) model, with the test data overlaid in black. This model assumes moderate memory and differencing, and is commonly used in many forecasting applications.Comparing this plot to the auto model helps us evaluate whether a standard manual model performs better or worse.
 
-```{r plot-forecast-manual-111-25}
+```{r plot-forecast-manual-111-25, warning=FALSE}
 autoplot(fc_manual_111) +
   autolayer(test_25, series = "Observed", color = "black") +
   ggtitle("Manual ARIMA(1,1,1) Forecast (25-Year Training)") +
@@ -282,7 +282,7 @@ autoplot(fc_manual_111) +
 
 This plot shows the forecast from the manual ARIMA(2,0,0) model, which relies more heavily on autoregressive terms. There is no differencing in this model, so we are testing how well the model can handle trend-like behavior directly. Again, the black line shows actual test data, providing a basis for visual evaluation.
 
-```{r plot-forecast-manual-200-25}
+```{r plot-forecast-manual-200-25, warning=FALSE}
 autoplot(fc_manual_200) +
   autolayer(test_25, series = "Observed", color = "black") +
   ggtitle("Manual ARIMA(2,0,0) Forecast (25-Year Training)") +
@@ -342,5 +342,5 @@ The ARIMA(2,0,0) model was slightly better, but it had two AR terms and no diffe
 
 # Description of each team member's contributions
 
-All team members helped decide on the goal and ran the analyses for the individual questions. Besides the individual assigned questions, all team members contributed to some common codes, which being called in other's code. All team members helped edit the report and wrote the discussion together.
+All team members collaboratively determined the goal and conducted analyses for the individual questions. In addition to working on their specific parts, everyone contributed to shared tasks and decisions—such as constructing the time series object and selecting a 25-year period for the training data. The entire team also participated in editing the final report.
 

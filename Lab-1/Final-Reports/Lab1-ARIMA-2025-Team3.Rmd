@@ -1,11 +1,13 @@
 ---
-title: Lab 1 Forecasting with ARIMA and ETS models
-author: Eli Holmes
-output: 
+title: "Lab 1 Forecasting with ARIMA and ETS models"
+author: 'Team 3: Ben Mahklouf, Tina Tao, and Emma Christman'
+output:
   html_document:
     code-folding: true
     toc: true
     toc_float: true
+  pdf_document:
+    toc: true
 ---
 
 ```{r include=FALSE}
@@ -15,7 +17,21 @@ knitr::opts_chunk$set(warning = FALSE)
 # library(forecast)
 ```
 
-#We decided to look at just Washington data for this lab. To do so, we isolate yearly and monthly data from just the Washington subset. 
+#Initial Plan and What Actually Happened
+We will compare the accuracy of ARIMA models in yearly vs. monthly data, answering the question: Is the accuracy of monthly or yearly data better? To do this we will look only at the Washington data. To begin, we will test the stationarity of the yearly data and the monthly data.
+
+If either are not stationary, we will use differencing to make them stationary for the purposes of this analysis. After the data are stationary, we will fit an ARIMA and ETS model to the monthly data using AutoARIMA on the earliest 80% of the data.
+This will allow use to compare the accuracy of the ARIMA model in predicting the last 20% of the data to the actual data. After this is done, we will do the same to the yearly data. Then, we can use the accuracy function to compare the two methods. 
+
+We loaded the data and wrangled it, filtering it to only include the Washington data. This allowed us to compare between both the yearly and monthly data. From there we used the auto.arima() function, which auto-checked for stationarity for us. We needed to make the yearly data stationary by differencing it once. Then, we fit both ETS and arima models to both the monthly and yearly catch data from Washington. After fitting the models, we concluded that the monthly data forecast was more accurate than the yearly data forecast.`
+
+
+#Question Addressed
+1) Is an ARIMA model and/or an ETS model adequate for using monthly data and yearly data?
+2) Is the accuracy of forecasting with monthly data or yearly data "better"?
+
+
+# Step1,  load data and filter to Washington with basic plots
 
 ```{r}
 # Seperate the monthly and yearly data 
@@ -56,7 +72,7 @@ ggplot(chinook.month, aes(x = Date, y = log.metric.tons)) +
 ```
 
 
-# Step2,  Check stationarity and differencing 
+# Step2,  check stationarity and differencing 
 
 ```{r}
 
@@ -110,19 +126,30 @@ adf.test(monthly_ts)
 
 #############################
 
-# wE can run the ndiff to see how many differences we would need to get to stationarity 
+# We can run the ndiff to see how many differences we would need to get to stationarity 
 
 ndiffs(yearly_ts)
 
 # [1], we need to difference ONCE, we expect the middle number in autoarima to be 1 
 
 ```
-### Step 3, explore correlation and autocorrelation using ACF, PACF 
+### Step 3, explore correlation and autocorrelation using ACF and PACF 
 
 ```{r}
-### ACF PACF HERE 
-```
+acf(yearly_ts, lag.max = 20, main = "ACF of Yearly Chinook Salmon Landings in Washington")
+# The ACF plot shows a tails off structure
+pacf(yearly_ts, lag.max = 20, main = "PACF of Yearly Chinook Salmon Landings in Washington")
+# The PACF plot show a cuts off structure after lag=1
+# These are AR(1) model characteristics
+# Combining with results from the above stationary test, we expect an ARIMA(1,1,0) model to fit the yearly Chinook Salmon Landings in Washington
 
+acf(monthly_ts, lag.max = 36, main = "ACF of Monthly Chinook Salmon Landings in Washington")
+# We observe a clear deterministic seasonal pattern and expect a big negative coefficient for AR component
+pacf(monthly_ts, lag.max = 36, main = "PACF of Monthly Chinook Salmon Landings in Washington")
+# Several correlation patterns are detected and there is a strong correlation with lag=2
+# Choosing the optimal p and q value may need to be done by comparing AIC and BIC values, which is expected to be conducted in auto.arima function
+```
+### Step 4, fit ARIMA and ETS models using created training and test sets on the monthly and yearly data
 
 ```{r}
 
@@ -143,7 +170,7 @@ rm(yearly_train_end)
 # Fit ARIMA model to training data
 yearly_arima <- auto.arima(yearly_train)
 # Series: yearly_train 
-# ARIMA(0,1,0) 
+# The model result suggests an random walk ARIMA(0,1,0) instead of ARIMA(1,1,0), because the AR(1) coefficient might be small or not statistically significant
 # 
 # sigma^2 = 0.04824:  log likelihood = 5.04
 # AIC=-8.07   AICc=-7.99   BIC=-6.12
@@ -200,8 +227,22 @@ monthly_ets <- ets(monthly_train)
 # 2058.871 2058.953 2069.952 
 
 ```
+### Step 5, model performance residual diagnostics
+```{r}
+checkresiduals(yearly_arima)
+# ACF of residuals shows no significant autocorrelation and looks like a normal distribution, indicating a very good fit
+checkresiduals(monthly_arima)
+# ACF of residuals have two autocorrelation spikes but could be random weird thing and looks like a normal distribution, indicating a relative good fit
+checkresiduals(yearly_ets)
+# ACF of residuals shows no significant autocorrelation and looks like a normal distribution, indicating a good fit
+checkresiduals(monthly_ets)
+# ACF of residuals shows several significant autocorrelations though looks like a normal distribution, indicating a poor fit
 
-Forecast
+## In general, the ARIMA models seem to fit better than the ETS models for both yearly and monthly data.
+```
+
+
+### Step 6, forecast
 ```{r}
 
 # Generate forecasts for the test period
@@ -259,33 +300,19 @@ monthly_ets_accuracy <- accuracy(monthly_ets_forecast, monthly_test)
 
 ```
 
+## Results and Discussion
 The accuracy metrics show that for yearly data, ARIMA and ETS models performed nearly the same with a MAPE value of about 3.1%, indicating reasonably accurate forecasts. For the monthly data, the ARIMA model outperformed ETS with lower RMSE (3.27 vs 3.91) and MAE (2.53 vs 3.00)
 
-Visually, the plots suggest better monthly performance but the numerical metrics indicate higher absolute errors for monthly forecasts compared to yearly ones. It would be interesting to compare how each of these predictions preform on test data from the other dataset (i.e. do predictions made from monthly data preform better for yearly data)
+Visually, the plots suggest better monthly performance but the numerical metrics indicate higher absolute errors for monthly forecasts compared to yearly ones. It would be interesting to compare how each of these predictions preform on test data from the other dataset (i.e. do predictions made from monthly data preform better for yearly data). Similarly, it would be interesting to compare the results here to that of the data from California, which is made complicated by the different range of time series values. We questioned the legitimacy of our methods for fitting an ARIMA to the yearly data, as the model suggests that the predicted catch for the next years is equal to the last year's catch. This held true with some back-of-the envelope calculations using the same methods on the California and Oregon data. Specifically, we question the fact that the forecast plot visually shows no variation that would typically be associated with a random walk, rather forecasting a straight line with no variation.
 
+##Team Member Contributions 
 
-################ 
-################ Team Member Contributions 
-
-BM, EC, and TT all contributed code and analysis to the final analysis. EC wrote details about the initial plan and questions we addressed. TT added details about checking the residuals and the ACF/PACF plots, and wrote details about the results and discussion. BM wrote and organized final code and added details about Accuracy results. 
+BM, EC, and TT all contributed code, question design, and analysis to the final work presented here. EC wrote details about the initial plan and questions we addressed, and how the plan was carried out, as well as added details to the discussion section. TT added details about checking the residuals and the ACF/PACF plots, and wrote details about the results and discussion. BM wrote and organized final code and added details about Accuracy results.
 
 
 
 
 
-# What we need still 
-######## initial plan (EMMA)
-####### What we actually did (EMMA)
-####### Questions we address (EMMA)
-
-###### Use ACF and PACF (TINA) 
-
-###  Results and Discussion (TINA: FIT RESULTS , 
-                             Ben: Accuracy Results) DONE 
-                             
-### Add in and comment out the accuracy results (BEN) DONE
-
-# Team members contributions Done-ish 
 
 
 

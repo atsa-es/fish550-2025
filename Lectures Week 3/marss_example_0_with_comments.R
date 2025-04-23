@@ -32,7 +32,7 @@ fit.0 <- MARSS(dat, model = mod.list.0)
 # Plot 1. Model fitted Y + CI
 # Plot 2. States - That's the population estimate
 # Last plot. Model innovations residuals ACF
-autoplot(fit.0)
+autoplot(fit.0) # will give series of plots
 
 # Q1. Change the observation model to all sites
 # having the same observation error variance
@@ -74,10 +74,18 @@ cov2cor(M) # Correlation matrix
 # Fit a model with four underlying state (population process)
 mod.list.1 <- list(B = diag(1,4), U = matrix("u",4,1), Q = "diagonal and equal", 
                    Z = diag(1,4), A = "scaling", R = "diagonal and unequal", 
-                   x0 = "unequal", tinitx = 0)
+                   x0 = "unequal", tinitx = 0) #only one u, subpopulation with same trend
 fit.1 <- MARSS(dat, model = mod.list.1)
 # Q1. Look at the plots
 autoplot(fit.1)
+
+# Fit a model with four underlying state (population process) test with different u
+mod.list.1t <- list(B = diag(1,4), U = "unequal", Q = "diagonal and equal", 
+                   Z = diag(1,4), A = "scaling", R = "diagonal and unequal", 
+                   x0 = "unequal", tinitx = 0) #only one u, subpopulation with same trend
+fit.1t <- MARSS(dat, model = mod.list.1t)
+# Q1. Look at the plots
+autoplot(fit.1t)
 
 # Plot 2. States - That's the population estimate
 # Q2. In the model you fit, are the 4 state processes (the lines) correlated with each other? Just based on the model you fit? Think about Q.

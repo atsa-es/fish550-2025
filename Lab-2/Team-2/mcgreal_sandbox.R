@@ -34,3 +34,16 @@ esu2 <- esu2 %>% mutate_all(~ifelse(is.nan(.), NA, .))
 esu2_widen <- esu2[-c(1:6, 8)]
 w_esu2 <- panel_data(esu2_widen, id = popname, wave = spawningyear)
 w_esu2 <- widen_panel(w_esu2, separator = "_")
+
+# grab years, population names, and n
+years <- names(w_esu2)
+years <- years[-1]
+years2 <- substring(years, first=10, last=13)
+
+pops <- w_esu2$popname
+
+n <- nrow(w_esu2)
+
+# convert counts to matrix
+dat <- data.matrix(w_esu2[2:ncol(w_esu2)])
+dat

@@ -51,8 +51,9 @@ if(i == 17 | i == 20) df$value_type <- "tsaij" else df$value_type <- "tsaej"
 columbia.river <- bind_rows(columbia.river, df)
 }
 columbia.river <- columbia.river %>% subset(species != "") %>% ungroup()
-save(columbia.river, file = file.path("Lab-2", "Data_Images/columbia-river.rda"))
-
+save(columbia.river, file = "/Users/Emma/Desktop/Research_Repos/fish550-2025/Lab-2/Team-2/columbia-river.rda")
+dir.create("/Users/Emma/Desktop/Research_Repos/fish550-2025/Lab-2/Team-2/", recursive = TRUE, showWarnings = FALSE)
+dir.exists("/Users/Emma/Desktop/Research_Repos/fish550-2025/Lab-2/Team-2/")
 unique(lower.columbia.river$esu_dps)
 df <- lower.columbia.river %>% subset(species == "Steelhead" & run == "Winter")
 ggplot(df, aes(x=spawningyear, y=log(value), color=majorpopgroup)) + 
@@ -60,4 +61,23 @@ ggplot(df, aes(x=spawningyear, y=log(value), color=majorpopgroup)) +
   theme(strip.text.x = element_text(size = 2)) +
   theme(axis.text.x = element_text(size = 5, angle = 90)) +
   facet_wrap(~esapopname)
+
+
+unique(esa.salmon$esu_dps)
+#Filter for just the "Salmon, Chinook (Snake River spring/summer-run ESU)"
+esa.salmon <- esa.salmon %>% filter(esu_dps == "Salmon, Chinook (Snake River spring/summer-run ESU)")
+unique(esa.salmon$majorpopgroup)
+#Remove rows that have a "NaN" in the value column
+esa.salmon <- esa.salmon %>% filter(value != "NaN")
+
+
+#Setupa. matrix
+# Create a matrix for each population, filling in missing years as NA
+data_matrix <- esa.salmon %>%
+  spread(key = spawningyear, value = value) %>%
+  select(-esapopname) %>%
+  as.matrix()
+
+# Fill any missing values in the matrix (if any)
+data_matrix[is.na(data_matrix)] <- NA
 

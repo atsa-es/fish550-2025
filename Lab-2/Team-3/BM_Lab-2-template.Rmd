@@ -41,62 +41,289 @@ Stl_plot<- SteelheadAll %>%
   labs(title="Summer Steelhead by ESA group", x="Year", y="Log Abundance")
 
 
-### To simplify, lets use just the summer 
-
-Stl<- SteelheadAll %>%
-  filter(run=="Summer")
-
-# To simplify names, remove "Steelhead" and "Summer" from esapopname
-Stl$esapopname<- gsub("Steelhead", "", Stl$esapopname)
-Stl$esapopname<- gsub("- summer", "", Stl$esapopname)
-
-
-Stl<- Stl %>%
-  select(spawningyear, esapopname, value) %>%
-  pivot_wider(names_from = esapopname, values_from = value)
-
-Years<- Stl$spawningyear
-
-# Remove years 
-Stl<- Stl %>%
-  select(-spawningyear)
-
-# Transpose the data so that each column is a different year and each row is a different population
-Stl<- t(Stl)
-
-# Add the years back in as the column names
-colnames(Stl)<- Years
-
-# Make sure the columns are ordered by year 
-Stl<- Stl[, order(as.numeric(colnames(Stl)))]
+print(Stl_plot)
 
 ```
 
+```{r}
+
+# Step 1: Start with your full dataset
+Stl <- SteelheadAll
+
+# Step 2: Filter for Summer if you want
+# Stl <- Stl %>% filter(run == "Summer") # optional
+
+# Step 3: Create region and run labels BEFORE pivoting
+Stl <- Stl %>%
+  mutate(
+    region = case_when(
+      grepl("Lower", esapopname) ~ "Lower",
+      grepl("Middle", esapopname) ~ "Middle",
+      grepl("Upper", esapopname) ~ "Upper",
+      TRUE ~ "Unknown"
+    ),
+    run_timing = case_when(
+      grepl("summer", esapopname, ignore.case = TRUE) ~ "Summer",
+      grepl("winter", esapopname, ignore.case = TRUE) ~ "Winter",
+      TRUE ~ "Unknown"
+    )
+  )
+
+# Step 4: Clean up the names (simplify for pivoting)
+Stl$esapopname <- gsub("Steelhead", "", Stl$esapopname)
+Stl$esapopname <- gsub("- summer", "", Stl$esapopname)
+Stl$esapopname <- gsub(" - winter", "", Stl$esapopname)
+
+
+# Step 5: Store lookup table for region/run AFTER cleaning names
+meta_info <- Stl %>%
+  select(esapopname, region, run_timing) %>%
+  distinct()
+
+# Step 6: Pivot wider to population x year
+Stl_wide <- Stl %>%
+  select(spawningyear, esapopname, value) %>%
+  pivot_wider(names_from = esapopname, values_from = value)
+
+# Step 7: Save years and transpose
+Years <- Stl_wide$spawningyear
+Stl_mat <- Stl_wide %>%
+  select(-spawningyear) %>%
+  as.matrix() %>%
+  t()
+
+# Step 8: Assign years as column names and reorder by year
+colnames(Stl_mat) <- Years
+Stl_mat <- Stl_mat[, order(as.numeric(colnames(Stl_mat)))]
+#Make sure all NaN are NA 
+Stl_mat[is.nan(Stl_mat)] <- NA
+
+# Step 9: Create vectors for regions and run timings
+region_vec <- meta_info$region[match(rownames(Stl_mat), meta_info$esapopname)]
+run_vec <- meta_info$run_timing[match(rownames(Stl_mat), meta_info$esapopname)]
+
+# Now you can subset like:
+# Stl_mat[region_vec == "Lower", ]
+# Stl_mat[run_vec == "Summer", ]
+
+
+```
+
+
+
+
+
+
+
 Models 
 
-# Hypotheses to test 
-
-#################
-### Hypothesis 1 
-
-## Description
-# All populations behave the same, no difference in sample error/variance 
-# All populations have the same trend (U)
-# Unconstrained (Q) 
-
-## Parameter matrix 
-
-################
-### Hypothesis 2 
-
-################
-### Hypothesis 3 
-
-################
-### Hypothesis 4 
-
+2. Evaluate support for the major population groups. Are the populations in the groups more correlated than outside the groups?
 
 ```{r}
+# Hypotheses to test 
+#################
+### Hypotheses
+# H1: All populations act the same 
+# H2: Each "Region" Lower, Middle, "Upper" acts differently
+# H3: Each "Run" Summer, Winter acts differently
+
+# Load required packages
+library(MARSS)
+
+# First let's log-transform the data for analysis
+Stl_log <- log(Stl_mat)
+# Replace -Inf values (from log(0)) with NA
+Stl_log[is.infinite(Stl_log)] <- NA
+
+# Examine our data structure
+dim(Stl_log)
+n_pops <- nrow(Stl_log)
+n_years <- ncol(Stl_log)
+
+# Print the region and run timing vectors to verify
+print(table(region_vec))
+print(table(run_vec))
+
+#------------------------------------------------------------------------------
+# MODEL 1: Single trend (H1: All populations act the same)
+#------------------------------------------------------------------------------
+# In this model, all populations follow one shared trend with different loadings
+mod1 <- list(
+  Z = "unconstrained",     # Each population loads differently on a single shared trend
+  R = "diagonal and unequal", # Each population has its own observation variance
+  Q = "identity",          # Single process variance for the shared trend
+  U = "identity",          # Single mean growth rate
+  x0 = "identity"          # Single initial state
+)
+
+# Parameter choice explanations:
+# Z = "unconstrained":
+#   - There is only one underlying trend that all populations follow
+#   - Each population can have a different relationship (loading) with this trend
+#   - "unconstrained" means loadings can be any value (+ or -) and different for each population
+# 
+# R = "diagonal and unequal":
+#   - Diagonal: Observation errors are independent across populations
+#   - Unequal: Each population has its own observation error variance
+#   - This accounts for different monitoring methods/accuracy between populations
+# 
+# Q = "identity":
+#   - Single process variance as we have only one underlying trend
+# 
+# U = "identity":
+#   - Single mean growth rate for the shared trend
+# 
+# x0 = "identity":
+#   - Single initial state for the shared trend
+
+# Fit model 1
+fit1 <- MARSS(Stl_log, model = mod1, silent = TRUE, control = list(maxit = 1000))
+
+#------------------------------------------------------------------------------
+# MODEL 2: Region-based trends (H2: Each Region acts differently)
+#------------------------------------------------------------------------------
+# In this model, populations within the same region share a trend
+
+# Create region-based groups mapping matrix
+unique_regions <- unique(region_vec)
+n_regions <- length(unique_regions)
+
+# Create a region membership matrix for MARSS
+Z_regions <- matrix(0, nrow = n_pops, ncol = n_regions)
+colnames(Z_regions) <- unique_regions
+rownames(Z_regions) <- rownames(Stl_log)
+
+# Fill in the region membership matrix
+for (i in 1:n_pops) {
+  region_idx <- which(unique_regions == region_vec[i])
+  Z_regions[i, region_idx] <- 1
+}
+
+mod2 <- list(
+  Z = Z_regions,           # Populations map to their respective region trends
+  R = "diagonal and unequal", # Each population has its own observation variance
+  Q = "diagonal and equal",   # Each region has the same process variance
+  U = "unequal",            # Each region has its own mean growth rate
+  x0 = "unequal"            # Each region has its own initial state
+)
+
+# Parameter choice explanations:
+# Z = Z_regions:
+#   - Custom matrix that maps populations to their geographical regions
+#   - Populations in the same region share the same underlying state (trend)
+# 
+# R = "diagonal and unequal":
+#   - Each population has its own observation error variance
+# 
+# Q = "diagonal and equal":
+#   - Process errors are independent between regions
+#   - Equal: All regions experience the same magnitude of environmental stochasticity
+# 
+# U = "unequal":
+#   - Each region has its own mean growth rate
+# 
+# x0 = "unequal":
+#   - Each region starts from a different initial state
+
+# Fit model 2
+fit2 <- MARSS(Stl_log, model = mod2, silent = TRUE, control = list(maxit = 1000))
+
+#------------------------------------------------------------------------------
+# MODEL 3: Run-timing based trends (H3: Each Run acts differently)
+#------------------------------------------------------------------------------
+# In this model, populations with the same run timing share a trend
+
+# Create run-timing based groups mapping matrix
+unique_runs <- unique(run_vec)
+n_runs <- length(unique_runs)
+
+# Create a run timing membership matrix for MARSS
+Z_runs <- matrix(0, nrow = n_pops, ncol = n_runs)
+colnames(Z_runs) <- unique_runs
+rownames(Z_runs) <- rownames(Stl_log)
+
+# Fill in the run timing membership matrix
+for (i in 1:n_pops) {
+  run_idx <- which(unique_runs == run_vec[i])
+  Z_runs[i, run_idx] <- 1
+}
+
+mod3 <- list(
+  Z = Z_runs,              # Populations map to their respective run timing trends
+  R = "diagonal and unequal", # Each population has its own observation variance
+  Q = "diagonal and equal",   # Each run timing has the same process variance
+  U = "unequal",            # Each run timing has its own mean growth rate
+  x0 = "unequal"            # Each run timing has its own initial state
+)
+
+# Parameter choice explanations:
+# Z = Z_runs:
+#   - Custom matrix that maps populations to their run timing groups (Summer, Winter)
+#   - Populations with the same run timing share the same underlying state (trend)
+# 
+# R = "diagonal and unequal":
+#   - Each population has its own observation error variance
+# 
+# Q = "diagonal and equal":
+#   - Process errors are independent between run timing groups
+#   - All run timing groups have the same environmental stochasticity magnitude
+# 
+# U = "unequal":
+#   - Each run timing group has its own mean growth rate
+# 
+# x0 = "unequal":
+#   - Each run timing group starts from a different initial state
+
+# Fit model 3
+fit3 <- MARSS(Stl_log, model = mod3, silent = TRUE, control = list(maxit = 1000))
+
+#------------------------------------------------------------------------------
+# Compare all models using AIC
+#------------------------------------------------------------------------------
+# Calculate AIC for each model
+AIC1 <- fit1$AIC
+AIC2 <- fit2$AIC
+AIC3 <- fit3$AIC
+
+# Calculate AICc (corrected AIC) for each model
+AICc1 <- fit1$AICc
+AICc2 <- fit2$AICc
+AICc3 <- fit3$AICc
+
+# Create a comparison table
+model_table <- data.frame(
+  Model = c("H1: All populations act the same", 
+            "H2: Each Region acts differently", 
+            "H3: Each Run acts differently"),
+  AIC = c(AIC1, AIC2, AIC3),
+  AICc = c(AICc1, AICc2, AICc3),
+  num_params = c(fit1$num.params, fit2$num.params, fit3$num.params),
+  logLik = c(fit1$logLik, fit2$logLik, fit3$logLik)
+)
+
+# Calculate delta AICc and weights
+model_table$delta_AICc <- model_table$AICc - min(model_table$AICc)
+model_table$AICc_weight <- exp(-0.5 * model_table$delta_AICc) / sum(exp(-0.5 * model_table$delta_AICc))
+
+# Sort by AICc
+model_table <- model_table[order(model_table$AICc), ]
+
+# Print the table
+print(model_table)
+
+# Identify best model
+best_model_idx <- which.min(c(AICc1, AICc2, AICc3))
+best_model_name <- c("H1: All populations act the same", 
+                     "H2: Each Region acts differently", 
+                     "H3: Each Run acts differently")[best_model_idx]
+
+cat("\nThe best model according to AICc is:", best_model_name, "\n")
+
+# Calculate AICc differences for interpretation
+cat("\nInterpretation guideline for delta_AICc:\n")
+cat("delta_AICc < 2: Models have substantial support\n")
+cat("delta_AICc 4-7: Models have considerably less support\n")
+cat("delta_AICc > 10: Models have essentially no support\n")
 
 
 ```

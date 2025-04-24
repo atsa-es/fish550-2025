@@ -41,36 +41,79 @@ Stl_plot<- SteelheadAll %>%
   labs(title="Summer Steelhead by ESA group", x="Year", y="Log Abundance")
 
 
-### To simplify, lets use just the summer 
+print(Stl_plot)
 
-Stl<- SteelheadAll %>%
-  filter(run=="Summer")
+```
 
-# To simplify names, remove "Steelhead" and "Summer" from esapopname
-Stl$esapopname<- gsub("Steelhead", "", Stl$esapopname)
-Stl$esapopname<- gsub("- summer", "", Stl$esapopname)
+```{r}
+
+# Step 1: Start with your full dataset
+Stl <- SteelheadAll
+
+# Step 2: Filter for Summer if you want
+# Stl <- Stl %>% filter(run == "Summer") # optional
+
+# Step 3: Create region and run labels BEFORE pivoting
+Stl <- Stl %>%
+  mutate(
+    region = case_when(
+      grepl("Lower", esapopname) ~ "Lower",
+      grepl("Middle", esapopname) ~ "Middle",
+      grepl("Upper", esapopname) ~ "Upper",
+      TRUE ~ "Unknown"
+    ),
+    run_timing = case_when(
+      grepl("summer", esapopname, ignore.case = TRUE) ~ "Summer",
+      grepl("winter", esapopname, ignore.case = TRUE) ~ "Winter",
+      TRUE ~ "Unknown"
+    )
+  )
+
+# Step 4: Clean up the names (simplify for pivoting)
+Stl$esapopname <- gsub("Steelhead", "", Stl$esapopname)
+Stl$esapopname <- gsub("- summer", "", Stl$esapopname)
+Stl$esapopname <- gsub(" - winter", "", Stl$esapopname)
 
 
-Stl<- Stl %>%
+# Step 5: Store lookup table for region/run AFTER cleaning names
+meta_info <- Stl %>%
+  select(esapopname, region, run_timing) %>%
+  distinct()
+
+# Step 6: Pivot wider to population x year
+Stl_wide <- Stl %>%
   select(spawningyear, esapopname, value) %>%
   pivot_wider(names_from = esapopname, values_from = value)
 
-Years<- Stl$spawningyear
+# Step 7: Save years and transpose
+Years <- Stl_wide$spawningyear
+Stl_mat <- Stl_wide %>%
+  select(-spawningyear) %>%
+  as.matrix() %>%
+  t()
 
-# Remove years 
-Stl<- Stl %>%
-  select(-spawningyear)
+# Step 8: Assign years as column names and reorder by year
+colnames(Stl_mat) <- Years
+Stl_mat <- Stl_mat[, order(as.numeric(colnames(Stl_mat)))]
+#Make sure all NaN are NA 
+Stl_mat[is.nan(Stl_mat)] <- NA
 
-# Transpose the data so that each column is a different year and each row is a different population
-Stl<- t(Stl)
+# Step 9: Create vectors for regions and run timings
+region_vec <- meta_info$region[match(rownames(Stl_mat), meta_info$esapopname)]
+run_vec <- meta_info$run_timing[match(rownames(Stl_mat), meta_info$esapopname)]
 
-# Add the years back in as the column names
-colnames(Stl)<- Years
+# Now you can subset like:
+# Stl_mat[region_vec == "Lower", ]
+# Stl_mat[run_vec == "Summer", ]
 
-# Make sure the columns are ordered by year 
-Stl<- Stl[, order(as.numeric(colnames(Stl)))]
 
 ```
+
+
+
+
+
+
 
 Models 
 
@@ -79,25 +122,316 @@ Models
 #################
 ### Hypothesis 1 
 
-## Description
-# All populations behave the same, no difference in sample error/variance 
-# All populations have the same trend (U)
-# Unconstrained (Q) 
 
-## Parameter matrix 
-
-################
-### Hypothesis 2 
-
-################
-### Hypothesis 3 
-
-################
-### Hypothesis 4 
-
+2. Evaluate support for the major population groups. Are the populations in the groups more correlated than outside the groups?
 
 ```{r}
+# Hypotheses to test 
+#################
+### Hypothesis 1 
+# Evaluate support for the major population groups. Are the populations in the groups more correlated than outside the groups?
 
+# Load required packages
+library(MARSS)
+
+# First let's examine our data structure after wrangling
+dim(Stl)
+pop_names <- rownames(Stl)
+n_pops <- length(pop_names)
+print(pop_names)
+
+# Let's log-transform the data since we're working with population abundances
+# Log transformation stabilizes variance and makes data more normally distributed
+Stl_log <- log(Stl)
+# Replace -Inf values (from log(0)) with NA
+Stl_log[is.infinite(Stl_log)] <- NA
+
+# Identify the major population groups based on the ESA designations
+# Extract group information from the population names
+# We'll create a function to identify the group for each population
+get_group <- function(pop_name) {
+  if(grepl("Middle Columbia", pop_name)) return("Middle Columbia")
+  if(grepl("Upper Columbia", pop_name)) return("Upper Columbia")
+  if(grepl("Snake River", pop_name)) return("Snake River")
+  if(grepl("Lower Columbia", pop_name)) return("Lower Columbia")
+  return("Other")
+}
+
+# Apply the function to get group for each population
+pop_groups <- sapply(pop_names, get_group)
+unique_groups <- unique(pop_groups)
+n_groups <- length(unique_groups)
+
+# Create a table showing the number of populations in each group
+table(pop_groups)
+
+# Create a matrix to define the population-to-group mapping for MARSS
+Z_groups <- matrix(0, nrow = n_pops, ncol = n_groups)
+colnames(Z_groups) <- unique_groups
+rownames(Z_groups) <- pop_names
+
+# Fill in the group membership matrix
+for (i in 1:n_pops) {
+  group_idx <- which(unique_groups == pop_groups[i])
+  Z_groups[i, group_idx] <- 1
+}
+
+# Print the group matrix to verify
+print(Z_groups)
+
+# We'll now define and fit several competing models to test our hypothesis
+# For each model, we'll provide detailed explanation of parameter choices
+
+#------------------------------------------------------------------------------
+# MODEL 1: Fully independent populations (null model)
+#------------------------------------------------------------------------------
+# In this model, each population has its own trend parameter
+mod1 <- list(
+  Z = "identity",           # Each population has its own trend
+  R = "diagonal and unequal", # Each population has its own observation variance
+  Q = "diagonal and unequal", # Each population has its own process variance
+  U = "unequal",            # Each population has its own mean growth rate
+  x0 = "unequal"            # Each population has its own initial state
+)
+
+# Parameter choice explanations:
+# Z = "identity": One-to-one mapping between states and observations
+#   - This assumes each population follows its own independent trajectory
+#   - No shared dynamics between populations
+# 
+# R = "diagonal and unequal":
+#   - Diagonal: Observation errors are independent across populations
+#   - Unequal: Each population has its own observation error variance
+#   - This is realistic as monitoring methods and precision may differ by population
+# 
+# Q = "diagonal and unequal":
+#   - Diagonal: Process errors (environmental stochasticity) are independent
+#   - Unequal: Each population experiences different environmental variation
+#   - This allows for different magnitudes of year-to-year fluctuations
+# 
+# U = "unequal":
+#   - Each population has its own growth trend
+#   - This allows populations to have different long-term trajectories
+# 
+# x0 = "unequal":
+#   - Each population starts from a different initial state
+#   - Reflects different initial abundances and historical conditions
+
+# Fit model 1 (this may take some time)
+fit1 <- MARSS(Stl_log, model = mod1, silent = TRUE, control = list(maxit = 1000))
+
+#------------------------------------------------------------------------------
+# MODEL 2: Group-based trends (our hypothesis model)
+#------------------------------------------------------------------------------
+# In this model, populations within the same ESA group share a trend
+mod2 <- list(
+  Z = Z_groups,           # Populations map to their respective group trends
+  R = "diagonal and unequal", # Each population has its own observation variance
+  Q = "diagonal and equal",   # Each group has the same process variance
+  U = "unequal",            # Each group has its own mean growth rate
+  x0 = "unequal"            # Each group has its own initial state
+)
+
+# Parameter choice explanations:
+# Z = Z_groups:
+#   - Custom matrix that maps populations to their ESA groups
+#   - Populations in the same group share the same underlying state (trend)
+#   - This directly tests our hypothesis that populations within groups are more correlated
+# 
+# R = "diagonal and unequal":
+#   - Observation errors remain independent between populations
+#   - Allows for different monitoring precision for each population
+# 
+# Q = "diagonal and equal":
+#   - Process errors are independent between groups
+#   - Equal: All groups experience the same magnitude of environmental stochasticity
+#   - This simplification reduces parameters and assumes similar environmental drivers
+# 
+# U = "unequal":
+#   - Each group has its own mean growth rate
+#   - Different ESA groups may have different overall trends
+# 
+# x0 = "unequal":
+#   - Each group starts from a different initial state
+#   - Different groups may have different historical abundances
+
+# Fit model 2
+fit2 <- MARSS(Stl_log, model = mod2, silent = TRUE, control = list(maxit = 1000))
+
+#------------------------------------------------------------------------------
+# MODEL 3: Shared trend with group-specific loadings
+#------------------------------------------------------------------------------
+# In this model, all populations follow one shared trend but with different loadings
+mod3 <- list(
+  Z = "unconstrained",     # Each population loads differently on the shared trend
+  R = "diagonal and unequal", # Each population has its own observation variance
+  Q = "identity",          # Single process variance for the shared trend
+  U = "equal",             # Single mean growth rate
+  x0 = "equal"             # Single initial state
+)
+
+# Parameter choice explanations:
+# Z = "unconstrained":
+#   - Allows each population to load differently on a single shared trend
+#   - Some populations may be more responsive to the shared drivers than others
+#   - The sign can also differ (some may increase while others decrease)
+# 
+# R = "diagonal and unequal":
+#   - Consistent with previous models
+# 
+# Q = "identity":
+#   - Single process variance as we have only one underlying trend
+# 
+# U = "equal":
+#   - Single mean growth rate for the shared trend
+# 
+# x0 = "equal":
+#   - Single initial state for the shared trend
+
+# Fit model 3
+fit3 <- MARSS(Stl_log, model = mod3, silent = TRUE, control = list(maxit = 1000, safe = TRUE))
+
+#------------------------------------------------------------------------------
+# MODEL 4: Correlated trends within groups
+#------------------------------------------------------------------------------
+# In this model, populations have individual trends but are correlated within groups
+# First, create a block-diagonal Q matrix structure
+Q_blocks <- list()
+for (g in unique_groups) {
+  # Find which populations are in this group
+  group_pops <- which(pop_groups == g)
+  n_in_group <- length(group_pops)
+  
+  # Create a matrix of 1s (will be converted to "unconstrained")
+  if (n_in_group > 1) {
+    Q_blocks[[g]] <- matrix("unconstrained", n_in_group, n_in_group)
+    diag(Q_blocks[[g]]) <- paste0("q", g) # Diagonal elements share the same parameter
+  } else if (n_in_group == 1) {
+    Q_blocks[[g]] <- matrix(paste0("q", g), 1, 1)
+  }
+}
+
+# Construct the block diagonal Q matrix
+Q_matrix <- MARSS:::build.block.diagonal(Q_blocks)
+
+mod4 <- list(
+  Z = "identity",           # Each population has its own trend
+  R = "diagonal and unequal", # Each population has its own observation variance
+  Q = Q_matrix,             # Block diagonal - correlated within groups
+  U = "unequal",            # Each population has its own mean growth rate
+  x0 = "unequal"            # Each population has its own initial state
+)
+
+# Parameter choice explanations:
+# Z = "identity":
+#   - Each population still has its own state
+#   - Unlike model 2, populations don't share states, but they are correlated
+# 
+# R = "diagonal and unequal":
+#   - Consistent with previous models
+# 
+# Q = Q_matrix:
+#   - Block diagonal structure where populations in the same group have correlated process errors
+#   - This allows for within-group correlation of environmental responses
+#   - Between-group processes remain independent
+#   - This directly tests if populations within the same group respond similarly to environmental variation
+# 
+# U = "unequal":
+#   - Each population maintains its own growth trend
+# 
+# x0 = "unequal":
+#   - Each population has its own initial state
+
+# Fit model 4 (this is more complex and might take longer)
+fit4 <- MARSS(Stl_log, model = mod4, silent = TRUE, control = list(maxit = 1000, safe = TRUE))
+
+#------------------------------------------------------------------------------
+# Compare all models
+#------------------------------------------------------------------------------
+# Use AIC to compare model fit
+model_table <- data.frame(
+  Model = c("Independent", "Shared Group Trends", "Single Trend", "Correlated Group Trends"),
+  AICc = c(fit1$AICc, fit2$AICc, fit3$AICc, fit4$AICc),
+  num_params = c(fit1$num.params, fit2$num.params, fit3$num.params, fit4$num.params),
+  logLik = c(fit1$logLik, fit2$logLik, fit3$logLik, fit4$logLik)
+)
+
+# Calculate delta AICc and weights
+model_table$delta_AICc <- model_table$AICc - min(model_table$AICc)
+model_table$AICc_weight <- exp(-0.5 * model_table$delta_AICc) / sum(exp(-0.5 * model_table$delta_AICc))
+
+# Sort by AICc
+model_table <- model_table[order(model_table$AICc), ]
+
+# Print the table
+print(model_table)
+
+# Plot the results for the best model
+best_model_idx <- which.min(c(fit1$AICc, fit2$AICc, fit3$AICc, fit4$AICc))
+best_fits <- list(fit1, fit2, fit3, fit4)[[best_model_idx]]
+
+# Plot the fitted values vs observed
+# We'll need to autoplot for this
+autoplot(best_fits, plot.type = "fitted.ytT")
+
+# If the group-based model (Model 2) is best, we can examine group-specific trends
+if (best_model_idx == 2) {
+  # Extract the estimated states (trends) for each group
+  states <- best_fits$states
+  state_CIs <- best_fits$states.se * 1.96 # For 95% CI
+  
+  # Create a data frame for plotting
+  states_df <- data.frame(
+    Year = as.numeric(colnames(Stl_log)),
+    t(states)
+  )
+  colnames(states_df)[-1] <- unique_groups
+  
+  # Plot the group trends
+  states_long <- pivot_longer(states_df, -Year, names_to = "Group", values_to = "Trend")
+  
+  ggplot(states_long, aes(x = Year, y = Trend, color = Group)) +
+    geom_line() +
+    theme_bw() +
+    labs(title = "Estimated population trends by ESA group",
+         x = "Year",
+         y = "Log Abundance")
+}
+
+# Examine the degree of correlation within vs between groups if Model 4 is best
+if (best_model_idx == 4) {
+  # Extract the Q matrix which contains the covariance structure
+  Q_est <- coef(best_fits, type = "matrix")$Q
+  
+  # Convert to correlation matrix
+  Q_sds <- sqrt(diag(Q_est))
+  Q_cor <- Q_est / (Q_sds %*% t(Q_sds))
+  
+  # Create a heatmap of the correlation matrix
+  Q_cor_df <- as.data.frame(Q_cor)
+  rownames(Q_cor_df) <- pop_names
+  
+  # Add group information for sorting
+  Q_cor_df$Group <- pop_groups
+  Q_cor_df <- Q_cor_df[order(Q_cor_df$Group), ]
+  Q_cor_df$Group <- NULL
+  
+  # Reorder the columns the same way
+  Q_cor_df <- Q_cor_df[, rownames(Q_cor_df)]
+  
+  # Plot the correlation heatmap
+  library(reshape2)
+  Q_cor_melt <- melt(as.matrix(Q_cor_df))
+  colnames(Q_cor_melt) <- c("Population1", "Population2", "Correlation")
+  
+  ggplot(Q_cor_melt, aes(x = Population1, y = Population2, fill = Correlation)) +
+    geom_tile() +
+    scale_fill_gradient2(low = "blue", high = "red", mid = "white", midpoint = 0) +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    labs(title = "Correlation structure between populations",
+         x = "", y = "")
+}
 
 ```
 

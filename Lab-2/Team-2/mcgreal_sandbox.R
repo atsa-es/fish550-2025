@@ -137,7 +137,8 @@ plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
        title='Spring Summer Chinook Abundance, Upper Columbia/Snake River') +
   geom_ribbon(aes(ymin=lb, ymax=ub, fill=state), alpha=0.35, linetype=0) +
   theme_classic() +
-  theme(legend.position="bottom")
+  theme(legend.position="bottom") + 
+  scale_x_discrete(breaks = c(1950, 1964, 1978, 1992, 2006, 2020))
 plot
 
 # working on z matrix -> major pop group
@@ -238,7 +239,8 @@ plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
        title='Spring Summer Chinook Abundance, Upper Columbia/Snake River') +
   geom_ribbon(aes(ymin=lb, ymax=ub, fill=state), alpha=0.35, linetype=0) +
   theme_classic() +
-  theme(legend.position="bottom")
+  theme(legend.position="bottom") +
+  scale_x_discrete(breaks = c(1950, 1964, 1978, 1992, 2006, 2020))
 plot
 
 ## QUESTION 2
@@ -334,5 +336,11 @@ plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
        title='Spring Summer Chinook Abundance, Upper Columbia/Snake River') +
   geom_ribbon(aes(ymin=lb, ymax=ub, fill=state), alpha=0.35, linetype=0) +
   theme_classic() +
-  theme(legend.position="bottom")
+  theme(legend.position="bottom") +
+  scale_x_discrete(breaks = c(1950, 1964, 1978, 1992, 2006, 2020))
 plot
+
+# check how much data is there per majorpopgroup?
+esu2$data_available <- ifelse(is.na(esu2$value), 0, 1)
+majpop_avaliable <- esu2[-c(1, 2, 4:10)]
+aggregate(data_available ~ majorpopgroup, majpop_avaliable, sum)

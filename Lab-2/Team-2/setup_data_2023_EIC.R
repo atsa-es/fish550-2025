@@ -64,6 +64,11 @@ ggplot(df, aes(x=spawningyear, y=log(value), color=majorpopgroup)) +
   facet_wrap(~esapopname)
 
 
+
+#### Start here
+setwd("C:/Users/Emma/Desktop/Research_Repos/fish550-2025/Lab-2/Data_Images")
+#Load in the esa.salmon.rda
+load("esa.salmon.rda")
 unique(esa.salmon$esu_dps)
 #Filter for just the "Salmon, Chinook (Snake River spring/summer-run ESU)"
 esa.salmon <- esa.salmon %>% filter(esu_dps == "Salmon, Chinook (Snake River spring/summer-run ESU)")
@@ -94,5 +99,13 @@ fit <- MARSS(data_matrix,
 state_estimates <- fit$states
 autoplot(fit, plot.type = "fitted.ytT")     # Observed vs fitted
 autoplot(fit, plot.type = "residuals") # Check model fit
+
+
+unique(esa.salmon$majorpopgroup)
+
+
+#Setting up the Z matrix for part 2 of the lab: Are the populations correlated?
+#H1: There is no correlation between the populations
+#H2: There is a correlation within the populations
 
 

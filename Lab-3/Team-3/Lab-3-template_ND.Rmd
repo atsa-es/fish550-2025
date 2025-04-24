@@ -34,6 +34,35 @@ all_dat <- lakeWAplanktonTrans
 ```
 
 ## Wrangle the data
+```{r}
+# Subset zooplankton data we will use
+## load the raw data (there are 3 datasets contained here)
+data(lakeWAplankton, package = "MARSS")
+all_dat <- lakeWAplanktonTrans
+unique(all_dat[,"Year"])
+yr_frst <- 1985
+yr_last <- 1994
+plank_dat <- all_dat[all_dat[, "Year"] >= yr_frst & 
+                       all_dat[, "Year"] <= yr_last,]
+
+## create vector of phytoplankton group names
+phytoplankton <- c("Cryptomonas", "Diatoms", "Greens", "Bluegreens",
+                   "Unicells", "Other.algae")
+zooplankton<- c("Conochilus", "Cyclops","Daphnia", "Diaptomus", "Epischura","Non.daphnid.cladocerans", "Non.colonial.rotifers")
+## get only the phytoplankton
+dat_phyto <- plank_dat[, phytoplankton]
+dat_zoo<-plank_dat[,zooplankton]
+
+par(mfrow=c(2,3))
+plot(dat_zoo[,1], type="l", main=zooplankton[1])
+plot(dat_zoo[,2], type="l", main=zooplankton[2])
+plot(dat_zoo[,3], type="l", main=zooplankton[3])
+plot(dat_zoo[,4], type="l", main=zooplankton[4])
+plot(dat_zoo[,5], type="l", main=zooplankton[5])
+plot(dat_zoo[,6], type="l", main=zooplankton[6])
+lines(dat_zoo[,7], type="l", col="red")
+
+```
 
 * You can choose any taxa to include in your analyses, but make sure there are at least 5 groups. You can mix phytoplankton and zooplankton, if you'd like, but justify any choices you make. 
 

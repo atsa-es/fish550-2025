@@ -1,20 +1,10 @@
 [
   {
-    "objectID": "index.html",
-    "href": "index.html",
-    "title": "Fish 550 Spring 2025",
-    "section": "",
-    "text": "Labs\n\nLab 1: Forecasting with ARIMA models\nLab 2: Interpolating with MARSS models\nLab 3: Dynamic Factor Analysis (DFA)\nLab 4: Hidden Markov Models\nLab 5: Dynamic Linear Models",
-    "crumbs": [
-      "<span class='chapter-number'>1</span>  <span class='chapter-title'>Labs</span>"
-    ]
-  },
-  {
     "objectID": "Lab-1/Lab1-ARIMA-2025.html",
     "href": "Lab-1/Lab1-ARIMA-2025.html",
     "title": "2  Lab 1 Forecasting with ARIMA and ETS models",
     "section": "",
-    "text": "Teams\nFor this lab you will use the material you have learned on ARMA and ETS models to explore features of time series of commercial landings of Chinook salmon in WA, CA, and OR. Then you will use these models to create forecasts and ask a research or forecasting question with those forecasts.\nYou will find this Rmd file in the Fish550-2025 repository. Clone the repository and then make sure you can Knit the Lab1-ARIMA-2025.Rmd file on your computer. Install any packages that it complains about.",
+    "text": "Teams",
     "crumbs": [
       "ARIMA models",
       "<span class='chapter-number'>2</span>  <span class='chapter-title'>Lab 1 Forecasting with ARIMA and ETS models</span>"
@@ -91,7 +81,7 @@
     "href": "Lab-2/Lab2-MARSS.html",
     "title": "3  Lab Intro",
     "section": "",
-    "text": "Teams\nFor this lab you will use multivariate auto-regressive state-space (MARSS) to analyze multivariate salmon data from the Columbia River. These data are noisy and gappy. They are estimates of total spawner abundance and might include hatchery spawners.",
+    "text": "Teams",
     "crumbs": [
       "MARSS Models",
       "<span class='chapter-number'>3</span>  <span class='chapter-title'>Lab Intro</span>"
@@ -212,7 +202,7 @@
     "href": "Lab-3/Lab-3-DFA.html",
     "title": "5  Lab Intro",
     "section": "",
-    "text": "Background\nFor this lab you will use dynamic factor analysis (DFA) to examine common temporal patterns in multivariate plankton data from Lake Washington. These data are a bit noisy and gappy, so you will need to make some choices about which species and time period(s) to examine.",
+    "text": "Background\nFor this lab you will use dynamic factor analysis (DFA) to examine common temporal patterns in plankton data from Lake Washington. These data are a bit noisy and gappy, so you will need to make some choices about which species and time period(s) to examine.",
     "crumbs": [
       "Dynamic Factor Analysis",
       "<span class='chapter-number'>5</span>  <span class='chapter-title'>Lab Intro</span>"
@@ -223,7 +213,7 @@
     "href": "Lab-3/Lab-3-DFA.html#teams",
     "title": "5  Lab Intro",
     "section": "Teams",
-    "text": "Teams",
+    "text": "Teams\nTeam 1: Anna, Mary, Emma\nTeam 2: Matheus, Brian, Tina\nTeam 3: Ben, Nicole, Lilac",
     "crumbs": [
       "Dynamic Factor Analysis",
       "<span class='chapter-number'>5</span>  <span class='chapter-title'>Lab Intro</span>"
@@ -235,6 +225,17 @@
     "title": "5  Lab Intro",
     "section": "Lake Washington data",
     "text": "Lake Washington data\nFor reference, here are the columns in the Lake Washington data set:\n\nIndices\n\nYear: year\n\nMonth: month as an integer\n\n\n\nEnvironmental data\n\nTemp: water temperature in degrees C\n\nTP: total phosphorous concentration in mg m-3\n\npH: pH.\n\n\n\nPhytoplankton\n\nCryptomonas: small brown or green algae (edible)\n\nDiatoms: small algae rich in silica (edible)\n\nGreens: general class of algae (edible)\n\nBluegreens: cyanobacteria that can fix nitrogen (inedible)\n\nUnicells: very small algae (edible)\n\nOther.algae: generic catch-all for atypical species (edible)\n\n\n\nZooplankton\n\nConochilus: colonial form of rotifer (grazer)\n\nCyclops: cyclopoid copepod (grazer)\n\nDaphnia: cladoceran (grazer)\n\nDiaptomus: calanoid copepod (grazer)\n\nEpischura: very large calanoid copepod (predator)\n\nLeptodora: very large cladoceran (predator)\n\nNeomysis: opossum shrimp (predator)\n\nNon.daphnid.cladocerans: catch-all for other cladocerans (grazers)\nNon.colonial.rotifers: free-floating rotifers (grazers)",
+    "crumbs": [
+      "Dynamic Factor Analysis",
+      "<span class='chapter-number'>5</span>  <span class='chapter-title'>Lab Intro</span>"
+    ]
+  },
+  {
+    "objectID": "Lab-3/Lab-3-DFA.html#tasks",
+    "href": "Lab-3/Lab-3-DFA.html#tasks",
+    "title": "5  Lab Intro",
+    "section": "Tasks",
+    "text": "Tasks\n\nPlot time series of densities for the different taxa and environmental covariates.\nSelect an appropriate time period of at least 5 years (60 months) and fit different forms of DFA models with and without covariates.\nEvaluate the model fits relative to the observed data for your best (or top 3) models.",
     "crumbs": [
       "Dynamic Factor Analysis",
       "<span class='chapter-number'>5</span>  <span class='chapter-title'>Lab Intro</span>"
@@ -304,6 +305,16 @@
     "crumbs": [
       "Dynamic Linear Models",
       "<span class='chapter-number'>7</span>  <span class='chapter-title'>Lab 5 - Dynamic Linear Models</span>"
+    ]
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Fish 550 Spring 2025",
+    "section": "",
+    "text": "Labs\n\nLab 1: Forecasting with ARIMA models\nLab 2: Interpolating with MARSS models\nLab 3: Dynamic Factor Analysis (DFA)\nLab 4: Hidden Markov Models\nLab 5: Dynamic Linear Models",
+    "crumbs": [
+      "<span class='chapter-number'>1</span>  <span class='chapter-title'>Labs</span>"
     ]
   }
 ]

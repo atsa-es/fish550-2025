@@ -2,6 +2,7 @@
 # First install devtools if you don't have it
 install.packages("devtools")
 library(devtools)
+library(atsalibrary)
 
 # Install from GitHub (replace with actual repo)
 install_github("nwfsc-cb/rCAX")
@@ -80,4 +81,18 @@ data_matrix <- esa.salmon %>%
 
 # Fill any missing values in the matrix (if any)
 data_matrix[is.na(data_matrix)] <- NA
+
+#Make all data in the matrix numeric
+data_matrix <- apply(data_matrix, 2, function(x) as.numeric(as.character(x)))
+
+#Fit the MARSS Model
+fit <- MARSS(data_matrix,
+             model = list(
+               R = "diagonal and equal",
+               A = "scaling"
+             ))
+state_estimates <- fit$states
+autoplot(fit, plot.type = "fitted.ytT")     # Observed vs fitted
+autoplot(fit, plot.type = "residuals") # Check model fit
+
 

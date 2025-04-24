@@ -112,6 +112,9 @@ decliningpop<-subset(cohoU, cohoU<0)
 #Salmon, coho (Oregon Coast ESU) Floras Creek/New River - fall
 #And Sixes River- fall are the only groups that are declining
 
+
+autoplot(obj, plot.type="fitted.ytT")
+autoplot(obj, plot.type="residuals")
 #So in general, this ESU group is experiencing slight increases from historical
 #abundances (average U=0.0359 when fitting biased random walk models to ts data). There is some variation
 #in population trends over time (see histogram above), but these models suggest the population has been 

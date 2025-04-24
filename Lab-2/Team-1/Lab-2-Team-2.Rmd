@@ -91,9 +91,8 @@ cohocolnames<-colnames(coho)
 
 3. Evaluate the evidence of cycling in the data. *We will talk about how to do this on the Tuesday after lab.*
 
-
 # Methods
-#### Question 1
+### Question 1
 To create estimates of spawner abundance, we fit an unbiased random walk model using the MARSS function to create estimates of the "states" or x values. For this first model, we assumed R and Q are diagonal and equal, and U is equal to zero, thus no bias term will be included in this estimate. Below is a plot of sub-populations with the state estimates and observed spawner abundances.
 ```{r, include=FALSE}
 #Part 1: Getting spawner abundance estiamtes
@@ -115,8 +114,10 @@ head(cohofit)
 
 ```{r, echo=FALSE}
 autoplot(obj, plot.type="fitted.ytT")
+autoplot(obj, plot.type="residuals")
 ```
-To estimate the population trends over time, we fit biased random walk models to each subpopulation's data. In one model, we assumed the U term is equal across all sub-populations. This model estimated U to be 0.0349, which indicates that the Oregon Coast coho ESU is generally stable and experiencing a slight increase from historical abundances. When we change this assumption of U being equal to U being unequal, the model estimated a population trend for each of the 26 sub-populations in the ESU. Below is a historgram of the distribution of U values for the sub-populations. There is some variation in the population trends among the sub-populations in this ESU, but the Floras Creek/New River and Sixes River fall spawners are the only groups that are experiencing a declining trend. Both of these models inidicate this ESU is stable, and spawner abundances have slightly increased from 1990 to 2023.
+To estimate the population trends over time, we fit biased random walk models to each subpopulation's data. In one model, we assumed the U term is equal across all sub-populations. This model estimated U to be 0.0349, which indicates that the Oregon Coast coho ESU is generally stable and experiencing a slight increase from historical abundances. When we change this assumption of U being equal to U being unequal, the model estimated a population trend for each of the 26 sub-populations in the ESU. 
+
 ``` {r, include=FALSE}
 ## Part 2: Estimates of decrease from historical abundance
 #Fit with biased random walk
@@ -147,11 +148,21 @@ mod.list<-list(
 coho.unequal<-MARSS(coho, mod.list)
 cohoU<-coef(coho.unequal, type="matrix")$U
 colnames(cohoU)<-c("U Estimate")
-```
-```{r, echo=FALSE}
 print(cohoU)
-hist(cohoU, main="Coho Population Trends", xlab="U coefficient")
 ```
+
+### Question 2
+
+
+### Question 3
+
+
+
+
+
+
+
+
 
 
 
@@ -166,8 +177,6 @@ Address the following in your methods
 * Write out your assumptions as different models **in matrix form**, fit each and then compare these with AIC or AICc.
 
 * Do your estimates differ depending on the assumptions you make about the structure of the data, i.e. you assumptions about the x's, Q, and U.
-
-### Tips
 
 **Assumptions**
 
@@ -186,10 +195,14 @@ autoplot(fit, plot.type="residuals")
 ```
 
 # Results
+### Estimating Population Trends
+
+Both of the models we fit to estimate population trends for the Oregon Coast ESU populations found they are relatively stable, and have experienced slight increases since 1990. Below is a histogram of the distribution of estimated population trends for each sub-population in this ESU. There is some variation in the population trends among the sub-populations in this ESU, but the Floras Creek/New River and Sixes River fall spawners are the only groups that are experiencing a declining trend.
+```{r, echo=FALSE}
+hist(cohoU, main="Coho Population Trends", xlab="U coefficient")
+```
 
 # Discussion
 
 # Description of each team member's contributions
-
-Example: "All team members helped decide on the goal and ran the analyses for the individual regions. Team members 2 & 3 wrote most of the code for the analysis of the regions. Team member 4 researched approaches for measuring accuracy of forecasts in [Hyndman & Athanasopoulos[OTexts.com/fpp2] and team member 2 added code for that to the methods. Team member 4 also researched tests for stationarity and worked with team member 2 to code that up. Team member 1 worked on the plotting section of the report using and adapting code that team member 3 wrote. All team members helped edit the report and wrote the discussion together."
 

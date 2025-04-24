@@ -179,7 +179,7 @@ load("Data_Images/esa-salmon.rda")
 
 Wrangle the data.
 ```{r}
-library(dplyr)
+library(tidyverse)
 esunum <- which(esu == "Steelhead (Upper Columbia River DPS)")
 esuname <- esu[esunum]
 

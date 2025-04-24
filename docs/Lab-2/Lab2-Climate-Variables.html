@@ -105,6 +105,35 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   }
 }</script>
 
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 </head>
 
@@ -255,6 +284,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#climate-indices" id="toc-climate-indices" class="nav-link active" data-scroll-target="#climate-indices">Climate Indices</a></li>
   <li><a href="#loading-data" id="toc-loading-data" class="nav-link" data-scroll-target="#loading-data">Loading data</a></li>
   <li><a href="#prepping-your-covariates-for-marss" id="toc-prepping-your-covariates-for-marss" class="nav-link" data-scroll-target="#prepping-your-covariates-for-marss">Prepping your covariates for <code>MARSS()</code></a></li>
+  <li><a href="#use-pdo-to-predict-steelhead-returns" id="toc-use-pdo-to-predict-steelhead-returns" class="nav-link" data-scroll-target="#use-pdo-to-predict-steelhead-returns">Use PDO to predict steelhead returns</a></li>
   <li><a href="#resources" id="toc-resources" class="nav-link" data-scroll-target="#resources">Resources</a></li>
   </ul>
 <div class="toc-actions"><ul><li><a href="https://github.com/atsa-es/fish550-2025/edit/main/Lab-2/Lab2-Climate-Variables.Rmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/atsa-es/fish550-2025/blob/main/Lab-2/Lab2-Climate-Variables.Rmd" class="toc-action"><i class="bi empty"></i>View source</a></li><li><a href="https://github.com/atsa-es/fish550-2025/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
@@ -417,8 +447,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># col 1 is year</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>years <span class="ot">&lt;-</span> <span class="fu">which</span>(pdo[,<span class="dv">1</span>] <span class="sc">%in%</span> <span class="dv">2000</span><span class="sc">:</span><span class="dv">2025</span>)</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>spring_pdo <span class="ot">&lt;-</span> <span class="fu">rowMeans</span>(pdo[years, <span class="dv">5</span><span class="sc">:</span><span class="dv">7</span>], <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>Cmat <span class="ot">&lt;-</span> <span class="fu">matrix</span>(spring_pdo, <span class="at">nrow=</span><span class="dv">1</span>)</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>Cmat</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>cmat <span class="ot">&lt;-</span> <span class="fu">matrix</span>(spring_pdo, <span class="at">nrow=</span><span class="dv">1</span>)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>cmat</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>           [,1]      [,2]      [,3] [,4]      [,5] [,6]       [,7]       [,8]
@@ -429,6 +459,198 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 [1,] 0.4466667 -0.6433333 0.09333333 -0.8666667  -1.9 -1.883333 -2.673333
          [,25] [,26]
 [1,] -2.746667   NaN</code></pre>
+</div>
+</div>
+<p>This is now <span class="math inline">\(\mathbf{c}_t\)</span> in <span class="math display">\[
+\mathbf{x}_t = \mathbf{x}_{t-1} + \mathbf{u} + \mathbf{C}\mathbf{c}_t + \mathbf{w}_t
+\]</span></p>
+</section>
+<section id="use-pdo-to-predict-steelhead-returns" class="level2">
+<h2 class="anchored" data-anchor-id="use-pdo-to-predict-steelhead-returns">Use PDO to predict steelhead returns</h2>
+<p>Idea is that pdo (<span class="math inline">\(p_t\)</span>) is correlated with the fluctuations in log spawner returns (<span class="math inline">\(x_t\)</span>).</p>
+<p><span class="math display">\[
+x_t = x_{t-1} + u + (\alpha p_t + w_t)
+\]</span> But we have 4 steelhead time series for this example. We can write this as: <span class="math display">\[
+\begin{bmatrix}x_{1,t}\\x_{2,t}\\x_{3,t}\\x_{4,t}\end{bmatrix}=
+\begin{bmatrix}x_{1,t-1}\\x_{2,t-1}\\x_{3,t-1}\\x_{4,t-1}\end{bmatrix} +
+\begin{bmatrix}u_1\\u_2\\u_3\\u_4\end{bmatrix}+
+\begin{bmatrix}\alpha_1\\\alpha_2\\\alpha_3\\\alpha_4\end{bmatrix} p_t +
+\begin{bmatrix}w_1\\w_2\\w_3\\w_4\end{bmatrix}
+\]</span></p>
+<p>What about the <span class="math inline">\(w_t\)</span>’s? How are they related? Let’s say they are independent with unequal variances (the <span class="math inline">\(x_t\)</span> are diagonal and unequal). What about our observations? Let’s say each <span class="math inline">\(y_t\)</span> measures one <span class="math inline">\(x_t\)</span> with independent and equal error (R is diagonal and equal). Let’s fit this model with MARSS.</p>
+<p>Wrangle the raw spawner data to get the <span class="math inline">\(x_t\)</span>.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">load</span>(<span class="st">"Data_Images/esa-salmon.rda"</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>esu <span class="ot">&lt;-</span> <span class="fu">unique</span>(esa.salmon<span class="sc">$</span>esu_dps)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>esunum <span class="ot">&lt;-</span> <span class="fu">which</span>(esu <span class="sc">==</span> <span class="st">"Steelhead (Upper Columbia River DPS)"</span>)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>esuname <span class="ot">&lt;-</span> esu[esunum]</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>dat <span class="ot">&lt;-</span> esa.salmon <span class="sc">%&gt;%</span> </span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">subset</span>(esu_dps <span class="sc">==</span> esuname) <span class="sc">%&gt;%</span> <span class="co"># get only this ESU</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">log.spawner =</span> <span class="fu">log</span>(value)) <span class="sc">%&gt;%</span> <span class="co"># create a column called log.spawner</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(esapopname, spawningyear, log.spawner) <span class="sc">%&gt;%</span> <span class="co"># get just the columns that I need</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> <span class="st">"esapopname"</span>, <span class="at">values_from =</span> <span class="st">"log.spawner"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">column_to_rownames</span>(<span class="at">var =</span> <span class="st">"spawningyear"</span>) <span class="sc">%&gt;%</span> <span class="co"># make the years rownames</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as.matrix</span>() <span class="sc">%&gt;%</span> <span class="co"># turn into a matrix with year down the rows</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">t</span>() <span class="co"># make time across the columns</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="co"># MARSS complains if I don't do this</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>dat[<span class="fu">is.na</span>(dat)] <span class="ot">&lt;-</span> <span class="cn">NA</span></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Clean up rownames</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>tmp <span class="ot">&lt;-</span> <span class="fu">rownames</span>(dat)</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>tmp <span class="ot">&lt;-</span> stringr<span class="sc">::</span><span class="fu">str_replace</span>(tmp, <span class="st">"Steelhead [(]Upper Columbia River DPS[)]"</span>, <span class="st">""</span>)</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>tmp <span class="ot">&lt;-</span> stringr<span class="sc">::</span><span class="fu">str_replace</span>(tmp, <span class="st">"River - summer"</span>, <span class="st">""</span>)</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>tmp <span class="ot">&lt;-</span> stringr<span class="sc">::</span><span class="fu">str_trim</span>(tmp)</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a><span class="fu">rownames</span>(dat) <span class="ot">&lt;-</span> tmp</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>Get the PDO for the years in our data:</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># col 1 is year</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>years <span class="ot">&lt;-</span> <span class="fu">which</span>(pdo[,<span class="dv">1</span>] <span class="sc">%in%</span> <span class="fu">colnames</span>(dat))</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>spring_pdo <span class="ot">&lt;-</span> <span class="fu">rowMeans</span>(pdo[years, <span class="dv">5</span><span class="sc">:</span><span class="dv">7</span>], <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>cmat <span class="ot">&lt;-</span> <span class="fu">matrix</span>(spring_pdo, <span class="at">nrow=</span><span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>Check that <code>cmat</code> and <code>dat</code> have the same number of columns.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(cmat)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1]  1 63</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(dat)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1]  4 63</code></pre>
+</div>
+</div>
+<p>Specify a model</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># pdo</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>mod.list1 <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">U =</span> <span class="st">"unequal"</span>,</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">R =</span> <span class="st">"diagonal and equal"</span>,</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">Q =</span> <span class="st">"diagonal and unequal"</span>,</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">c =</span> cmat,</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">C =</span> <span class="st">"unequal"</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a><span class="co"># no pdo</span></span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>mod.list2 <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">U =</span> <span class="st">"unequal"</span>,</span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">R =</span> <span class="st">"diagonal and equal"</span>,</span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">Q =</span> <span class="st">"diagonal and unequal"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(MARSS)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'MARSS' was built under R version 4.4.3</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>fit1 <span class="ot">&lt;-</span> <span class="fu">MARSS</span>(dat, <span class="at">model=</span>mod.list1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Success! abstol and log-log tests passed at 229 iterations.
+Alert: conv.test.slope.tol is 0.5.
+Test with smaller values (&lt;0.1) to ensure convergence.
+
+MARSS fit is
+Estimation method: kem 
+Convergence test: conv.test.slope.tol = 0.5, abstol = 0.001
+Estimation converged in 229 iterations. 
+Log-likelihood: -152.4383 
+AIC: 338.8765   AICc: 343.0398   
+ 
+                            Estimate
+R.diag                        0.1005
+U.X.Entiat                   -0.0144
+U.X.Methow                   -0.0122
+U.X.Okanogan                 -0.0462
+U.X.Wenatchee                -0.0140
+Q.(X.Entiat,X.Entiat)         0.1178
+Q.(X.Methow,X.Methow)         0.1200
+Q.(X.Okanogan,X.Okanogan)     0.1045
+Q.(X.Wenatchee,X.Wenatchee)   0.3614
+x0.X.Entiat                   5.1194
+x0.X.Methow                   6.9854
+x0.X.Okanogan                 7.0155
+x0.X.Wenatchee                8.1083
+C.X.Entiat                   -0.0789
+C.X.Methow                   -0.0516
+C.X.Okanogan                 -0.0973
+C.X.Wenatchee                 0.0377
+Initial states (x0) defined at t=0
+
+Standard errors have not been calculated. 
+Use MARSSparamCIs to compute CIs and bias estimates.</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>fit2 <span class="ot">&lt;-</span> <span class="fu">MARSS</span>(dat, <span class="at">model=</span>mod.list2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Success! abstol and log-log tests passed at 304 iterations.
+Alert: conv.test.slope.tol is 0.5.
+Test with smaller values (&lt;0.1) to ensure convergence.
+
+MARSS fit is
+Estimation method: kem 
+Convergence test: conv.test.slope.tol = 0.5, abstol = 0.001
+Estimation converged in 304 iterations. 
+Log-likelihood: -154.5953 
+AIC: 335.1906   AICc: 337.6012   
+ 
+                            Estimate
+R.diag                       0.08492
+U.X.Entiat                   0.00213
+U.X.Methow                  -0.00557
+U.X.Okanogan                -0.00920
+U.X.Wenatchee               -0.02427
+Q.(X.Entiat,X.Entiat)        0.14095
+Q.(X.Methow,X.Methow)        0.14800
+Q.(X.Okanogan,X.Okanogan)    0.14483
+Q.(X.Wenatchee,X.Wenatchee)  0.38490
+x0.X.Entiat                  5.57099
+x0.X.Methow                  7.40887
+x0.X.Okanogan                7.10616
+x0.X.Wenatchee               8.06274
+Initial states (x0) defined at t=0
+
+Standard errors have not been calculated. 
+Use MARSSparamCIs to compute CIs and bias estimates.</code></pre>
+</div>
+</div>
+<p>Which one fits better based on AIC? The model without PDO is better (lower AICc).</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>fit1<span class="sc">$</span>AICc</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 343.0398</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>fit2<span class="sc">$</span>AICc</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 337.6012</code></pre>
 </div>
 </div>
 </section>
@@ -927,80 +1149,173 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
       </a>
   </div>
 </nav><div class="modal fade" id="quarto-embedded-source-code-modal" tabindex="-1" aria-labelledby="quarto-embedded-source-code-modal-label" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="quarto-embedded-source-code-modal-label">Source Code</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="">
-<div class="sourceCode" id="cb5" data-shortcodes="false"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="an">title:</span><span class="co"> Climate Variables</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="an">author:</span><span class="co"> "E Holmes"</span></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="an">date:</span><span class="co"> "April 22, 2025"</span></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="an">output:</span></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="co">  html_document:</span></span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="co">    code-folding: yes</span></span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="co">    toc: yes</span></span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="co">    toc_float: yes</span></span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="co">  pdf_document:</span></span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="co">    toc: yes</span></span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="in">```{r message=FALSE}</span></span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="in">library(tidyverse)</span></span>
-<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="in">options(dplyr.summarise.inform = FALSE)</span></span>
-<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a><span class="fu">## Climate Indices</span></span>
-<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>See also <span class="ot">&lt;https://psl.noaa.gov/data/atmoswrit/corr/timeseries/&gt;</span></span>
-<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>| Index                            | Region                            | Influences                                         | Notes                                                                 | Data Source |</span>
-<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>|----------------------------------|------------------------------------|----------------------------------------------------|-----------------------------------------------------------------------|-------------|</span>
-<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>| **PDO** (Pacific Decadal Osc.)  | North Pacific                      | Ocean temps, productivity, stratification          | Warm phase → poor survival in Alaska, good in CA (and vice versa)    | <span class="co">[</span><span class="ot">PDO CSV</span><span class="co">](https://www.ncei.noaa.gov/pub/data/cmb/ersst/v5/index/ersst.v5.pdo.dat)</span> |</span>
-<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>| **ONI** (Oceanic Niño Index) | Equatorial Pacific (global effects) | Upwelling, SST, marine food web                    | El Niño often harmful for juvenile salmon on West Coast              | <span class="co">[</span><span class="ot">ONI TXT</span><span class="co">](https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt)</span> |</span>
-<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>| **NPGO** (<span class="co">[</span><span class="ot">North Pacific Gyre Osc</span><span class="co">](https://www.o3d.org/npgo/)</span>) | North Pacific                    | Salinity, nutrient flux, productivity              | Positively correlated with salmon survival (esp. CA Current)         | <span class="co">[</span><span class="ot">NPGO TXT</span><span class="co">](https://www.o3d.org/npgo/data/NPGO.txt)</span> |</span>
-<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>| Cold Pool Index | Bering Sea shelf  | Bottom temperature, habitat compression            | Cold pool extent influences migration, prey availability, and predation | <span class="co">[</span><span class="ot">coldpool r package</span><span class="co">](https://github.com/afsc-gap-products/coldpool)</span> |</span>
-<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>| **NEP SST** (NE Pacific SST)     | Coastal Alaska, BC, WA, OR, CA     | Marine heatwaves, thermal stress | associated with reduced survival  |  |</span>
-<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>| **Upwelling Index** (Bakun)      | California/Oregon coast            | Nutrient delivery, primary productivity            | Drives ocean growth conditions for smolts                            | <span class="co">[</span><span class="ot">NOAA Upwelling</span><span class="co">](https://mjacox.com/upwelling-indices/)</span> |</span>
-<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>| **PNA** (Pacific-North American) | North America/western U.S.         | Winter temps, river flow, snowpack                 | Influences freshwater survival, stream temperatures <span class="co">[</span><span class="ot">info</span><span class="co">](https://www.climate.gov/news-features/understanding-climate/climate-variability-pacific-north-american-pattern)</span>               | <span class="co">[</span><span class="ot">PNA TXT</span><span class="co">](https://www.ncei.noaa.gov/access/monitoring/pna/)</span> |</span>
-<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>| **MEI / MEIv2** (Multivariate ENSO Index) | ENSO-linked               | Broad atmospheric/ocean composite                  | More integrated than ONI; includes wind, pressure, SST               | <span class="co">[</span><span class="ot">MEIv2 TXT</span><span class="co">](https://psl.noaa.gov/enso/mei/)</span> |</span>
-<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>| West Coast Stream Flow |   |    |    | <span class="co">[</span><span class="ot">Daily West Coast Stream Flow</span><span class="co">](https://noaa-nwfsc.github.io/Streamflow-Means-NWM/)</span> |</span>
-<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a><span class="fu">## Loading data</span></span>
-<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a>This can be painful. Share your code in the class repo so others can use your work! <span class="co">[</span><span class="ot">Post here</span><span class="co">](https://github.com/atsa-es/fish550-2025/discussions/4)</span></span>
-<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb5-43"><a href="#cb5-43" aria-hidden="true" tabindex="-1"></a>pdo_url <span class="ot">&lt;-</span> <span class="st">"https://www.ncei.noaa.gov/pub/data/cmb/ersst/v5/index/ersst.v5.pdo.dat"</span></span>
-<span id="cb5-44"><a href="#cb5-44" aria-hidden="true" tabindex="-1"></a>pdo <span class="ot">&lt;-</span> <span class="fu">read.table</span>(pdo_url, <span class="at">skip =</span> <span class="dv">2</span>, <span class="at">header =</span> <span class="cn">FALSE</span>, <span class="at">check.names =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb5-45"><a href="#cb5-45" aria-hidden="true" tabindex="-1"></a>pdo[pdo<span class="sc">==</span><span class="fl">99.99</span>] <span class="ot">&lt;-</span> <span class="cn">NA</span></span>
-<span id="cb5-46"><a href="#cb5-46" aria-hidden="true" tabindex="-1"></a>pdo_vec <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(<span class="fu">t</span>(pdo[, <span class="dv">2</span><span class="sc">:</span><span class="dv">13</span>]))</span>
-<span id="cb5-47"><a href="#cb5-47" aria-hidden="true" tabindex="-1"></a>pdots <span class="ot">&lt;-</span> <span class="fu">ts</span>(pdo_vec, <span class="at">freq=</span><span class="dv">12</span>, <span class="at">start=</span><span class="fu">c</span>(<span class="dv">1854</span>, <span class="dv">1</span>))</span>
-<span id="cb5-48"><a href="#cb5-48" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(pdots)</span>
-<span id="cb5-49"><a href="#cb5-49" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb5-50"><a href="#cb5-50" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-51"><a href="#cb5-51" aria-hidden="true" tabindex="-1"></a><span class="fu">## Prepping your covariates for `MARSS()`</span></span>
-<span id="cb5-52"><a href="#cb5-52" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-53"><a href="#cb5-53" aria-hidden="true" tabindex="-1"></a>You need a matrix:</span>
-<span id="cb5-54"><a href="#cb5-54" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-55"><a href="#cb5-55" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>Columns = time and number of columns must match your data</span>
-<span id="cb5-56"><a href="#cb5-56" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>Rows = 1 row for each covariate</span>
-<span id="cb5-57"><a href="#cb5-57" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-58"><a href="#cb5-58" aria-hidden="true" tabindex="-1"></a>**Example for PDO**</span>
-<span id="cb5-59"><a href="#cb5-59" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-60"><a href="#cb5-60" aria-hidden="true" tabindex="-1"></a>Let's say we want to use the April-June average PDO.</span>
-<span id="cb5-61"><a href="#cb5-61" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-64"><a href="#cb5-64" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb5-65"><a href="#cb5-65" aria-hidden="true" tabindex="-1"></a><span class="co"># col 1 is year</span></span>
-<span id="cb5-66"><a href="#cb5-66" aria-hidden="true" tabindex="-1"></a>years <span class="ot">&lt;-</span> <span class="fu">which</span>(pdo[,<span class="dv">1</span>] <span class="sc">%in%</span> <span class="dv">2000</span><span class="sc">:</span><span class="dv">2025</span>)</span>
-<span id="cb5-67"><a href="#cb5-67" aria-hidden="true" tabindex="-1"></a>spring_pdo <span class="ot">&lt;-</span> <span class="fu">rowMeans</span>(pdo[years, <span class="dv">5</span><span class="sc">:</span><span class="dv">7</span>], <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb5-68"><a href="#cb5-68" aria-hidden="true" tabindex="-1"></a>Cmat <span class="ot">&lt;-</span> <span class="fu">matrix</span>(spring_pdo, <span class="at">nrow=</span><span class="dv">1</span>)</span>
-<span id="cb5-69"><a href="#cb5-69" aria-hidden="true" tabindex="-1"></a>Cmat</span>
-<span id="cb5-70"><a href="#cb5-70" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb5-71"><a href="#cb5-71" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-72"><a href="#cb5-72" aria-hidden="true" tabindex="-1"></a><span class="fu">## Resources</span></span>
-<span id="cb5-73"><a href="#cb5-73" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-74"><a href="#cb5-74" aria-hidden="true" tabindex="-1"></a>Chapter 7 MARSS models. ATSA Lab Book. <span class="ot">&lt;https://atsa-es.github.io/atsa-labs/chap-mss.html&gt;</span></span>
-<span id="cb5-75"><a href="#cb5-75" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-76"><a href="#cb5-76" aria-hidden="true" tabindex="-1"></a>Chapter 8 MARSS models with covariates. ATSA Lab Book. <span class="ot">&lt;https://atsa-es.github.io/atsa-labs/chap-msscov.html&gt;</span></span>
-<span id="cb5-77"><a href="#cb5-77" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-78"><a href="#cb5-78" aria-hidden="true" tabindex="-1"></a>Chapter 16 Modeling cyclic sockeye <span class="ot">&lt;https://atsa-es.github.io/atsa-labs/chap-cyclic-sockeye.html&gt;</span></span>
+<div class="sourceCode" id="cb22" data-shortcodes="false"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="an">title:</span><span class="co"> Climate Variables</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="an">author:</span><span class="co"> "E Holmes"</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a><span class="an">date:</span><span class="co"> "April 22, 2025"</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="an">output:</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a><span class="co">  html_document:</span></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a><span class="co">    code-folding: yes</span></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a><span class="co">    toc: yes</span></span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a><span class="co">    toc_float: yes</span></span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a><span class="co">  pdf_document:</span></span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a><span class="co">    toc: yes</span></span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a><span class="in">```{r message=FALSE}</span></span>
+<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a><span class="in">library(tidyverse)</span></span>
+<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a><span class="in">options(dplyr.summarise.inform = FALSE)</span></span>
+<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb22-18"><a href="#cb22-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-19"><a href="#cb22-19" aria-hidden="true" tabindex="-1"></a><span class="fu">## Climate Indices</span></span>
+<span id="cb22-20"><a href="#cb22-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-21"><a href="#cb22-21" aria-hidden="true" tabindex="-1"></a>See also <span class="ot">&lt;https://psl.noaa.gov/data/atmoswrit/corr/timeseries/&gt;</span></span>
+<span id="cb22-22"><a href="#cb22-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-23"><a href="#cb22-23" aria-hidden="true" tabindex="-1"></a>| Index                            | Region                            | Influences                                         | Notes                                                                 | Data Source |</span>
+<span id="cb22-24"><a href="#cb22-24" aria-hidden="true" tabindex="-1"></a>|----------------------------------|------------------------------------|----------------------------------------------------|-----------------------------------------------------------------------|-------------|</span>
+<span id="cb22-25"><a href="#cb22-25" aria-hidden="true" tabindex="-1"></a>| **PDO** (Pacific Decadal Osc.)  | North Pacific                      | Ocean temps, productivity, stratification          | Warm phase → poor survival in Alaska, good in CA (and vice versa)    | <span class="co">[</span><span class="ot">PDO CSV</span><span class="co">](https://www.ncei.noaa.gov/pub/data/cmb/ersst/v5/index/ersst.v5.pdo.dat)</span> |</span>
+<span id="cb22-26"><a href="#cb22-26" aria-hidden="true" tabindex="-1"></a>| **ONI** (Oceanic Niño Index) | Equatorial Pacific (global effects) | Upwelling, SST, marine food web                    | El Niño often harmful for juvenile salmon on West Coast              | <span class="co">[</span><span class="ot">ONI TXT</span><span class="co">](https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt)</span> |</span>
+<span id="cb22-27"><a href="#cb22-27" aria-hidden="true" tabindex="-1"></a>| **NPGO** (<span class="co">[</span><span class="ot">North Pacific Gyre Osc</span><span class="co">](https://www.o3d.org/npgo/)</span>) | North Pacific                    | Salinity, nutrient flux, productivity              | Positively correlated with salmon survival (esp. CA Current)         | <span class="co">[</span><span class="ot">NPGO TXT</span><span class="co">](https://www.o3d.org/npgo/data/NPGO.txt)</span> |</span>
+<span id="cb22-28"><a href="#cb22-28" aria-hidden="true" tabindex="-1"></a>| Cold Pool Index | Bering Sea shelf  | Bottom temperature, habitat compression            | Cold pool extent influences migration, prey availability, and predation | <span class="co">[</span><span class="ot">coldpool r package</span><span class="co">](https://github.com/afsc-gap-products/coldpool)</span> |</span>
+<span id="cb22-29"><a href="#cb22-29" aria-hidden="true" tabindex="-1"></a>| **NEP SST** (NE Pacific SST)     | Coastal Alaska, BC, WA, OR, CA     | Marine heatwaves, thermal stress | associated with reduced survival  |  |</span>
+<span id="cb22-30"><a href="#cb22-30" aria-hidden="true" tabindex="-1"></a>| **Upwelling Index** (Bakun)      | California/Oregon coast            | Nutrient delivery, primary productivity            | Drives ocean growth conditions for smolts                            | <span class="co">[</span><span class="ot">NOAA Upwelling</span><span class="co">](https://mjacox.com/upwelling-indices/)</span> |</span>
+<span id="cb22-31"><a href="#cb22-31" aria-hidden="true" tabindex="-1"></a>| **PNA** (Pacific-North American) | North America/western U.S.         | Winter temps, river flow, snowpack                 | Influences freshwater survival, stream temperatures <span class="co">[</span><span class="ot">info</span><span class="co">](https://www.climate.gov/news-features/understanding-climate/climate-variability-pacific-north-american-pattern)</span>               | <span class="co">[</span><span class="ot">PNA TXT</span><span class="co">](https://www.ncei.noaa.gov/access/monitoring/pna/)</span> |</span>
+<span id="cb22-32"><a href="#cb22-32" aria-hidden="true" tabindex="-1"></a>| **MEI / MEIv2** (Multivariate ENSO Index) | ENSO-linked               | Broad atmospheric/ocean composite                  | More integrated than ONI; includes wind, pressure, SST               | <span class="co">[</span><span class="ot">MEIv2 TXT</span><span class="co">](https://psl.noaa.gov/enso/mei/)</span> |</span>
+<span id="cb22-33"><a href="#cb22-33" aria-hidden="true" tabindex="-1"></a>| West Coast Stream Flow |   |    |    | <span class="co">[</span><span class="ot">Daily West Coast Stream Flow</span><span class="co">](https://noaa-nwfsc.github.io/Streamflow-Means-NWM/)</span> |</span>
+<span id="cb22-34"><a href="#cb22-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-35"><a href="#cb22-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-36"><a href="#cb22-36" aria-hidden="true" tabindex="-1"></a><span class="fu">## Loading data</span></span>
+<span id="cb22-37"><a href="#cb22-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-38"><a href="#cb22-38" aria-hidden="true" tabindex="-1"></a>This can be painful. Share your code in the class repo so others can use your work! <span class="co">[</span><span class="ot">Post here</span><span class="co">](https://github.com/atsa-es/fish550-2025/discussions/4)</span></span>
+<span id="cb22-39"><a href="#cb22-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-42"><a href="#cb22-42" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb22-43"><a href="#cb22-43" aria-hidden="true" tabindex="-1"></a>pdo_url <span class="ot">&lt;-</span> <span class="st">"https://www.ncei.noaa.gov/pub/data/cmb/ersst/v5/index/ersst.v5.pdo.dat"</span></span>
+<span id="cb22-44"><a href="#cb22-44" aria-hidden="true" tabindex="-1"></a>pdo <span class="ot">&lt;-</span> <span class="fu">read.table</span>(pdo_url, <span class="at">skip =</span> <span class="dv">2</span>, <span class="at">header =</span> <span class="cn">FALSE</span>, <span class="at">check.names =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb22-45"><a href="#cb22-45" aria-hidden="true" tabindex="-1"></a>pdo[pdo<span class="sc">==</span><span class="fl">99.99</span>] <span class="ot">&lt;-</span> <span class="cn">NA</span></span>
+<span id="cb22-46"><a href="#cb22-46" aria-hidden="true" tabindex="-1"></a>pdo_vec <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(<span class="fu">t</span>(pdo[, <span class="dv">2</span><span class="sc">:</span><span class="dv">13</span>]))</span>
+<span id="cb22-47"><a href="#cb22-47" aria-hidden="true" tabindex="-1"></a>pdots <span class="ot">&lt;-</span> <span class="fu">ts</span>(pdo_vec, <span class="at">freq=</span><span class="dv">12</span>, <span class="at">start=</span><span class="fu">c</span>(<span class="dv">1854</span>, <span class="dv">1</span>))</span>
+<span id="cb22-48"><a href="#cb22-48" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(pdots)</span>
+<span id="cb22-49"><a href="#cb22-49" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb22-50"><a href="#cb22-50" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-51"><a href="#cb22-51" aria-hidden="true" tabindex="-1"></a><span class="fu">## Prepping your covariates for `MARSS()`</span></span>
+<span id="cb22-52"><a href="#cb22-52" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-53"><a href="#cb22-53" aria-hidden="true" tabindex="-1"></a>You need a matrix:</span>
+<span id="cb22-54"><a href="#cb22-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-55"><a href="#cb22-55" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>Columns = time and number of columns must match your data</span>
+<span id="cb22-56"><a href="#cb22-56" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>Rows = 1 row for each covariate</span>
+<span id="cb22-57"><a href="#cb22-57" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-58"><a href="#cb22-58" aria-hidden="true" tabindex="-1"></a>**Example for PDO**</span>
+<span id="cb22-59"><a href="#cb22-59" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-60"><a href="#cb22-60" aria-hidden="true" tabindex="-1"></a>Let's say we want to use the April-June average PDO. </span>
+<span id="cb22-61"><a href="#cb22-61" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-64"><a href="#cb22-64" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb22-65"><a href="#cb22-65" aria-hidden="true" tabindex="-1"></a><span class="co"># col 1 is year</span></span>
+<span id="cb22-66"><a href="#cb22-66" aria-hidden="true" tabindex="-1"></a>years <span class="ot">&lt;-</span> <span class="fu">which</span>(pdo[,<span class="dv">1</span>] <span class="sc">%in%</span> <span class="dv">2000</span><span class="sc">:</span><span class="dv">2025</span>)</span>
+<span id="cb22-67"><a href="#cb22-67" aria-hidden="true" tabindex="-1"></a>spring_pdo <span class="ot">&lt;-</span> <span class="fu">rowMeans</span>(pdo[years, <span class="dv">5</span><span class="sc">:</span><span class="dv">7</span>], <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb22-68"><a href="#cb22-68" aria-hidden="true" tabindex="-1"></a>cmat <span class="ot">&lt;-</span> <span class="fu">matrix</span>(spring_pdo, <span class="at">nrow=</span><span class="dv">1</span>)</span>
+<span id="cb22-69"><a href="#cb22-69" aria-hidden="true" tabindex="-1"></a>cmat</span>
+<span id="cb22-70"><a href="#cb22-70" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb22-71"><a href="#cb22-71" aria-hidden="true" tabindex="-1"></a>This is now $\mathbf{c}_t$ in </span>
+<span id="cb22-72"><a href="#cb22-72" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb22-73"><a href="#cb22-73" aria-hidden="true" tabindex="-1"></a>\mathbf{x}_t = \mathbf{x}_{t-1} + \mathbf{u} + \mathbf{C}\mathbf{c}_t + \mathbf{w}_t</span>
+<span id="cb22-74"><a href="#cb22-74" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb22-75"><a href="#cb22-75" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-76"><a href="#cb22-76" aria-hidden="true" tabindex="-1"></a><span class="fu">## Use PDO to predict steelhead returns</span></span>
+<span id="cb22-77"><a href="#cb22-77" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-78"><a href="#cb22-78" aria-hidden="true" tabindex="-1"></a>Idea is that pdo ($p_t$) is correlated with the fluctuations in log spawner returns ($x_t$).</span>
+<span id="cb22-79"><a href="#cb22-79" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-80"><a href="#cb22-80" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb22-81"><a href="#cb22-81" aria-hidden="true" tabindex="-1"></a>x_t = x_{t-1} + u + (\alpha p_t + w_t)</span>
+<span id="cb22-82"><a href="#cb22-82" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb22-83"><a href="#cb22-83" aria-hidden="true" tabindex="-1"></a>But we have 4 steelhead time series for this example. We can write this as:</span>
+<span id="cb22-84"><a href="#cb22-84" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb22-85"><a href="#cb22-85" aria-hidden="true" tabindex="-1"></a>\begin{bmatrix}x_{1,t}<span class="sc">\\</span>x_{2,t}<span class="sc">\\</span>x_{3,t}<span class="sc">\\</span>x_{4,t}\end{bmatrix}=</span>
+<span id="cb22-86"><a href="#cb22-86" aria-hidden="true" tabindex="-1"></a>\begin{bmatrix}x_{1,t-1}<span class="sc">\\</span>x_{2,t-1}<span class="sc">\\</span>x_{3,t-1}<span class="sc">\\</span>x_{4,t-1}\end{bmatrix} + </span>
+<span id="cb22-87"><a href="#cb22-87" aria-hidden="true" tabindex="-1"></a>\begin{bmatrix}u_1<span class="sc">\\</span>u_2<span class="sc">\\</span>u_3<span class="sc">\\</span>u_4\end{bmatrix}+ </span>
+<span id="cb22-88"><a href="#cb22-88" aria-hidden="true" tabindex="-1"></a>\begin{bmatrix}\alpha_1<span class="sc">\\</span>\alpha_2<span class="sc">\\</span>\alpha_3<span class="sc">\\</span>\alpha_4\end{bmatrix} p_t +</span>
+<span id="cb22-89"><a href="#cb22-89" aria-hidden="true" tabindex="-1"></a>\begin{bmatrix}w_1<span class="sc">\\</span>w_2<span class="sc">\\</span>w_3<span class="sc">\\</span>w_4\end{bmatrix}</span>
+<span id="cb22-90"><a href="#cb22-90" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb22-91"><a href="#cb22-91" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-92"><a href="#cb22-92" aria-hidden="true" tabindex="-1"></a>What about the $w_t$'s? How are they related? Let's say they are independent with unequal variances (the $x_t$ are diagonal and unequal). What about our observations? Let's say each $y_t$ measures one $x_t$ with independent and equal error (R is diagonal and equal). Let's fit this model with MARSS.</span>
+<span id="cb22-93"><a href="#cb22-93" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-94"><a href="#cb22-94" aria-hidden="true" tabindex="-1"></a>Wrangle the raw spawner data to get the $x_t$.</span>
+<span id="cb22-97"><a href="#cb22-97" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb22-98"><a href="#cb22-98" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb22-99"><a href="#cb22-99" aria-hidden="true" tabindex="-1"></a><span class="fu">load</span>(<span class="st">"Data_Images/esa-salmon.rda"</span>)</span>
+<span id="cb22-100"><a href="#cb22-100" aria-hidden="true" tabindex="-1"></a>esu <span class="ot">&lt;-</span> <span class="fu">unique</span>(esa.salmon<span class="sc">$</span>esu_dps)</span>
+<span id="cb22-101"><a href="#cb22-101" aria-hidden="true" tabindex="-1"></a>esunum <span class="ot">&lt;-</span> <span class="fu">which</span>(esu <span class="sc">==</span> <span class="st">"Steelhead (Upper Columbia River DPS)"</span>)</span>
+<span id="cb22-102"><a href="#cb22-102" aria-hidden="true" tabindex="-1"></a>esuname <span class="ot">&lt;-</span> esu[esunum]</span>
+<span id="cb22-103"><a href="#cb22-103" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-104"><a href="#cb22-104" aria-hidden="true" tabindex="-1"></a>dat <span class="ot">&lt;-</span> esa.salmon <span class="sc">%&gt;%</span> </span>
+<span id="cb22-105"><a href="#cb22-105" aria-hidden="true" tabindex="-1"></a>  <span class="fu">subset</span>(esu_dps <span class="sc">==</span> esuname) <span class="sc">%&gt;%</span> <span class="co"># get only this ESU</span></span>
+<span id="cb22-106"><a href="#cb22-106" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">log.spawner =</span> <span class="fu">log</span>(value)) <span class="sc">%&gt;%</span> <span class="co"># create a column called log.spawner</span></span>
+<span id="cb22-107"><a href="#cb22-107" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(esapopname, spawningyear, log.spawner) <span class="sc">%&gt;%</span> <span class="co"># get just the columns that I need</span></span>
+<span id="cb22-108"><a href="#cb22-108" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> <span class="st">"esapopname"</span>, <span class="at">values_from =</span> <span class="st">"log.spawner"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb22-109"><a href="#cb22-109" aria-hidden="true" tabindex="-1"></a>  <span class="fu">column_to_rownames</span>(<span class="at">var =</span> <span class="st">"spawningyear"</span>) <span class="sc">%&gt;%</span> <span class="co"># make the years rownames</span></span>
+<span id="cb22-110"><a href="#cb22-110" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as.matrix</span>() <span class="sc">%&gt;%</span> <span class="co"># turn into a matrix with year down the rows</span></span>
+<span id="cb22-111"><a href="#cb22-111" aria-hidden="true" tabindex="-1"></a>  <span class="fu">t</span>() <span class="co"># make time across the columns</span></span>
+<span id="cb22-112"><a href="#cb22-112" aria-hidden="true" tabindex="-1"></a><span class="co"># MARSS complains if I don't do this</span></span>
+<span id="cb22-113"><a href="#cb22-113" aria-hidden="true" tabindex="-1"></a>dat[<span class="fu">is.na</span>(dat)] <span class="ot">&lt;-</span> <span class="cn">NA</span></span>
+<span id="cb22-114"><a href="#cb22-114" aria-hidden="true" tabindex="-1"></a><span class="co"># Clean up rownames</span></span>
+<span id="cb22-115"><a href="#cb22-115" aria-hidden="true" tabindex="-1"></a>tmp <span class="ot">&lt;-</span> <span class="fu">rownames</span>(dat)</span>
+<span id="cb22-116"><a href="#cb22-116" aria-hidden="true" tabindex="-1"></a>tmp <span class="ot">&lt;-</span> stringr<span class="sc">::</span><span class="fu">str_replace</span>(tmp, <span class="st">"Steelhead [(]Upper Columbia River DPS[)]"</span>, <span class="st">""</span>)</span>
+<span id="cb22-117"><a href="#cb22-117" aria-hidden="true" tabindex="-1"></a>tmp <span class="ot">&lt;-</span> stringr<span class="sc">::</span><span class="fu">str_replace</span>(tmp, <span class="st">"River - summer"</span>, <span class="st">""</span>)</span>
+<span id="cb22-118"><a href="#cb22-118" aria-hidden="true" tabindex="-1"></a>tmp <span class="ot">&lt;-</span> stringr<span class="sc">::</span><span class="fu">str_trim</span>(tmp)</span>
+<span id="cb22-119"><a href="#cb22-119" aria-hidden="true" tabindex="-1"></a><span class="fu">rownames</span>(dat) <span class="ot">&lt;-</span> tmp</span>
+<span id="cb22-120"><a href="#cb22-120" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb22-121"><a href="#cb22-121" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-122"><a href="#cb22-122" aria-hidden="true" tabindex="-1"></a>Get the PDO for the years in our data:</span>
+<span id="cb22-125"><a href="#cb22-125" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb22-126"><a href="#cb22-126" aria-hidden="true" tabindex="-1"></a><span class="co"># col 1 is year</span></span>
+<span id="cb22-127"><a href="#cb22-127" aria-hidden="true" tabindex="-1"></a>years <span class="ot">&lt;-</span> <span class="fu">which</span>(pdo[,<span class="dv">1</span>] <span class="sc">%in%</span> <span class="fu">colnames</span>(dat))</span>
+<span id="cb22-128"><a href="#cb22-128" aria-hidden="true" tabindex="-1"></a>spring_pdo <span class="ot">&lt;-</span> <span class="fu">rowMeans</span>(pdo[years, <span class="dv">5</span><span class="sc">:</span><span class="dv">7</span>], <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb22-129"><a href="#cb22-129" aria-hidden="true" tabindex="-1"></a>cmat <span class="ot">&lt;-</span> <span class="fu">matrix</span>(spring_pdo, <span class="at">nrow=</span><span class="dv">1</span>)</span>
+<span id="cb22-130"><a href="#cb22-130" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb22-131"><a href="#cb22-131" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-132"><a href="#cb22-132" aria-hidden="true" tabindex="-1"></a>Check that <span class="in">`cmat`</span> and <span class="in">`dat`</span> have the same number of columns.</span>
+<span id="cb22-135"><a href="#cb22-135" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb22-136"><a href="#cb22-136" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(cmat)</span>
+<span id="cb22-137"><a href="#cb22-137" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(dat)</span>
+<span id="cb22-138"><a href="#cb22-138" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb22-139"><a href="#cb22-139" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-140"><a href="#cb22-140" aria-hidden="true" tabindex="-1"></a>Specify a model</span>
+<span id="cb22-143"><a href="#cb22-143" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb22-144"><a href="#cb22-144" aria-hidden="true" tabindex="-1"></a><span class="co"># pdo</span></span>
+<span id="cb22-145"><a href="#cb22-145" aria-hidden="true" tabindex="-1"></a>mod.list1 <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb22-146"><a href="#cb22-146" aria-hidden="true" tabindex="-1"></a>  <span class="at">U =</span> <span class="st">"unequal"</span>,</span>
+<span id="cb22-147"><a href="#cb22-147" aria-hidden="true" tabindex="-1"></a>  <span class="at">R =</span> <span class="st">"diagonal and equal"</span>,</span>
+<span id="cb22-148"><a href="#cb22-148" aria-hidden="true" tabindex="-1"></a>  <span class="at">Q =</span> <span class="st">"diagonal and unequal"</span>,</span>
+<span id="cb22-149"><a href="#cb22-149" aria-hidden="true" tabindex="-1"></a>  <span class="at">c =</span> cmat,</span>
+<span id="cb22-150"><a href="#cb22-150" aria-hidden="true" tabindex="-1"></a>  <span class="at">C =</span> <span class="st">"unequal"</span></span>
+<span id="cb22-151"><a href="#cb22-151" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb22-152"><a href="#cb22-152" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-153"><a href="#cb22-153" aria-hidden="true" tabindex="-1"></a><span class="co"># no pdo</span></span>
+<span id="cb22-154"><a href="#cb22-154" aria-hidden="true" tabindex="-1"></a>mod.list2 <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb22-155"><a href="#cb22-155" aria-hidden="true" tabindex="-1"></a>  <span class="at">U =</span> <span class="st">"unequal"</span>,</span>
+<span id="cb22-156"><a href="#cb22-156" aria-hidden="true" tabindex="-1"></a>  <span class="at">R =</span> <span class="st">"diagonal and equal"</span>,</span>
+<span id="cb22-157"><a href="#cb22-157" aria-hidden="true" tabindex="-1"></a>  <span class="at">Q =</span> <span class="st">"diagonal and unequal"</span>)</span>
+<span id="cb22-158"><a href="#cb22-158" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb22-159"><a href="#cb22-159" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-162"><a href="#cb22-162" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb22-163"><a href="#cb22-163" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(MARSS)</span>
+<span id="cb22-164"><a href="#cb22-164" aria-hidden="true" tabindex="-1"></a>fit1 <span class="ot">&lt;-</span> <span class="fu">MARSS</span>(dat, <span class="at">model=</span>mod.list1)</span>
+<span id="cb22-165"><a href="#cb22-165" aria-hidden="true" tabindex="-1"></a>fit2 <span class="ot">&lt;-</span> <span class="fu">MARSS</span>(dat, <span class="at">model=</span>mod.list2)</span>
+<span id="cb22-166"><a href="#cb22-166" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb22-167"><a href="#cb22-167" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-168"><a href="#cb22-168" aria-hidden="true" tabindex="-1"></a>Which one fits better based on AIC? The model without PDO is better (lower AICc).</span>
+<span id="cb22-169"><a href="#cb22-169" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-172"><a href="#cb22-172" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb22-173"><a href="#cb22-173" aria-hidden="true" tabindex="-1"></a>fit1<span class="sc">$</span>AICc</span>
+<span id="cb22-174"><a href="#cb22-174" aria-hidden="true" tabindex="-1"></a>fit2<span class="sc">$</span>AICc</span>
+<span id="cb22-175"><a href="#cb22-175" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb22-176"><a href="#cb22-176" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-177"><a href="#cb22-177" aria-hidden="true" tabindex="-1"></a><span class="fu">## Resources</span></span>
+<span id="cb22-178"><a href="#cb22-178" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-179"><a href="#cb22-179" aria-hidden="true" tabindex="-1"></a>Chapter 7 MARSS models. ATSA Lab Book. <span class="ot">&lt;https://atsa-es.github.io/atsa-labs/chap-mss.html&gt;</span></span>
+<span id="cb22-180"><a href="#cb22-180" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-181"><a href="#cb22-181" aria-hidden="true" tabindex="-1"></a>Chapter 8 MARSS models with covariates. ATSA Lab Book. <span class="ot">&lt;https://atsa-es.github.io/atsa-labs/chap-msscov.html&gt;</span></span>
+<span id="cb22-182"><a href="#cb22-182" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-183"><a href="#cb22-183" aria-hidden="true" tabindex="-1"></a>Chapter 16 Modeling cyclic sockeye <span class="ot">&lt;https://atsa-es.github.io/atsa-labs/chap-cyclic-sockeye.html&gt;</span></span>
 </code><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></pre></div>
 </div></div></div></div></div>
 </div> <!-- /content -->

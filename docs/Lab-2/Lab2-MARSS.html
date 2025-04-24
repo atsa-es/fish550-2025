@@ -534,7 +534,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>esunum <span class="ot">&lt;-</span> <span class="fu">which</span>(esu <span class="sc">==</span> <span class="st">"Steelhead (Upper Columbia River DPS)"</span>)</span>
 <span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>esuname <span class="ot">&lt;-</span> esu[esunum]</span>
 <span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a></span>
@@ -576,39 +576,45 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(MARSS)</span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>fit1 <span class="ot">&lt;-</span> <span class="fu">MARSS</span>(dat, <span class="at">model=</span>mod.list1, <span class="at">method=</span><span class="st">"BFGS"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(MARSS)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'MARSS' was built under R version 4.4.3</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>fit1 <span class="ot">&lt;-</span> <span class="fu">MARSS</span>(dat, <span class="at">model=</span>mod.list1, <span class="at">method=</span><span class="st">"BFGS"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
-<pre><code>Success! Converged in 110 iterations.
+<pre><code>Success! Converged in 105 iterations.
 Function MARSSkfas used for likelihood calculation.
 
 MARSS fit is
 Estimation method: BFGS 
-Estimation converged in 110 iterations. 
-Log-likelihood: -111.3565 
-AIC: 260.7129   AICc: 265.9543   
+Estimation converged in 105 iterations. 
+Log-likelihood: -111.3573 
+AIC: 260.7147   AICc: 265.9561   
  
                Estimate
 R.diag          0.02043
-U.X.Entiat      0.02239
-U.X.Methow      0.01639
-U.X.Okanogan    0.00535
-U.X.Wenatchee  -0.02057
-Q.(1,1)         0.26385
-Q.(2,1)         0.12961
-Q.(3,1)         0.14582
-Q.(4,1)         0.23779
-Q.(2,2)         0.30238
-Q.(3,2)         0.29402
-Q.(4,2)         0.18418
-Q.(3,3)         0.28778
-Q.(4,3)         0.19383
-Q.(4,4)         0.50262
-x0.X.Entiat     4.62927
-x0.X.Methow     6.52964
-x0.X.Okanogan   6.33590
-x0.X.Wenatchee  8.04979
+U.X.Entiat      0.02235
+U.X.Methow      0.01630
+U.X.Okanogan    0.00529
+U.X.Wenatchee  -0.02063
+Q.(1,1)         0.26388
+Q.(2,1)         0.12962
+Q.(3,1)         0.14589
+Q.(4,1)         0.23793
+Q.(2,2)         0.30235
+Q.(3,2)         0.29398
+Q.(4,2)         0.18411
+Q.(3,3)         0.28774
+Q.(4,3)         0.19401
+Q.(4,4)         0.50313
+x0.X.Entiat     4.62790
+x0.X.Methow     6.53666
+x0.X.Okanogan   6.34194
+x0.X.Wenatchee  8.04854
 Initial states (x0) defined at t=0
 
 Standard errors have not been calculated. 
@@ -619,7 +625,7 @@ Use MARSSparamCIs to compute CIs and bias estimates.</code></pre>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">autoplot</span>(fit1, <span class="at">plot.type=</span><span class="st">"fitted.ytT"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">autoplot</span>(fit1, <span class="at">plot.type=</span><span class="st">"fitted.ytT"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>MARSSresiduals.tT reported warnings. See msg element or attribute of returned residuals object.</code></pre>
@@ -636,16 +642,16 @@ Use MARSSparamCIs to compute CIs and bias estimates.</code></pre>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(corrplot)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(corrplot)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stderr">
 <pre><code>corrplot 0.95 loaded</code></pre>
 </div>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>Q <span class="ot">&lt;-</span> <span class="fu">coef</span>(fit1, <span class="at">type=</span><span class="st">"matrix"</span>)<span class="sc">$</span>Q</span>
-<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>corrmat <span class="ot">&lt;-</span> <span class="fu">diag</span>(<span class="dv">1</span><span class="sc">/</span><span class="fu">sqrt</span>(<span class="fu">diag</span>(Q))) <span class="sc">%*%</span> Q <span class="sc">%*%</span> <span class="fu">diag</span>(<span class="dv">1</span><span class="sc">/</span><span class="fu">sqrt</span>(<span class="fu">diag</span>(Q)))</span>
-<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a><span class="fu">corrplot</span>(corrmat)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>Q <span class="ot">&lt;-</span> <span class="fu">coef</span>(fit1, <span class="at">type=</span><span class="st">"matrix"</span>)<span class="sc">$</span>Q</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>corrmat <span class="ot">&lt;-</span> <span class="fu">diag</span>(<span class="dv">1</span><span class="sc">/</span><span class="fu">sqrt</span>(<span class="fu">diag</span>(Q))) <span class="sc">%*%</span> Q <span class="sc">%*%</span> <span class="fu">diag</span>(<span class="dv">1</span><span class="sc">/</span><span class="fu">sqrt</span>(<span class="fu">diag</span>(Q)))</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a><span class="fu">corrplot</span>(corrmat)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <div>
@@ -659,12 +665,12 @@ Use MARSSparamCIs to compute CIs and bias estimates.</code></pre>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>mod.list2 <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
-<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">U =</span> <span class="st">"unequal"</span>,</span>
-<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">R =</span> <span class="st">"diagonal and equal"</span>,</span>
-<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">Q =</span> <span class="st">"equalvarcov"</span></span>
-<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>fit2 <span class="ot">&lt;-</span> <span class="fu">MARSS</span>(dat, <span class="at">model=</span>mod.list2, <span class="at">control =</span> <span class="fu">list</span>(<span class="at">maxit=</span><span class="dv">1000</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>mod.list2 <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">U =</span> <span class="st">"unequal"</span>,</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">R =</span> <span class="st">"diagonal and equal"</span>,</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">Q =</span> <span class="st">"equalvarcov"</span></span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>fit2 <span class="ot">&lt;-</span> <span class="fu">MARSS</span>(dat, <span class="at">model=</span>mod.list2, <span class="at">control =</span> <span class="fu">list</span>(<span class="at">maxit=</span><span class="dv">1000</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>Success! abstol and log-log tests passed at 836 iterations.
@@ -699,7 +705,7 @@ Use MARSSparamCIs to compute CIs and bias estimates.</code></pre>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">autoplot</span>(fit2, <span class="at">plot.type=</span><span class="st">"fitted.ytT"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">autoplot</span>(fit2, <span class="at">plot.type=</span><span class="st">"fitted.ytT"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>MARSSresiduals.tT reported warnings. See msg element or attribute of returned residuals object.</code></pre>
@@ -716,10 +722,10 @@ Use MARSSparamCIs to compute CIs and bias estimates.</code></pre>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>mod.list3 <span class="ot">&lt;-</span> mod.list1</span>
-<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>mod.list3<span class="sc">$</span>Q <span class="ot">&lt;-</span> <span class="st">"unconstrained"</span></span>
-<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>mod.list3<span class="sc">$</span>Z <span class="ot">&lt;-</span> <span class="fu">factor</span>(<span class="fu">c</span>(<span class="st">"ew"</span>, <span class="st">"mo"</span>, <span class="st">"mo"</span>, <span class="st">"ew"</span>))</span>
-<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>fit3 <span class="ot">&lt;-</span> <span class="fu">MARSS</span>(dat, <span class="at">model =</span> mod.list3)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>mod.list3 <span class="ot">&lt;-</span> mod.list1</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>mod.list3<span class="sc">$</span>Q <span class="ot">&lt;-</span> <span class="st">"unconstrained"</span></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>mod.list3<span class="sc">$</span>Z <span class="ot">&lt;-</span> <span class="fu">factor</span>(<span class="fu">c</span>(<span class="st">"ew"</span>, <span class="st">"mo"</span>, <span class="st">"mo"</span>, <span class="st">"ew"</span>))</span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>fit3 <span class="ot">&lt;-</span> <span class="fu">MARSS</span>(dat, <span class="at">model =</span> mod.list3)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>Warning! Reached maxit before parameters converged. Maxit was 500.
@@ -757,7 +763,7 @@ Convergence warnings
 </div>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="fu">autoplot</span>(fit3, <span class="at">plot.type=</span><span class="st">"fitted.ytT"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">autoplot</span>(fit3, <span class="at">plot.type=</span><span class="st">"fitted.ytT"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>MARSSresiduals.tT reported warnings. See msg element or attribute of returned residuals object.</code></pre>
@@ -774,11 +780,11 @@ Convergence warnings
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>aic <span class="ot">&lt;-</span> <span class="fu">c</span>(fit1<span class="sc">$</span>AICc, fit2<span class="sc">$</span>AICc, fit3<span class="sc">$</span>AICc)</span>
-<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>aic<span class="sc">-</span><span class="fu">min</span>(aic)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>aic <span class="ot">&lt;-</span> <span class="fu">c</span>(fit1<span class="sc">$</span>AICc, fit2<span class="sc">$</span>AICc, fit3<span class="sc">$</span>AICc)</span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>aic<span class="sc">-</span><span class="fu">min</span>(aic)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1]  0.000000  5.409776 36.986716</code></pre>
+<pre><code>[1]  0.000000  5.407992 36.984932</code></pre>
 </div>
 </div>
 <section id="including-cycling" class="level3">
@@ -787,7 +793,7 @@ Convergence warnings
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>dat87 <span class="ot">&lt;-</span> dat[,<span class="fu">colnames</span>(dat)<span class="sc">&gt;</span><span class="dv">1987</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>dat87 <span class="ot">&lt;-</span> dat[,<span class="fu">colnames</span>(dat)<span class="sc">&gt;</span><span class="dv">1987</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
 <p>Let’s look the acf to look for evidence of cycling. Due to the nature of their life-cycle where they tend to return back to their spawning grounds after a certain numbers of years, we might expect some cycling although steelhead aren’t really known for this (unlike sockeye, chinook and pink).</p>
@@ -795,10 +801,10 @@ Convergence warnings
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow=</span><span class="fu">c</span>(<span class="dv">2</span>,<span class="dv">2</span>))</span>
-<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>){</span>
-<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">acf</span>(dat87[i,], <span class="at">na.action=</span>na.pass, <span class="at">main=</span><span class="fu">rownames</span>(dat87)[i])</span>
-<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow=</span><span class="fu">c</span>(<span class="dv">2</span>,<span class="dv">2</span>))</span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>){</span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">acf</span>(dat87[i,], <span class="at">na.action=</span>na.pass, <span class="at">main=</span><span class="fu">rownames</span>(dat87)[i])</span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <div>
@@ -812,12 +818,12 @@ Convergence warnings
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>TT <span class="ot">&lt;-</span> <span class="fu">dim</span>(dat87)[<span class="dv">2</span>] <span class="co">#number of time steps</span></span>
-<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>covariates <span class="ot">&lt;-</span> <span class="fu">rbind</span>(</span>
-<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>  forecast<span class="sc">::</span><span class="fu">fourier</span>(<span class="fu">ts</span>(<span class="dv">1</span><span class="sc">:</span>TT, <span class="at">freq=</span><span class="dv">3</span>), <span class="at">K=</span><span class="dv">1</span>) <span class="sc">|&gt;</span> <span class="fu">t</span>(),</span>
-<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>  forecast<span class="sc">::</span><span class="fu">fourier</span>(<span class="fu">ts</span>(<span class="dv">1</span><span class="sc">:</span>TT, <span class="at">freq=</span><span class="dv">4</span>), <span class="at">K=</span><span class="dv">1</span>) <span class="sc">|&gt;</span> <span class="fu">t</span>(),</span>
-<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a>  forecast<span class="sc">::</span><span class="fu">fourier</span>(<span class="fu">ts</span>(<span class="dv">1</span><span class="sc">:</span>TT, <span class="at">freq=</span><span class="dv">5</span>), <span class="at">K=</span><span class="dv">1</span>) <span class="sc">|&gt;</span> <span class="fu">t</span>()</span>
-<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>TT <span class="ot">&lt;-</span> <span class="fu">dim</span>(dat87)[<span class="dv">2</span>] <span class="co">#number of time steps</span></span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>covariates <span class="ot">&lt;-</span> <span class="fu">rbind</span>(</span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>  forecast<span class="sc">::</span><span class="fu">fourier</span>(<span class="fu">ts</span>(<span class="dv">1</span><span class="sc">:</span>TT, <span class="at">freq=</span><span class="dv">3</span>), <span class="at">K=</span><span class="dv">1</span>) <span class="sc">|&gt;</span> <span class="fu">t</span>(),</span>
+<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>  forecast<span class="sc">::</span><span class="fu">fourier</span>(<span class="fu">ts</span>(<span class="dv">1</span><span class="sc">:</span>TT, <span class="at">freq=</span><span class="dv">4</span>), <span class="at">K=</span><span class="dv">1</span>) <span class="sc">|&gt;</span> <span class="fu">t</span>(),</span>
+<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a>  forecast<span class="sc">::</span><span class="fu">fourier</span>(<span class="fu">ts</span>(<span class="dv">1</span><span class="sc">:</span>TT, <span class="at">freq=</span><span class="dv">5</span>), <span class="at">K=</span><span class="dv">1</span>) <span class="sc">|&gt;</span> <span class="fu">t</span>()</span>
+<span id="cb41-6"><a href="#cb41-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stderr">
 <pre><code>Registered S3 method overwritten by 'quantmod':
@@ -829,19 +835,19 @@ Convergence warnings
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>mod.list4 <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
-<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">Q =</span> <span class="st">"unconstrained"</span>,</span>
-<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">U =</span> <span class="st">"unequal"</span>,</span>
-<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">R =</span> <span class="st">"diagonal and equal"</span>,</span>
-<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">D =</span> <span class="st">"unconstrained"</span>,</span>
-<span id="cb41-6"><a href="#cb41-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">d =</span> covariates</span>
-<span id="cb41-7"><a href="#cb41-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>mod.list4 <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">Q =</span> <span class="st">"unconstrained"</span>,</span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">U =</span> <span class="st">"unequal"</span>,</span>
+<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">R =</span> <span class="st">"diagonal and equal"</span>,</span>
+<span id="cb43-5"><a href="#cb43-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">D =</span> <span class="st">"unconstrained"</span>,</span>
+<span id="cb43-6"><a href="#cb43-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">d =</span> covariates</span>
+<span id="cb43-7"><a href="#cb43-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>fit4<span class="fl">.87</span> <span class="ot">&lt;-</span> <span class="fu">MARSS</span>(dat87, <span class="at">model=</span>mod.list4)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>fit4<span class="fl">.87</span> <span class="ot">&lt;-</span> <span class="fu">MARSS</span>(dat87, <span class="at">model=</span>mod.list4)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>Success! abstol and log-log tests passed at 82 iterations.
@@ -909,29 +915,29 @@ Use MARSSparamCIs to compute CIs and bias estimates.</code></pre>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(broom)</span>
-<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a><span class="co"># get all the parameter estimates for D</span></span>
-<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">tidy</span>(fit4<span class="fl">.87</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">subset</span>(stringr<span class="sc">::</span><span class="fu">str_sub</span>(term,<span class="dv">1</span>,<span class="dv">1</span>)<span class="sc">==</span><span class="st">"D"</span>)</span>
-<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a><span class="co"># add a column with the river names</span></span>
-<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>river <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(<span class="fu">rep</span>(<span class="fu">rownames</span>(dat87),<span class="fu">nrow</span>(covariates)))</span>
-<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a><span class="co"># add a column for the lag or frequency</span></span>
-<span id="cb44-8"><a href="#cb44-8" aria-hidden="true" tabindex="-1"></a>lags <span class="ot">&lt;-</span> stringr<span class="sc">::</span><span class="fu">str_split</span>(<span class="fu">rownames</span>(covariates), <span class="st">"-"</span>) <span class="sc">%&gt;%</span> <span class="fu">lapply</span>(<span class="cf">function</span>(x){x[[<span class="dv">2</span>]]}) <span class="sc">%&gt;%</span> <span class="fu">unlist</span>()</span>
-<span id="cb44-9"><a href="#cb44-9" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>lag <span class="ot">&lt;-</span> <span class="fu">rep</span>(lags, <span class="at">each=</span><span class="fu">nrow</span>(dat87))</span>
-<span id="cb44-10"><a href="#cb44-10" aria-hidden="true" tabindex="-1"></a><span class="co"># add column for the type of fourier</span></span>
-<span id="cb44-11"><a href="#cb44-11" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>type <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="fu">rownames</span>(covariates), <span class="at">each=</span><span class="fu">nrow</span>(dat87))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(broom)</span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a><span class="co"># get all the parameter estimates for D</span></span>
+<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">tidy</span>(fit4<span class="fl">.87</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">subset</span>(stringr<span class="sc">::</span><span class="fu">str_sub</span>(term,<span class="dv">1</span>,<span class="dv">1</span>)<span class="sc">==</span><span class="st">"D"</span>)</span>
+<span id="cb46-5"><a href="#cb46-5" aria-hidden="true" tabindex="-1"></a><span class="co"># add a column with the river names</span></span>
+<span id="cb46-6"><a href="#cb46-6" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>river <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(<span class="fu">rep</span>(<span class="fu">rownames</span>(dat87),<span class="fu">nrow</span>(covariates)))</span>
+<span id="cb46-7"><a href="#cb46-7" aria-hidden="true" tabindex="-1"></a><span class="co"># add a column for the lag or frequency</span></span>
+<span id="cb46-8"><a href="#cb46-8" aria-hidden="true" tabindex="-1"></a>lags <span class="ot">&lt;-</span> stringr<span class="sc">::</span><span class="fu">str_split</span>(<span class="fu">rownames</span>(covariates), <span class="st">"-"</span>) <span class="sc">%&gt;%</span> <span class="fu">lapply</span>(<span class="cf">function</span>(x){x[[<span class="dv">2</span>]]}) <span class="sc">%&gt;%</span> <span class="fu">unlist</span>()</span>
+<span id="cb46-9"><a href="#cb46-9" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>lag <span class="ot">&lt;-</span> <span class="fu">rep</span>(lags, <span class="at">each=</span><span class="fu">nrow</span>(dat87))</span>
+<span id="cb46-10"><a href="#cb46-10" aria-hidden="true" tabindex="-1"></a><span class="co"># add column for the type of fourier</span></span>
+<span id="cb46-11"><a href="#cb46-11" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>type <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="fu">rownames</span>(covariates), <span class="at">each=</span><span class="fu">nrow</span>(dat87))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
 <p>We can then plot this. Interesting. Some support for 5 year cycles.</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(df, <span class="fu">aes</span>(<span class="at">x=</span>type, <span class="at">y=</span>estimate, <span class="at">col=</span>lag)) <span class="sc">+</span> </span>
-<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
-<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_errorbar</span>(<span class="fu">aes</span>(<span class="at">ymin=</span>conf.low, <span class="at">ymax=</span>conf.up), <span class="at">width=</span>.<span class="dv">2</span>, <span class="at">position=</span><span class="fu">position_dodge</span>(.<span class="dv">9</span>)) <span class="sc">+</span></span>
-<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">0</span>) <span class="sc">+</span></span>
-<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>river) <span class="sc">+</span></span>
-<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggtitle</span>(<span class="st">"The cycle estimates with CIs"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(df, <span class="fu">aes</span>(<span class="at">x=</span>type, <span class="at">y=</span>estimate, <span class="at">col=</span>lag)) <span class="sc">+</span> </span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_errorbar</span>(<span class="fu">aes</span>(<span class="at">ymin=</span>conf.low, <span class="at">ymax=</span>conf.up), <span class="at">width=</span>.<span class="dv">2</span>, <span class="at">position=</span><span class="fu">position_dodge</span>(.<span class="dv">9</span>)) <span class="sc">+</span></span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">0</span>) <span class="sc">+</span></span>
+<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>river) <span class="sc">+</span></span>
+<span id="cb47-6"><a href="#cb47-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggtitle</span>(<span class="st">"The cycle estimates with CIs"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <div>
@@ -945,41 +951,41 @@ Use MARSSparamCIs to compute CIs and bias estimates.</code></pre>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="co"># No cycles</span></span>
-<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>mod.list <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
-<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">Q =</span> <span class="st">"unconstrained"</span>,</span>
-<span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">U =</span> <span class="st">"unequal"</span>,</span>
-<span id="cb46-5"><a href="#cb46-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">R =</span> <span class="st">"diagonal and equal"</span></span>
-<span id="cb46-6"><a href="#cb46-6" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb46-7"><a href="#cb46-7" aria-hidden="true" tabindex="-1"></a>fit1<span class="fl">.87</span> <span class="ot">&lt;-</span> <span class="fu">MARSS</span>(dat87, <span class="at">model=</span>mod.list, <span class="at">silent=</span><span class="cn">TRUE</span>)</span>
-<span id="cb46-8"><a href="#cb46-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Only lag 5 cycles</span></span>
-<span id="cb46-9"><a href="#cb46-9" aria-hidden="true" tabindex="-1"></a>mod.list <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
-<span id="cb46-10"><a href="#cb46-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">Q =</span> <span class="st">"unconstrained"</span>,</span>
-<span id="cb46-11"><a href="#cb46-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">U =</span> <span class="st">"unequal"</span>,</span>
-<span id="cb46-12"><a href="#cb46-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">R =</span> <span class="st">"diagonal and equal"</span>,</span>
-<span id="cb46-13"><a href="#cb46-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">D =</span> <span class="st">"unconstrained"</span>,</span>
-<span id="cb46-14"><a href="#cb46-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">d =</span> covariates[<span class="dv">5</span><span class="sc">:</span><span class="dv">6</span>,]</span>
-<span id="cb46-15"><a href="#cb46-15" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb46-16"><a href="#cb46-16" aria-hidden="true" tabindex="-1"></a>fit5<span class="fl">.87</span> <span class="ot">&lt;-</span> <span class="fu">MARSS</span>(dat87, <span class="at">model=</span>mod.list, <span class="at">silent=</span><span class="cn">TRUE</span>)</span>
-<span id="cb46-17"><a href="#cb46-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Cycles in the process</span></span>
-<span id="cb46-18"><a href="#cb46-18" aria-hidden="true" tabindex="-1"></a><span class="co"># which doesn't really make sense for salmon since the cycles are age-structure cycles </span></span>
-<span id="cb46-19"><a href="#cb46-19" aria-hidden="true" tabindex="-1"></a><span class="co"># which act like cycles in the observations</span></span>
-<span id="cb46-20"><a href="#cb46-20" aria-hidden="true" tabindex="-1"></a>mod.list <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
-<span id="cb46-21"><a href="#cb46-21" aria-hidden="true" tabindex="-1"></a>  <span class="at">Q =</span> <span class="st">"unconstrained"</span>,</span>
-<span id="cb46-22"><a href="#cb46-22" aria-hidden="true" tabindex="-1"></a>  <span class="at">U =</span> <span class="st">"unequal"</span>,</span>
-<span id="cb46-23"><a href="#cb46-23" aria-hidden="true" tabindex="-1"></a>  <span class="at">R =</span> <span class="st">"diagonal and equal"</span>,</span>
-<span id="cb46-24"><a href="#cb46-24" aria-hidden="true" tabindex="-1"></a>  <span class="at">C =</span> <span class="st">"unconstrained"</span>,</span>
-<span id="cb46-25"><a href="#cb46-25" aria-hidden="true" tabindex="-1"></a>  <span class="at">c =</span> covariates</span>
-<span id="cb46-26"><a href="#cb46-26" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb46-27"><a href="#cb46-27" aria-hidden="true" tabindex="-1"></a>fit6<span class="fl">.87</span> <span class="ot">&lt;-</span> <span class="fu">MARSS</span>(dat87, <span class="at">model=</span>mod.list, <span class="at">silent=</span><span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="co"># No cycles</span></span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>mod.list <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">Q =</span> <span class="st">"unconstrained"</span>,</span>
+<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">U =</span> <span class="st">"unequal"</span>,</span>
+<span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">R =</span> <span class="st">"diagonal and equal"</span></span>
+<span id="cb48-6"><a href="#cb48-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb48-7"><a href="#cb48-7" aria-hidden="true" tabindex="-1"></a>fit1<span class="fl">.87</span> <span class="ot">&lt;-</span> <span class="fu">MARSS</span>(dat87, <span class="at">model=</span>mod.list, <span class="at">silent=</span><span class="cn">TRUE</span>)</span>
+<span id="cb48-8"><a href="#cb48-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Only lag 5 cycles</span></span>
+<span id="cb48-9"><a href="#cb48-9" aria-hidden="true" tabindex="-1"></a>mod.list <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb48-10"><a href="#cb48-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">Q =</span> <span class="st">"unconstrained"</span>,</span>
+<span id="cb48-11"><a href="#cb48-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">U =</span> <span class="st">"unequal"</span>,</span>
+<span id="cb48-12"><a href="#cb48-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">R =</span> <span class="st">"diagonal and equal"</span>,</span>
+<span id="cb48-13"><a href="#cb48-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">D =</span> <span class="st">"unconstrained"</span>,</span>
+<span id="cb48-14"><a href="#cb48-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">d =</span> covariates[<span class="dv">5</span><span class="sc">:</span><span class="dv">6</span>,]</span>
+<span id="cb48-15"><a href="#cb48-15" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb48-16"><a href="#cb48-16" aria-hidden="true" tabindex="-1"></a>fit5<span class="fl">.87</span> <span class="ot">&lt;-</span> <span class="fu">MARSS</span>(dat87, <span class="at">model=</span>mod.list, <span class="at">silent=</span><span class="cn">TRUE</span>)</span>
+<span id="cb48-17"><a href="#cb48-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Cycles in the process</span></span>
+<span id="cb48-18"><a href="#cb48-18" aria-hidden="true" tabindex="-1"></a><span class="co"># which doesn't really make sense for salmon since the cycles are age-structure cycles </span></span>
+<span id="cb48-19"><a href="#cb48-19" aria-hidden="true" tabindex="-1"></a><span class="co"># which act like cycles in the observations</span></span>
+<span id="cb48-20"><a href="#cb48-20" aria-hidden="true" tabindex="-1"></a>mod.list <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb48-21"><a href="#cb48-21" aria-hidden="true" tabindex="-1"></a>  <span class="at">Q =</span> <span class="st">"unconstrained"</span>,</span>
+<span id="cb48-22"><a href="#cb48-22" aria-hidden="true" tabindex="-1"></a>  <span class="at">U =</span> <span class="st">"unequal"</span>,</span>
+<span id="cb48-23"><a href="#cb48-23" aria-hidden="true" tabindex="-1"></a>  <span class="at">R =</span> <span class="st">"diagonal and equal"</span>,</span>
+<span id="cb48-24"><a href="#cb48-24" aria-hidden="true" tabindex="-1"></a>  <span class="at">C =</span> <span class="st">"unconstrained"</span>,</span>
+<span id="cb48-25"><a href="#cb48-25" aria-hidden="true" tabindex="-1"></a>  <span class="at">c =</span> covariates</span>
+<span id="cb48-26"><a href="#cb48-26" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb48-27"><a href="#cb48-27" aria-hidden="true" tabindex="-1"></a>fit6<span class="fl">.87</span> <span class="ot">&lt;-</span> <span class="fu">MARSS</span>(dat87, <span class="at">model=</span>mod.list, <span class="at">silent=</span><span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
 <p>Hmm model without cyles is much better (lower AICc). Even if we only have the 5 year cycles (<code>covariates[5:6,]</code>), the AICc is larger than for the models with cycles.</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>aic <span class="ot">&lt;-</span> <span class="fu">c</span>(fit1<span class="fl">.87</span><span class="sc">$</span>AICc, fit4<span class="fl">.87</span><span class="sc">$</span>AICc, fit5<span class="fl">.87</span><span class="sc">$</span>AICc, fit6<span class="fl">.87</span><span class="sc">$</span>AICc)</span>
-<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>aic<span class="sc">-</span><span class="fu">min</span>(aic)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>aic <span class="ot">&lt;-</span> <span class="fu">c</span>(fit1<span class="fl">.87</span><span class="sc">$</span>AICc, fit4<span class="fl">.87</span><span class="sc">$</span>AICc, fit5<span class="fl">.87</span><span class="sc">$</span>AICc, fit6<span class="fl">.87</span><span class="sc">$</span>AICc)</span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>aic<span class="sc">-</span><span class="fu">min</span>(aic)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1]  0.00000 59.75211 13.15998 59.75202</code></pre>
@@ -1482,384 +1488,384 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
       </a>
   </div>
 </nav><div class="modal fade" id="quarto-embedded-source-code-modal" tabindex="-1" aria-labelledby="quarto-embedded-source-code-modal-label" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="quarto-embedded-source-code-modal-label">Source Code</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="">
-<div class="sourceCode" id="cb49" data-shortcodes="false"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
-<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a><span class="an">title:</span><span class="co"> Lab Intro</span></span>
-<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a><span class="an">subtitle:</span><span class="co"> "Lab 2 Analyzing multivariate salmon data"</span></span>
-<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a><span class="an">author:</span><span class="co"> "E Holmes"</span></span>
-<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a><span class="an">date:</span><span class="co"> "April 17, 2025"</span></span>
-<span id="cb49-6"><a href="#cb49-6" aria-hidden="true" tabindex="-1"></a><span class="an">output:</span></span>
-<span id="cb49-7"><a href="#cb49-7" aria-hidden="true" tabindex="-1"></a><span class="co">  html_document:</span></span>
-<span id="cb49-8"><a href="#cb49-8" aria-hidden="true" tabindex="-1"></a><span class="co">    code-folding: yes</span></span>
-<span id="cb49-9"><a href="#cb49-9" aria-hidden="true" tabindex="-1"></a><span class="co">    toc: yes</span></span>
-<span id="cb49-10"><a href="#cb49-10" aria-hidden="true" tabindex="-1"></a><span class="co">    toc_float: yes</span></span>
-<span id="cb49-11"><a href="#cb49-11" aria-hidden="true" tabindex="-1"></a><span class="co">  pdf_document:</span></span>
-<span id="cb49-12"><a href="#cb49-12" aria-hidden="true" tabindex="-1"></a><span class="co">    toc: yes</span></span>
-<span id="cb49-13"><a href="#cb49-13" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
-<span id="cb49-14"><a href="#cb49-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-15"><a href="#cb49-15" aria-hidden="true" tabindex="-1"></a><span class="in">```{r message=FALSE}</span></span>
-<span id="cb49-16"><a href="#cb49-16" aria-hidden="true" tabindex="-1"></a><span class="in">library(tidyverse)</span></span>
-<span id="cb49-17"><a href="#cb49-17" aria-hidden="true" tabindex="-1"></a><span class="in">options(dplyr.summarise.inform = FALSE)</span></span>
-<span id="cb49-18"><a href="#cb49-18" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb49-19"><a href="#cb49-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-20"><a href="#cb49-20" aria-hidden="true" tabindex="-1"></a>For this lab you will use multivariate auto-regressive state-space (MARSS) to analyze multivariate salmon data from the Columbia River. These data are noisy and gappy. They are estimates of total spawner abundance and might include hatchery spawners.</span>
-<span id="cb49-21"><a href="#cb49-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-22"><a href="#cb49-22" aria-hidden="true" tabindex="-1"></a><span class="fu">## Teams</span></span>
-<span id="cb49-23"><a href="#cb49-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-24"><a href="#cb49-24" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>Salmon, coho (Oregon Coast ESU) <span class="in">`esu[7]`</span></span>
-<span id="cb49-25"><a href="#cb49-25" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>Salmon, Chinook (Snake River spring/summer-run ESU) <span class="in">`esu[2]`</span></span>
-<span id="cb49-26"><a href="#cb49-26" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>Steelhead (Snake River Basin DPS) <span class="in">`esu[11]`</span></span>
-<span id="cb49-27"><a href="#cb49-27" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-28"><a href="#cb49-28" aria-hidden="true" tabindex="-1"></a><span class="in">```{r, results = "asis", echo=FALSE}</span></span>
-<span id="cb49-29"><a href="#cb49-29" aria-hidden="true" tabindex="-1"></a><span class="in"># Set up names and shuffle</span></span>
-<span id="cb49-30"><a href="#cb49-30" aria-hidden="true" tabindex="-1"></a><span class="in">set.seed(123)</span></span>
-<span id="cb49-31"><a href="#cb49-31" aria-hidden="true" tabindex="-1"></a><span class="in">names_str &lt;- "Anna, Brian, Nicole, Matheus, Lilac, Mary, Ben, Emma, Tina"</span></span>
-<span id="cb49-32"><a href="#cb49-32" aria-hidden="true" tabindex="-1"></a><span class="in">names &lt;- strsplit(names_str, ",\\s*")[[1]]</span></span>
-<span id="cb49-33"><a href="#cb49-33" aria-hidden="true" tabindex="-1"></a><span class="in">shuffled &lt;- sample(names)</span></span>
-<span id="cb49-34"><a href="#cb49-34" aria-hidden="true" tabindex="-1"></a><span class="in">teams &lt;- split(shuffled, ceiling(seq_along(shuffled) / 3))</span></span>
-<span id="cb49-35"><a href="#cb49-35" aria-hidden="true" tabindex="-1"></a><span class="in">for (i in seq_along(teams)) {</span></span>
-<span id="cb49-36"><a href="#cb49-36" aria-hidden="true" tabindex="-1"></a><span class="in">  cat(sprintf("- **Team %d**: %s  \n", i, paste(teams[[i]], collapse = ", ")))</span></span>
-<span id="cb49-37"><a href="#cb49-37" aria-hidden="true" tabindex="-1"></a><span class="in">}</span></span>
-<span id="cb49-38"><a href="#cb49-38" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb49-39"><a href="#cb49-39" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-40"><a href="#cb49-40" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-41"><a href="#cb49-41" aria-hidden="true" tabindex="-1"></a><span class="fu">## WA and OR Endangered and Threatened salmon spawner data</span></span>
-<span id="cb49-42"><a href="#cb49-42" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-43"><a href="#cb49-43" aria-hidden="true" tabindex="-1"></a>These data are from the <span class="co">[</span><span class="ot">Coordinated Assessments Partnership (CAP) </span><span class="co">](https://www.streamnet.org/cap/about-cap/)</span> and downloaded using the <span class="co">[</span><span class="ot">rCAX R client</span><span class="co">](https://nwfsc-cb.github.io/rCAX/)</span> for the CAX (the CAP database) API. The data are saved in <span class="in">`Lab-2/Data_Images/columbia-river.rda`</span>. See <span class="in">`Lab-2/Data_Images/setup_data_2025.R`</span> for the script to create the data.</span>
-<span id="cb49-44"><a href="#cb49-44" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-45"><a href="#cb49-45" aria-hidden="true" tabindex="-1"></a><span class="in">```{r load-data}</span></span>
-<span id="cb49-46"><a href="#cb49-46" aria-hidden="true" tabindex="-1"></a><span class="in">load("Data_Images/esa-salmon.rda")</span></span>
-<span id="cb49-47"><a href="#cb49-47" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb49-48"><a href="#cb49-48" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-49"><a href="#cb49-49" aria-hidden="true" tabindex="-1"></a>The data set has data for endangered and threatened ESU (Evolutionary Significant Units) and DPS (Distinct Population Segments) in the Washington and Oregon.</span>
-<span id="cb49-50"><a href="#cb49-50" aria-hidden="true" tabindex="-1"></a><span class="in">```{r esus}</span></span>
-<span id="cb49-51"><a href="#cb49-51" aria-hidden="true" tabindex="-1"></a><span class="in">esu &lt;- unique(esa.salmon$esu_dps)</span></span>
-<span id="cb49-52"><a href="#cb49-52" aria-hidden="true" tabindex="-1"></a><span class="in">esu</span></span>
-<span id="cb49-53"><a href="#cb49-53" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb49-54"><a href="#cb49-54" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-55"><a href="#cb49-55" aria-hidden="true" tabindex="-1"></a><span class="in">```{r echo=FALSE, out.width="50%", fig.cap="Figure from ESA recovery plan for Lower Columbia River Coho salmon, Lower Columbia River Chinook salmon, Columbia River Chum salmon, and Lower Columbia River steelhead. 2013. NMFS NW Region.  https://repository.library.noaa.gov/view/noaa/16002"}</span></span>
-<span id="cb49-56"><a href="#cb49-56" aria-hidden="true" tabindex="-1"></a><span class="in">knitr::include_graphics("Data_Images/LCR-chinook-regions.png")</span></span>
-<span id="cb49-57"><a href="#cb49-57" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb49-58"><a href="#cb49-58" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-59"><a href="#cb49-59" aria-hidden="true" tabindex="-1"></a><span class="fu">### Data structure</span></span>
-<span id="cb49-60"><a href="#cb49-60" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-61"><a href="#cb49-61" aria-hidden="true" tabindex="-1"></a>The dataset has the following columns</span>
-<span id="cb49-62"><a href="#cb49-62" aria-hidden="true" tabindex="-1"></a><span class="in">```{r data-structure}</span></span>
-<span id="cb49-63"><a href="#cb49-63" aria-hidden="true" tabindex="-1"></a><span class="in">colnames(esa.salmon)</span></span>
-<span id="cb49-64"><a href="#cb49-64" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb49-65"><a href="#cb49-65" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>species: Chinook, Coho, Steelhead, Chum, Sockeye</span>
-<span id="cb49-66"><a href="#cb49-66" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>esu_dps: name of the ESU</span>
-<span id="cb49-67"><a href="#cb49-67" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>majorpopgroup: biological major group</span>
-<span id="cb49-68"><a href="#cb49-68" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>commonpopname: common population name, generally a stream or river</span>
-<span id="cb49-69"><a href="#cb49-69" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>run: run-timing</span>
-<span id="cb49-70"><a href="#cb49-70" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>spawningyear: the year that the spawners were counted on the spawning grounds</span>
-<span id="cb49-71"><a href="#cb49-71" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>value: total (natural-born and hatchery-born) spawners on the spawning ground. Generally some type of redd-count expansion or some other stream count of spawners. Redd = a gravel nest.</span>
-<span id="cb49-72"><a href="#cb49-72" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-73"><a href="#cb49-73" aria-hidden="true" tabindex="-1"></a><span class="fu">### Data plots</span></span>
-<span id="cb49-74"><a href="#cb49-74" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-75"><a href="#cb49-75" aria-hidden="true" tabindex="-1"></a>Let's load one ESU and make a plot. Create a function.</span>
-<span id="cb49-76"><a href="#cb49-76" aria-hidden="true" tabindex="-1"></a><span class="in">```{r plot-function}</span></span>
-<span id="cb49-77"><a href="#cb49-77" aria-hidden="true" tabindex="-1"></a><span class="in">plotesu &lt;- function(esuname){</span></span>
-<span id="cb49-78"><a href="#cb49-78" aria-hidden="true" tabindex="-1"></a><span class="in">  df &lt;- esa.salmon %&gt;% subset(esu_dps %in% esuname)</span></span>
-<span id="cb49-79"><a href="#cb49-79" aria-hidden="true" tabindex="-1"></a><span class="in">ggplot(df, aes(x=spawningyear, y=log(value), color=majorpopgroup)) + </span></span>
-<span id="cb49-80"><a href="#cb49-80" aria-hidden="true" tabindex="-1"></a><span class="in">  geom_point(size=0.2, na.rm = TRUE) + </span></span>
-<span id="cb49-81"><a href="#cb49-81" aria-hidden="true" tabindex="-1"></a><span class="in">  theme(strip.text.x = element_text(size = 3)) +</span></span>
-<span id="cb49-82"><a href="#cb49-82" aria-hidden="true" tabindex="-1"></a><span class="in">  theme(axis.text.x = element_text(size = 5, angle = 90)) +</span></span>
-<span id="cb49-83"><a href="#cb49-83" aria-hidden="true" tabindex="-1"></a><span class="in">  facet_wrap(~esapopname) +</span></span>
-<span id="cb49-84"><a href="#cb49-84" aria-hidden="true" tabindex="-1"></a><span class="in">  ggtitle(paste0(esuname, collapse="\n"))</span></span>
-<span id="cb49-85"><a href="#cb49-85" aria-hidden="true" tabindex="-1"></a><span class="in">}</span></span>
-<span id="cb49-86"><a href="#cb49-86" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb49-87"><a href="#cb49-87" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-90"><a href="#cb49-90" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb49-91"><a href="#cb49-91" aria-hidden="true" tabindex="-1"></a><span class="fu">plotesu</span>(esu[<span class="dv">7</span>])</span>
-<span id="cb49-92"><a href="#cb49-92" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb49-93"><a href="#cb49-93" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-96"><a href="#cb49-96" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb49-97"><a href="#cb49-97" aria-hidden="true" tabindex="-1"></a><span class="fu">plotesu</span>(esu[<span class="dv">11</span>])</span>
-<span id="cb49-98"><a href="#cb49-98" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb49-99"><a href="#cb49-99" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-102"><a href="#cb49-102" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb49-103"><a href="#cb49-103" aria-hidden="true" tabindex="-1"></a><span class="fu">plotesu</span>(esu[<span class="dv">2</span>])</span>
-<span id="cb49-104"><a href="#cb49-104" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb49-105"><a href="#cb49-105" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-106"><a href="#cb49-106" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-107"><a href="#cb49-107" aria-hidden="true" tabindex="-1"></a><span class="in">```{r plot-runs}</span></span>
-<span id="cb49-108"><a href="#cb49-108" aria-hidden="true" tabindex="-1"></a><span class="in">df &lt;- esa.salmon %&gt;% subset(species == "Chinook salmon")</span></span>
-<span id="cb49-109"><a href="#cb49-109" aria-hidden="true" tabindex="-1"></a><span class="in">ggplot(df, aes(x=spawningyear, y=log(value), color=run)) + </span></span>
-<span id="cb49-110"><a href="#cb49-110" aria-hidden="true" tabindex="-1"></a><span class="in">  geom_point(size=0.2, na.rm = TRUE) +</span></span>
-<span id="cb49-111"><a href="#cb49-111" aria-hidden="true" tabindex="-1"></a><span class="in">  theme(strip.text.x = element_text(size = 3)) +</span></span>
-<span id="cb49-112"><a href="#cb49-112" aria-hidden="true" tabindex="-1"></a><span class="in">  theme(axis.text.x = element_text(size = 5, angle = 90)) + </span></span>
-<span id="cb49-113"><a href="#cb49-113" aria-hidden="true" tabindex="-1"></a><span class="in">  facet_wrap(~esapopname)</span></span>
-<span id="cb49-114"><a href="#cb49-114" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb49-115"><a href="#cb49-115" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-116"><a href="#cb49-116" aria-hidden="true" tabindex="-1"></a><span class="fu">## Tasks for each group</span></span>
-<span id="cb49-117"><a href="#cb49-117" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-118"><a href="#cb49-118" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>Create estimates of spawner abundance for all missing years and provide estimates of the decline from the historical abundance.</span>
-<span id="cb49-119"><a href="#cb49-119" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-120"><a href="#cb49-120" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>Evaluate support for the major population groups. Are the populations in the groups more correlated than outside the groups?</span>
-<span id="cb49-121"><a href="#cb49-121" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-122"><a href="#cb49-122" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>Evaluate the evidence of correlation of salmon returns with climate indices. *We will talk about how to do this on the Tuesday after lab.*</span>
-<span id="cb49-123"><a href="#cb49-123" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-124"><a href="#cb49-124" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-125"><a href="#cb49-125" aria-hidden="true" tabindex="-1"></a><span class="fu">### Tips</span></span>
-<span id="cb49-126"><a href="#cb49-126" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-127"><a href="#cb49-127" aria-hidden="true" tabindex="-1"></a>**Simplify**</span>
-<span id="cb49-128"><a href="#cb49-128" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-129"><a href="#cb49-129" aria-hidden="true" tabindex="-1"></a>If your ESU has many populations, start with a smaller set of 4-7 populations.</span>
-<span id="cb49-130"><a href="#cb49-130" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-131"><a href="#cb49-131" aria-hidden="true" tabindex="-1"></a>**Assumptions**</span>
-<span id="cb49-132"><a href="#cb49-132" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-133"><a href="#cb49-133" aria-hidden="true" tabindex="-1"></a>You can assume that <span class="in">`R="diagonal and equal"`</span> and <span class="in">`A="scaling"`</span>. Assume that "historical" means the earliest years available for your group.</span>
-<span id="cb49-134"><a href="#cb49-134" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-135"><a href="#cb49-135" aria-hidden="true" tabindex="-1"></a>**States**</span>
-<span id="cb49-136"><a href="#cb49-136" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-137"><a href="#cb49-137" aria-hidden="true" tabindex="-1"></a>Your abundance estimate is the "x" or "state" estimates. You can get this from</span>
-<span id="cb49-138"><a href="#cb49-138" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb49-139"><a href="#cb49-139" aria-hidden="true" tabindex="-1"></a><span class="in">fit$states</span></span>
-<span id="cb49-140"><a href="#cb49-140" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb49-141"><a href="#cb49-141" aria-hidden="true" tabindex="-1"></a>or </span>
-<span id="cb49-142"><a href="#cb49-142" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb49-143"><a href="#cb49-143" aria-hidden="true" tabindex="-1"></a><span class="in">tsSmooth(fit)</span></span>
-<span id="cb49-144"><a href="#cb49-144" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb49-145"><a href="#cb49-145" aria-hidden="true" tabindex="-1"></a>where <span class="in">`fit`</span> is from <span class="in">`fit &lt;- MARSS()`</span></span>
-<span id="cb49-146"><a href="#cb49-146" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-147"><a href="#cb49-147" aria-hidden="true" tabindex="-1"></a>**plotting**</span>
-<span id="cb49-148"><a href="#cb49-148" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-149"><a href="#cb49-149" aria-hidden="true" tabindex="-1"></a>Estimate of the mean of the spawner counts based on your x model.</span>
-<span id="cb49-150"><a href="#cb49-150" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb49-151"><a href="#cb49-151" aria-hidden="true" tabindex="-1"></a><span class="in">autoplot(fit, plot.type="fitted.ytT")</span></span>
-<span id="cb49-152"><a href="#cb49-152" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb49-153"><a href="#cb49-153" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-154"><a href="#cb49-154" aria-hidden="true" tabindex="-1"></a>**diagnostics**</span>
-<span id="cb49-155"><a href="#cb49-155" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb49-156"><a href="#cb49-156" aria-hidden="true" tabindex="-1"></a><span class="in">autoplot(fit, plot.type="residuals")</span></span>
-<span id="cb49-157"><a href="#cb49-157" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb49-158"><a href="#cb49-158" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-159"><a href="#cb49-159" aria-hidden="true" tabindex="-1"></a><span class="fu">### Address the following in your methods</span></span>
-<span id="cb49-160"><a href="#cb49-160" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-161"><a href="#cb49-161" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>Describe your assumptions about the x and how the data time series are related to x.</span>
-<span id="cb49-162"><a href="#cb49-162" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-163"><a href="#cb49-163" aria-hidden="true" tabindex="-1"></a><span class="ss">   - </span>How are the x and y (data) related? 1 x for 1 y or will you assume 1 x for all y or 1 x for each major population group? How will you choose? </span>
-<span id="cb49-164"><a href="#cb49-164" aria-hidden="true" tabindex="-1"></a><span class="ss">   - </span>What will you assume about the U for the x's?</span>
-<span id="cb49-165"><a href="#cb49-165" aria-hidden="true" tabindex="-1"></a><span class="ss">   - </span>What will you assume about the Q matrix?</span>
-<span id="cb49-166"><a href="#cb49-166" aria-hidden="true" tabindex="-1"></a>   </span>
-<span id="cb49-167"><a href="#cb49-167" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>Write out your assumptions as different models **in matrix form**, fit each and then compare these with AIC or AICc.</span>
-<span id="cb49-168"><a href="#cb49-168" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-169"><a href="#cb49-169" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>Do your estimates differ depending on the assumptions you make about the structure of the data, i.e. you assumptions about the x's, Q, and U.</span>
-<span id="cb49-170"><a href="#cb49-170" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-171"><a href="#cb49-171" aria-hidden="true" tabindex="-1"></a><span class="fu">## Sample code</span></span>
-<span id="cb49-172"><a href="#cb49-172" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-173"><a href="#cb49-173" aria-hidden="true" tabindex="-1"></a>Here I show how I might analyze the Upper Columbia Steelhead data.</span>
-<span id="cb49-174"><a href="#cb49-174" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-175"><a href="#cb49-175" aria-hidden="true" tabindex="-1"></a><span class="in">```{r echo=FALSE, out.width="50%", fig.cap="Figure from 2022 5-Year Review: Summary &amp; Evaluation of Upper Columbia River Spring-run Chinook Salmon and Upper Columbia River Steelhead. NMFS. West Coast Region. https://doi.org/10.25923/p4w5-dp31"}</span></span>
-<span id="cb49-176"><a href="#cb49-176" aria-hidden="true" tabindex="-1"></a><span class="in">knitr::include_graphics("Data_Images/UCR-Steelhead-regions.png")</span></span>
-<span id="cb49-177"><a href="#cb49-177" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb49-178"><a href="#cb49-178" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-179"><a href="#cb49-179" aria-hidden="true" tabindex="-1"></a>Set up the data. We need the time series in a matrix with time across the columns.</span>
-<span id="cb49-180"><a href="#cb49-180" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-181"><a href="#cb49-181" aria-hidden="true" tabindex="-1"></a>Load the data.</span>
-<span id="cb49-184"><a href="#cb49-184" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb49-185"><a href="#cb49-185" aria-hidden="true" tabindex="-1"></a><span class="fu">load</span>(<span class="st">"Data_Images/esa-salmon.rda"</span>)</span>
-<span id="cb49-186"><a href="#cb49-186" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb49-187"><a href="#cb49-187" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-188"><a href="#cb49-188" aria-hidden="true" tabindex="-1"></a>Wrangle the data.</span>
-<span id="cb49-191"><a href="#cb49-191" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb49-192"><a href="#cb49-192" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
-<span id="cb49-193"><a href="#cb49-193" aria-hidden="true" tabindex="-1"></a>esunum <span class="ot">&lt;-</span> <span class="fu">which</span>(esu <span class="sc">==</span> <span class="st">"Steelhead (Upper Columbia River DPS)"</span>)</span>
-<span id="cb49-194"><a href="#cb49-194" aria-hidden="true" tabindex="-1"></a>esuname <span class="ot">&lt;-</span> esu[esunum]</span>
-<span id="cb49-195"><a href="#cb49-195" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-196"><a href="#cb49-196" aria-hidden="true" tabindex="-1"></a>dat <span class="ot">&lt;-</span> esa.salmon <span class="sc">%&gt;%</span> </span>
-<span id="cb49-197"><a href="#cb49-197" aria-hidden="true" tabindex="-1"></a>  <span class="fu">subset</span>(esu_dps <span class="sc">==</span> esuname) <span class="sc">%&gt;%</span> <span class="co"># get only this ESU</span></span>
-<span id="cb49-198"><a href="#cb49-198" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">log.spawner =</span> <span class="fu">log</span>(value)) <span class="sc">%&gt;%</span> <span class="co"># create a column called log.spawner</span></span>
-<span id="cb49-199"><a href="#cb49-199" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(esapopname, spawningyear, log.spawner) <span class="sc">%&gt;%</span> <span class="co"># get just the columns that I need</span></span>
-<span id="cb49-200"><a href="#cb49-200" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> <span class="st">"esapopname"</span>, <span class="at">values_from =</span> <span class="st">"log.spawner"</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb49-201"><a href="#cb49-201" aria-hidden="true" tabindex="-1"></a>  <span class="fu">column_to_rownames</span>(<span class="at">var =</span> <span class="st">"spawningyear"</span>) <span class="sc">%&gt;%</span> <span class="co"># make the years rownames</span></span>
-<span id="cb49-202"><a href="#cb49-202" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as.matrix</span>() <span class="sc">%&gt;%</span> <span class="co"># turn into a matrix with year down the rows</span></span>
-<span id="cb49-203"><a href="#cb49-203" aria-hidden="true" tabindex="-1"></a>  <span class="fu">t</span>() <span class="co"># make time across the columns</span></span>
-<span id="cb49-204"><a href="#cb49-204" aria-hidden="true" tabindex="-1"></a><span class="co"># MARSS complains if I don't do this</span></span>
-<span id="cb49-205"><a href="#cb49-205" aria-hidden="true" tabindex="-1"></a>dat[<span class="fu">is.na</span>(dat)] <span class="ot">&lt;-</span> <span class="cn">NA</span></span>
-<span id="cb49-206"><a href="#cb49-206" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb49-207"><a href="#cb49-207" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-208"><a href="#cb49-208" aria-hidden="true" tabindex="-1"></a>Clean up the row names</span>
-<span id="cb49-211"><a href="#cb49-211" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb49-212"><a href="#cb49-212" aria-hidden="true" tabindex="-1"></a>tmp <span class="ot">&lt;-</span> <span class="fu">rownames</span>(dat)</span>
-<span id="cb49-213"><a href="#cb49-213" aria-hidden="true" tabindex="-1"></a>tmp <span class="ot">&lt;-</span> stringr<span class="sc">::</span><span class="fu">str_replace</span>(tmp, <span class="st">"Steelhead [(]Upper Columbia River DPS[)]"</span>, <span class="st">""</span>)</span>
-<span id="cb49-214"><a href="#cb49-214" aria-hidden="true" tabindex="-1"></a>tmp <span class="ot">&lt;-</span> stringr<span class="sc">::</span><span class="fu">str_replace</span>(tmp, <span class="st">"River - summer"</span>, <span class="st">""</span>)</span>
-<span id="cb49-215"><a href="#cb49-215" aria-hidden="true" tabindex="-1"></a>tmp <span class="ot">&lt;-</span> stringr<span class="sc">::</span><span class="fu">str_trim</span>(tmp)</span>
-<span id="cb49-216"><a href="#cb49-216" aria-hidden="true" tabindex="-1"></a><span class="fu">rownames</span>(dat) <span class="ot">&lt;-</span> tmp</span>
-<span id="cb49-217"><a href="#cb49-217" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb49-218"><a href="#cb49-218" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-219"><a href="#cb49-219" aria-hidden="true" tabindex="-1"></a>Specify a model</span>
-<span id="cb49-222"><a href="#cb49-222" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb49-223"><a href="#cb49-223" aria-hidden="true" tabindex="-1"></a>mod.list1 <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
-<span id="cb49-224"><a href="#cb49-224" aria-hidden="true" tabindex="-1"></a>  <span class="at">U =</span> <span class="st">"unequal"</span>,</span>
-<span id="cb49-225"><a href="#cb49-225" aria-hidden="true" tabindex="-1"></a>  <span class="at">R =</span> <span class="st">"diagonal and equal"</span>,</span>
-<span id="cb49-226"><a href="#cb49-226" aria-hidden="true" tabindex="-1"></a>  <span class="at">Q =</span> <span class="st">"unconstrained"</span></span>
-<span id="cb49-227"><a href="#cb49-227" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb49-228"><a href="#cb49-228" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb49-229"><a href="#cb49-229" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-230"><a href="#cb49-230" aria-hidden="true" tabindex="-1"></a>Fit the model. In this case, a BFGS algorithm is faster.</span>
-<span id="cb49-233"><a href="#cb49-233" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb49-234"><a href="#cb49-234" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(MARSS)</span>
-<span id="cb49-235"><a href="#cb49-235" aria-hidden="true" tabindex="-1"></a>fit1 <span class="ot">&lt;-</span> <span class="fu">MARSS</span>(dat, <span class="at">model=</span>mod.list1, <span class="at">method=</span><span class="st">"BFGS"</span>)</span>
-<span id="cb49-236"><a href="#cb49-236" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb49-237"><a href="#cb49-237" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-238"><a href="#cb49-238" aria-hidden="true" tabindex="-1"></a>Hmmmmm, the Q variance is so high that it perfectly fits the data. That doesn't seem right.</span>
-<span id="cb49-241"><a href="#cb49-241" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb49-242"><a href="#cb49-242" aria-hidden="true" tabindex="-1"></a><span class="fu">autoplot</span>(fit1, <span class="at">plot.type=</span><span class="st">"fitted.ytT"</span>)</span>
-<span id="cb49-243"><a href="#cb49-243" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb49-244"><a href="#cb49-244" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-245"><a href="#cb49-245" aria-hidden="true" tabindex="-1"></a>Let's look at the corrplot. Interesting. The Methow and Entiat are almost perfectly correlated while the Entiat and Wenatchee are somewhat correlated. That makes sense if you look at a map.</span>
-<span id="cb49-248"><a href="#cb49-248" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb49-249"><a href="#cb49-249" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(corrplot)</span>
-<span id="cb49-250"><a href="#cb49-250" aria-hidden="true" tabindex="-1"></a>Q <span class="ot">&lt;-</span> <span class="fu">coef</span>(fit1, <span class="at">type=</span><span class="st">"matrix"</span>)<span class="sc">$</span>Q</span>
-<span id="cb49-251"><a href="#cb49-251" aria-hidden="true" tabindex="-1"></a>corrmat <span class="ot">&lt;-</span> <span class="fu">diag</span>(<span class="dv">1</span><span class="sc">/</span><span class="fu">sqrt</span>(<span class="fu">diag</span>(Q))) <span class="sc">%*%</span> Q <span class="sc">%*%</span> <span class="fu">diag</span>(<span class="dv">1</span><span class="sc">/</span><span class="fu">sqrt</span>(<span class="fu">diag</span>(Q)))</span>
-<span id="cb49-252"><a href="#cb49-252" aria-hidden="true" tabindex="-1"></a><span class="fu">corrplot</span>(corrmat)</span>
-<span id="cb49-253"><a href="#cb49-253" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb49-254"><a href="#cb49-254" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-255"><a href="#cb49-255" aria-hidden="true" tabindex="-1"></a>I need to use the EM algorithm (remove <span class="in">`method="BFGS"`</span>) because the BFGS algorithm doesn't allow constraints on the Q matrix.</span>
-<span id="cb49-258"><a href="#cb49-258" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb49-259"><a href="#cb49-259" aria-hidden="true" tabindex="-1"></a>mod.list2 <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
-<span id="cb49-260"><a href="#cb49-260" aria-hidden="true" tabindex="-1"></a>  <span class="at">U =</span> <span class="st">"unequal"</span>,</span>
-<span id="cb49-261"><a href="#cb49-261" aria-hidden="true" tabindex="-1"></a>  <span class="at">R =</span> <span class="st">"diagonal and equal"</span>,</span>
-<span id="cb49-262"><a href="#cb49-262" aria-hidden="true" tabindex="-1"></a>  <span class="at">Q =</span> <span class="st">"equalvarcov"</span></span>
-<span id="cb49-263"><a href="#cb49-263" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb49-264"><a href="#cb49-264" aria-hidden="true" tabindex="-1"></a>fit2 <span class="ot">&lt;-</span> <span class="fu">MARSS</span>(dat, <span class="at">model=</span>mod.list2, <span class="at">control =</span> <span class="fu">list</span>(<span class="at">maxit=</span><span class="dv">1000</span>))</span>
-<span id="cb49-265"><a href="#cb49-265" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb49-266"><a href="#cb49-266" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-269"><a href="#cb49-269" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb49-270"><a href="#cb49-270" aria-hidden="true" tabindex="-1"></a><span class="fu">autoplot</span>(fit2, <span class="at">plot.type=</span><span class="st">"fitted.ytT"</span>)</span>
-<span id="cb49-271"><a href="#cb49-271" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb49-272"><a href="#cb49-272" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-273"><a href="#cb49-273" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-274"><a href="#cb49-274" aria-hidden="true" tabindex="-1"></a>Now I want try something different. I will treat the Methow-Okanogan as one state and the Entiat-Wenatchee as another. I'll let these be correlated together. Interesting, these two are estimated to be perfectly correlated.</span>
-<span id="cb49-277"><a href="#cb49-277" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb49-278"><a href="#cb49-278" aria-hidden="true" tabindex="-1"></a>mod.list3 <span class="ot">&lt;-</span> mod.list1</span>
-<span id="cb49-279"><a href="#cb49-279" aria-hidden="true" tabindex="-1"></a>mod.list3<span class="sc">$</span>Q <span class="ot">&lt;-</span> <span class="st">"unconstrained"</span></span>
-<span id="cb49-280"><a href="#cb49-280" aria-hidden="true" tabindex="-1"></a>mod.list3<span class="sc">$</span>Z <span class="ot">&lt;-</span> <span class="fu">factor</span>(<span class="fu">c</span>(<span class="st">"ew"</span>, <span class="st">"mo"</span>, <span class="st">"mo"</span>, <span class="st">"ew"</span>))</span>
-<span id="cb49-281"><a href="#cb49-281" aria-hidden="true" tabindex="-1"></a>fit3 <span class="ot">&lt;-</span> <span class="fu">MARSS</span>(dat, <span class="at">model =</span> mod.list3)</span>
-<span id="cb49-282"><a href="#cb49-282" aria-hidden="true" tabindex="-1"></a><span class="fu">autoplot</span>(fit3, <span class="at">plot.type=</span><span class="st">"fitted.ytT"</span>)</span>
-<span id="cb49-283"><a href="#cb49-283" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb49-284"><a href="#cb49-284" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-285"><a href="#cb49-285" aria-hidden="true" tabindex="-1"></a>Finally, let's look at the AIC values. Fit1 was very flexible and can put a line through the data so I know I have at least one model in the set that can fit the data. Well, the most flexible model is the best. At this point, I'd like to look just at data after 1980 or so. I don't like the big dip that happened in the Wenatchee River. I'd want to talk to the biologists to find out what happened, especially because I know that there might be hatchery releases in this system.</span>
-<span id="cb49-288"><a href="#cb49-288" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb49-289"><a href="#cb49-289" aria-hidden="true" tabindex="-1"></a>aic <span class="ot">&lt;-</span> <span class="fu">c</span>(fit1<span class="sc">$</span>AICc, fit2<span class="sc">$</span>AICc, fit3<span class="sc">$</span>AICc)</span>
-<span id="cb49-290"><a href="#cb49-290" aria-hidden="true" tabindex="-1"></a>aic<span class="sc">-</span><span class="fu">min</span>(aic)</span>
-<span id="cb49-291"><a href="#cb49-291" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb49-292"><a href="#cb49-292" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-293"><a href="#cb49-293" aria-hidden="true" tabindex="-1"></a><span class="fu">### Including cycling</span></span>
-<span id="cb49-294"><a href="#cb49-294" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-295"><a href="#cb49-295" aria-hidden="true" tabindex="-1"></a>Let's just look at the data after 1987 to eliminate that string of NAs in the 3 rivers.</span>
-<span id="cb49-296"><a href="#cb49-296" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-299"><a href="#cb49-299" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb49-300"><a href="#cb49-300" aria-hidden="true" tabindex="-1"></a>dat87 <span class="ot">&lt;-</span> dat[,<span class="fu">colnames</span>(dat)<span class="sc">&gt;</span><span class="dv">1987</span>]</span>
-<span id="cb49-301"><a href="#cb49-301" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb49-302"><a href="#cb49-302" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-303"><a href="#cb49-303" aria-hidden="true" tabindex="-1"></a>Let's look the acf to look for evidence of cycling. Due to the nature of their life-cycle where they tend to return back to their spawning grounds after a certain numbers of years, we might expect some cycling although steelhead aren't really known for this (unlike sockeye, chinook and pink).</span>
-<span id="cb49-304"><a href="#cb49-304" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-305"><a href="#cb49-305" aria-hidden="true" tabindex="-1"></a>Well no obvious cycles.</span>
-<span id="cb49-306"><a href="#cb49-306" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-309"><a href="#cb49-309" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb49-310"><a href="#cb49-310" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow=</span><span class="fu">c</span>(<span class="dv">2</span>,<span class="dv">2</span>))</span>
-<span id="cb49-311"><a href="#cb49-311" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>){</span>
-<span id="cb49-312"><a href="#cb49-312" aria-hidden="true" tabindex="-1"></a>  <span class="fu">acf</span>(dat87[i,], <span class="at">na.action=</span>na.pass, <span class="at">main=</span><span class="fu">rownames</span>(dat87)[i])</span>
-<span id="cb49-313"><a href="#cb49-313" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb49-314"><a href="#cb49-314" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb49-315"><a href="#cb49-315" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-316"><a href="#cb49-316" aria-hidden="true" tabindex="-1"></a>But let's go through how we might include cycles. We are going to include cycles with frequency 3, 4, and 5, choosen to reflect steelhead returning after 3, 4 or 5 years.</span>
-<span id="cb49-317"><a href="#cb49-317" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-320"><a href="#cb49-320" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb49-321"><a href="#cb49-321" aria-hidden="true" tabindex="-1"></a>TT <span class="ot">&lt;-</span> <span class="fu">dim</span>(dat87)[<span class="dv">2</span>] <span class="co">#number of time steps</span></span>
-<span id="cb49-322"><a href="#cb49-322" aria-hidden="true" tabindex="-1"></a>covariates <span class="ot">&lt;-</span> <span class="fu">rbind</span>(</span>
-<span id="cb49-323"><a href="#cb49-323" aria-hidden="true" tabindex="-1"></a>  forecast<span class="sc">::</span><span class="fu">fourier</span>(<span class="fu">ts</span>(<span class="dv">1</span><span class="sc">:</span>TT, <span class="at">freq=</span><span class="dv">3</span>), <span class="at">K=</span><span class="dv">1</span>) <span class="sc">|&gt;</span> <span class="fu">t</span>(),</span>
-<span id="cb49-324"><a href="#cb49-324" aria-hidden="true" tabindex="-1"></a>  forecast<span class="sc">::</span><span class="fu">fourier</span>(<span class="fu">ts</span>(<span class="dv">1</span><span class="sc">:</span>TT, <span class="at">freq=</span><span class="dv">4</span>), <span class="at">K=</span><span class="dv">1</span>) <span class="sc">|&gt;</span> <span class="fu">t</span>(),</span>
-<span id="cb49-325"><a href="#cb49-325" aria-hidden="true" tabindex="-1"></a>  forecast<span class="sc">::</span><span class="fu">fourier</span>(<span class="fu">ts</span>(<span class="dv">1</span><span class="sc">:</span>TT, <span class="at">freq=</span><span class="dv">5</span>), <span class="at">K=</span><span class="dv">1</span>) <span class="sc">|&gt;</span> <span class="fu">t</span>()</span>
-<span id="cb49-326"><a href="#cb49-326" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb49-327"><a href="#cb49-327" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb49-328"><a href="#cb49-328" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-329"><a href="#cb49-329" aria-hidden="true" tabindex="-1"></a>Now let's fit a model with these covariates. Let's analyze the populations separately, so Q is diagonal.</span>
-<span id="cb49-332"><a href="#cb49-332" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb49-333"><a href="#cb49-333" aria-hidden="true" tabindex="-1"></a>mod.list4 <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
-<span id="cb49-334"><a href="#cb49-334" aria-hidden="true" tabindex="-1"></a>  <span class="at">Q =</span> <span class="st">"unconstrained"</span>,</span>
-<span id="cb49-335"><a href="#cb49-335" aria-hidden="true" tabindex="-1"></a>  <span class="at">U =</span> <span class="st">"unequal"</span>,</span>
-<span id="cb49-336"><a href="#cb49-336" aria-hidden="true" tabindex="-1"></a>  <span class="at">R =</span> <span class="st">"diagonal and equal"</span>,</span>
-<span id="cb49-337"><a href="#cb49-337" aria-hidden="true" tabindex="-1"></a>  <span class="at">D =</span> <span class="st">"unconstrained"</span>,</span>
-<span id="cb49-338"><a href="#cb49-338" aria-hidden="true" tabindex="-1"></a>  <span class="at">d =</span> covariates</span>
-<span id="cb49-339"><a href="#cb49-339" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb49-340"><a href="#cb49-340" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb49-341"><a href="#cb49-341" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb49-342"><a href="#cb49-342" aria-hidden="true" tabindex="-1"></a><span class="in">```{r acf-entiat}</span></span>
-<span id="cb49-343"><a href="#cb49-343" aria-hidden="true" tabindex="-1"></a><span class="in">fit4.87 &lt;- MARSS(dat87, model=mod.list4)</span></span>
-<span id="cb49-344"><a href="#cb49-344" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb49-345"><a href="#cb49-345" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-346"><a href="#cb49-346" aria-hidden="true" tabindex="-1"></a>Let's plot the estimates. <span class="in">`broom::tidy()`</span> will get a data frame with the terms, estimates and CIs.</span>
-<span id="cb49-349"><a href="#cb49-349" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb49-350"><a href="#cb49-350" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(broom)</span>
-<span id="cb49-351"><a href="#cb49-351" aria-hidden="true" tabindex="-1"></a><span class="co"># get all the parameter estimates for D</span></span>
-<span id="cb49-352"><a href="#cb49-352" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">tidy</span>(fit4<span class="fl">.87</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb49-353"><a href="#cb49-353" aria-hidden="true" tabindex="-1"></a>  <span class="fu">subset</span>(stringr<span class="sc">::</span><span class="fu">str_sub</span>(term,<span class="dv">1</span>,<span class="dv">1</span>)<span class="sc">==</span><span class="st">"D"</span>)</span>
-<span id="cb49-354"><a href="#cb49-354" aria-hidden="true" tabindex="-1"></a><span class="co"># add a column with the river names</span></span>
-<span id="cb49-355"><a href="#cb49-355" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>river <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(<span class="fu">rep</span>(<span class="fu">rownames</span>(dat87),<span class="fu">nrow</span>(covariates)))</span>
-<span id="cb49-356"><a href="#cb49-356" aria-hidden="true" tabindex="-1"></a><span class="co"># add a column for the lag or frequency</span></span>
-<span id="cb49-357"><a href="#cb49-357" aria-hidden="true" tabindex="-1"></a>lags <span class="ot">&lt;-</span> stringr<span class="sc">::</span><span class="fu">str_split</span>(<span class="fu">rownames</span>(covariates), <span class="st">"-"</span>) <span class="sc">%&gt;%</span> <span class="fu">lapply</span>(<span class="cf">function</span>(x){x[[<span class="dv">2</span>]]}) <span class="sc">%&gt;%</span> <span class="fu">unlist</span>()</span>
-<span id="cb49-358"><a href="#cb49-358" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>lag <span class="ot">&lt;-</span> <span class="fu">rep</span>(lags, <span class="at">each=</span><span class="fu">nrow</span>(dat87))</span>
-<span id="cb49-359"><a href="#cb49-359" aria-hidden="true" tabindex="-1"></a><span class="co"># add column for the type of fourier</span></span>
-<span id="cb49-360"><a href="#cb49-360" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>type <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="fu">rownames</span>(covariates), <span class="at">each=</span><span class="fu">nrow</span>(dat87))</span>
-<span id="cb49-361"><a href="#cb49-361" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb49-362"><a href="#cb49-362" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-363"><a href="#cb49-363" aria-hidden="true" tabindex="-1"></a>We can then plot this. Interesting. Some support for 5 year cycles.</span>
-<span id="cb49-366"><a href="#cb49-366" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb49-367"><a href="#cb49-367" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(df, <span class="fu">aes</span>(<span class="at">x=</span>type, <span class="at">y=</span>estimate, <span class="at">col=</span>lag)) <span class="sc">+</span> </span>
-<span id="cb49-368"><a href="#cb49-368" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
-<span id="cb49-369"><a href="#cb49-369" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_errorbar</span>(<span class="fu">aes</span>(<span class="at">ymin=</span>conf.low, <span class="at">ymax=</span>conf.up), <span class="at">width=</span>.<span class="dv">2</span>, <span class="at">position=</span><span class="fu">position_dodge</span>(.<span class="dv">9</span>)) <span class="sc">+</span></span>
-<span id="cb49-370"><a href="#cb49-370" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">0</span>) <span class="sc">+</span></span>
-<span id="cb49-371"><a href="#cb49-371" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>river) <span class="sc">+</span></span>
-<span id="cb49-372"><a href="#cb49-372" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggtitle</span>(<span class="st">"The cycle estimates with CIs"</span>)</span>
-<span id="cb49-373"><a href="#cb49-373" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb49-374"><a href="#cb49-374" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-375"><a href="#cb49-375" aria-hidden="true" tabindex="-1"></a>Let's compare some other models.</span>
-<span id="cb49-378"><a href="#cb49-378" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb49-379"><a href="#cb49-379" aria-hidden="true" tabindex="-1"></a><span class="co"># No cycles</span></span>
-<span id="cb49-380"><a href="#cb49-380" aria-hidden="true" tabindex="-1"></a>mod.list <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
-<span id="cb49-381"><a href="#cb49-381" aria-hidden="true" tabindex="-1"></a>  <span class="at">Q =</span> <span class="st">"unconstrained"</span>,</span>
-<span id="cb49-382"><a href="#cb49-382" aria-hidden="true" tabindex="-1"></a>  <span class="at">U =</span> <span class="st">"unequal"</span>,</span>
-<span id="cb49-383"><a href="#cb49-383" aria-hidden="true" tabindex="-1"></a>  <span class="at">R =</span> <span class="st">"diagonal and equal"</span></span>
-<span id="cb49-384"><a href="#cb49-384" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb49-385"><a href="#cb49-385" aria-hidden="true" tabindex="-1"></a>fit1<span class="fl">.87</span> <span class="ot">&lt;-</span> <span class="fu">MARSS</span>(dat87, <span class="at">model=</span>mod.list, <span class="at">silent=</span><span class="cn">TRUE</span>)</span>
-<span id="cb49-386"><a href="#cb49-386" aria-hidden="true" tabindex="-1"></a><span class="co"># Only lag 5 cycles</span></span>
-<span id="cb49-387"><a href="#cb49-387" aria-hidden="true" tabindex="-1"></a>mod.list <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
-<span id="cb49-388"><a href="#cb49-388" aria-hidden="true" tabindex="-1"></a>  <span class="at">Q =</span> <span class="st">"unconstrained"</span>,</span>
-<span id="cb49-389"><a href="#cb49-389" aria-hidden="true" tabindex="-1"></a>  <span class="at">U =</span> <span class="st">"unequal"</span>,</span>
-<span id="cb49-390"><a href="#cb49-390" aria-hidden="true" tabindex="-1"></a>  <span class="at">R =</span> <span class="st">"diagonal and equal"</span>,</span>
-<span id="cb49-391"><a href="#cb49-391" aria-hidden="true" tabindex="-1"></a>  <span class="at">D =</span> <span class="st">"unconstrained"</span>,</span>
-<span id="cb49-392"><a href="#cb49-392" aria-hidden="true" tabindex="-1"></a>  <span class="at">d =</span> covariates[<span class="dv">5</span><span class="sc">:</span><span class="dv">6</span>,]</span>
-<span id="cb49-393"><a href="#cb49-393" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb49-394"><a href="#cb49-394" aria-hidden="true" tabindex="-1"></a>fit5<span class="fl">.87</span> <span class="ot">&lt;-</span> <span class="fu">MARSS</span>(dat87, <span class="at">model=</span>mod.list, <span class="at">silent=</span><span class="cn">TRUE</span>)</span>
-<span id="cb49-395"><a href="#cb49-395" aria-hidden="true" tabindex="-1"></a><span class="co"># Cycles in the process</span></span>
-<span id="cb49-396"><a href="#cb49-396" aria-hidden="true" tabindex="-1"></a><span class="co"># which doesn't really make sense for salmon since the cycles are age-structure cycles </span></span>
-<span id="cb49-397"><a href="#cb49-397" aria-hidden="true" tabindex="-1"></a><span class="co"># which act like cycles in the observations</span></span>
-<span id="cb49-398"><a href="#cb49-398" aria-hidden="true" tabindex="-1"></a>mod.list <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
-<span id="cb49-399"><a href="#cb49-399" aria-hidden="true" tabindex="-1"></a>  <span class="at">Q =</span> <span class="st">"unconstrained"</span>,</span>
-<span id="cb49-400"><a href="#cb49-400" aria-hidden="true" tabindex="-1"></a>  <span class="at">U =</span> <span class="st">"unequal"</span>,</span>
-<span id="cb49-401"><a href="#cb49-401" aria-hidden="true" tabindex="-1"></a>  <span class="at">R =</span> <span class="st">"diagonal and equal"</span>,</span>
-<span id="cb49-402"><a href="#cb49-402" aria-hidden="true" tabindex="-1"></a>  <span class="at">C =</span> <span class="st">"unconstrained"</span>,</span>
-<span id="cb49-403"><a href="#cb49-403" aria-hidden="true" tabindex="-1"></a>  <span class="at">c =</span> covariates</span>
-<span id="cb49-404"><a href="#cb49-404" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb49-405"><a href="#cb49-405" aria-hidden="true" tabindex="-1"></a>fit6<span class="fl">.87</span> <span class="ot">&lt;-</span> <span class="fu">MARSS</span>(dat87, <span class="at">model=</span>mod.list, <span class="at">silent=</span><span class="cn">TRUE</span>)</span>
-<span id="cb49-406"><a href="#cb49-406" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb49-407"><a href="#cb49-407" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-408"><a href="#cb49-408" aria-hidden="true" tabindex="-1"></a>Hmm model without cyles is much better (lower AICc). Even if we only have the 5 year cycles (<span class="in">`covariates[5:6,]`</span>), the AICc is larger than for the models with cycles.</span>
-<span id="cb49-411"><a href="#cb49-411" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb49-412"><a href="#cb49-412" aria-hidden="true" tabindex="-1"></a>aic <span class="ot">&lt;-</span> <span class="fu">c</span>(fit1<span class="fl">.87</span><span class="sc">$</span>AICc, fit4<span class="fl">.87</span><span class="sc">$</span>AICc, fit5<span class="fl">.87</span><span class="sc">$</span>AICc, fit6<span class="fl">.87</span><span class="sc">$</span>AICc)</span>
-<span id="cb49-413"><a href="#cb49-413" aria-hidden="true" tabindex="-1"></a>aic<span class="sc">-</span><span class="fu">min</span>(aic)</span>
-<span id="cb49-414"><a href="#cb49-414" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb49-415"><a href="#cb49-415" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-416"><a href="#cb49-416" aria-hidden="true" tabindex="-1"></a><span class="fu">## Resources</span></span>
-<span id="cb49-417"><a href="#cb49-417" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-418"><a href="#cb49-418" aria-hidden="true" tabindex="-1"></a>Chapter 7 MARSS models. ATSA Lab Book. <span class="ot">&lt;https://atsa-es.github.io/atsa-labs/chap-mss.html&gt;</span></span>
-<span id="cb49-419"><a href="#cb49-419" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-420"><a href="#cb49-420" aria-hidden="true" tabindex="-1"></a>Chapter 8 MARSS models with covariate. ATSA Lab Book. <span class="ot">&lt;https://atsa-es.github.io/atsa-labs/chap-msscov.html&gt;</span></span>
-<span id="cb49-421"><a href="#cb49-421" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-422"><a href="#cb49-422" aria-hidden="true" tabindex="-1"></a>Chapter 16 Modeling cyclic sockeye <span class="ot">&lt;https://atsa-es.github.io/atsa-labs/chap-cyclic-sockeye.html&gt;</span></span>
+<div class="sourceCode" id="cb51" data-shortcodes="false"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a><span class="an">title:</span><span class="co"> Lab Intro</span></span>
+<span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a><span class="an">subtitle:</span><span class="co"> "Lab 2 Analyzing multivariate salmon data"</span></span>
+<span id="cb51-4"><a href="#cb51-4" aria-hidden="true" tabindex="-1"></a><span class="an">author:</span><span class="co"> "E Holmes"</span></span>
+<span id="cb51-5"><a href="#cb51-5" aria-hidden="true" tabindex="-1"></a><span class="an">date:</span><span class="co"> "April 17, 2025"</span></span>
+<span id="cb51-6"><a href="#cb51-6" aria-hidden="true" tabindex="-1"></a><span class="an">output:</span></span>
+<span id="cb51-7"><a href="#cb51-7" aria-hidden="true" tabindex="-1"></a><span class="co">  html_document:</span></span>
+<span id="cb51-8"><a href="#cb51-8" aria-hidden="true" tabindex="-1"></a><span class="co">    code-folding: yes</span></span>
+<span id="cb51-9"><a href="#cb51-9" aria-hidden="true" tabindex="-1"></a><span class="co">    toc: yes</span></span>
+<span id="cb51-10"><a href="#cb51-10" aria-hidden="true" tabindex="-1"></a><span class="co">    toc_float: yes</span></span>
+<span id="cb51-11"><a href="#cb51-11" aria-hidden="true" tabindex="-1"></a><span class="co">  pdf_document:</span></span>
+<span id="cb51-12"><a href="#cb51-12" aria-hidden="true" tabindex="-1"></a><span class="co">    toc: yes</span></span>
+<span id="cb51-13"><a href="#cb51-13" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb51-14"><a href="#cb51-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-15"><a href="#cb51-15" aria-hidden="true" tabindex="-1"></a><span class="in">```{r message=FALSE}</span></span>
+<span id="cb51-16"><a href="#cb51-16" aria-hidden="true" tabindex="-1"></a><span class="in">library(tidyverse)</span></span>
+<span id="cb51-17"><a href="#cb51-17" aria-hidden="true" tabindex="-1"></a><span class="in">options(dplyr.summarise.inform = FALSE)</span></span>
+<span id="cb51-18"><a href="#cb51-18" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb51-19"><a href="#cb51-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-20"><a href="#cb51-20" aria-hidden="true" tabindex="-1"></a>For this lab you will use multivariate auto-regressive state-space (MARSS) to analyze multivariate salmon data from the Columbia River. These data are noisy and gappy. They are estimates of total spawner abundance and might include hatchery spawners.</span>
+<span id="cb51-21"><a href="#cb51-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-22"><a href="#cb51-22" aria-hidden="true" tabindex="-1"></a><span class="fu">## Teams</span></span>
+<span id="cb51-23"><a href="#cb51-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-24"><a href="#cb51-24" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>Salmon, coho (Oregon Coast ESU) <span class="in">`esu[7]`</span></span>
+<span id="cb51-25"><a href="#cb51-25" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>Salmon, Chinook (Snake River spring/summer-run ESU) <span class="in">`esu[2]`</span></span>
+<span id="cb51-26"><a href="#cb51-26" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>Steelhead (Snake River Basin DPS) <span class="in">`esu[11]`</span></span>
+<span id="cb51-27"><a href="#cb51-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-28"><a href="#cb51-28" aria-hidden="true" tabindex="-1"></a><span class="in">```{r, results = "asis", echo=FALSE}</span></span>
+<span id="cb51-29"><a href="#cb51-29" aria-hidden="true" tabindex="-1"></a><span class="in"># Set up names and shuffle</span></span>
+<span id="cb51-30"><a href="#cb51-30" aria-hidden="true" tabindex="-1"></a><span class="in">set.seed(123)</span></span>
+<span id="cb51-31"><a href="#cb51-31" aria-hidden="true" tabindex="-1"></a><span class="in">names_str &lt;- "Anna, Brian, Nicole, Matheus, Lilac, Mary, Ben, Emma, Tina"</span></span>
+<span id="cb51-32"><a href="#cb51-32" aria-hidden="true" tabindex="-1"></a><span class="in">names &lt;- strsplit(names_str, ",\\s*")[[1]]</span></span>
+<span id="cb51-33"><a href="#cb51-33" aria-hidden="true" tabindex="-1"></a><span class="in">shuffled &lt;- sample(names)</span></span>
+<span id="cb51-34"><a href="#cb51-34" aria-hidden="true" tabindex="-1"></a><span class="in">teams &lt;- split(shuffled, ceiling(seq_along(shuffled) / 3))</span></span>
+<span id="cb51-35"><a href="#cb51-35" aria-hidden="true" tabindex="-1"></a><span class="in">for (i in seq_along(teams)) {</span></span>
+<span id="cb51-36"><a href="#cb51-36" aria-hidden="true" tabindex="-1"></a><span class="in">  cat(sprintf("- **Team %d**: %s  \n", i, paste(teams[[i]], collapse = ", ")))</span></span>
+<span id="cb51-37"><a href="#cb51-37" aria-hidden="true" tabindex="-1"></a><span class="in">}</span></span>
+<span id="cb51-38"><a href="#cb51-38" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb51-39"><a href="#cb51-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-40"><a href="#cb51-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-41"><a href="#cb51-41" aria-hidden="true" tabindex="-1"></a><span class="fu">## WA and OR Endangered and Threatened salmon spawner data</span></span>
+<span id="cb51-42"><a href="#cb51-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-43"><a href="#cb51-43" aria-hidden="true" tabindex="-1"></a>These data are from the <span class="co">[</span><span class="ot">Coordinated Assessments Partnership (CAP) </span><span class="co">](https://www.streamnet.org/cap/about-cap/)</span> and downloaded using the <span class="co">[</span><span class="ot">rCAX R client</span><span class="co">](https://nwfsc-cb.github.io/rCAX/)</span> for the CAX (the CAP database) API. The data are saved in <span class="in">`Lab-2/Data_Images/columbia-river.rda`</span>. See <span class="in">`Lab-2/Data_Images/setup_data_2025.R`</span> for the script to create the data.</span>
+<span id="cb51-44"><a href="#cb51-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-45"><a href="#cb51-45" aria-hidden="true" tabindex="-1"></a><span class="in">```{r load-data}</span></span>
+<span id="cb51-46"><a href="#cb51-46" aria-hidden="true" tabindex="-1"></a><span class="in">load("Data_Images/esa-salmon.rda")</span></span>
+<span id="cb51-47"><a href="#cb51-47" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb51-48"><a href="#cb51-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-49"><a href="#cb51-49" aria-hidden="true" tabindex="-1"></a>The data set has data for endangered and threatened ESU (Evolutionary Significant Units) and DPS (Distinct Population Segments) in the Washington and Oregon.</span>
+<span id="cb51-50"><a href="#cb51-50" aria-hidden="true" tabindex="-1"></a><span class="in">```{r esus}</span></span>
+<span id="cb51-51"><a href="#cb51-51" aria-hidden="true" tabindex="-1"></a><span class="in">esu &lt;- unique(esa.salmon$esu_dps)</span></span>
+<span id="cb51-52"><a href="#cb51-52" aria-hidden="true" tabindex="-1"></a><span class="in">esu</span></span>
+<span id="cb51-53"><a href="#cb51-53" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb51-54"><a href="#cb51-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-55"><a href="#cb51-55" aria-hidden="true" tabindex="-1"></a><span class="in">```{r echo=FALSE, out.width="50%", fig.cap="Figure from ESA recovery plan for Lower Columbia River Coho salmon, Lower Columbia River Chinook salmon, Columbia River Chum salmon, and Lower Columbia River steelhead. 2013. NMFS NW Region.  https://repository.library.noaa.gov/view/noaa/16002"}</span></span>
+<span id="cb51-56"><a href="#cb51-56" aria-hidden="true" tabindex="-1"></a><span class="in">knitr::include_graphics("Data_Images/LCR-chinook-regions.png")</span></span>
+<span id="cb51-57"><a href="#cb51-57" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb51-58"><a href="#cb51-58" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-59"><a href="#cb51-59" aria-hidden="true" tabindex="-1"></a><span class="fu">### Data structure</span></span>
+<span id="cb51-60"><a href="#cb51-60" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-61"><a href="#cb51-61" aria-hidden="true" tabindex="-1"></a>The dataset has the following columns</span>
+<span id="cb51-62"><a href="#cb51-62" aria-hidden="true" tabindex="-1"></a><span class="in">```{r data-structure}</span></span>
+<span id="cb51-63"><a href="#cb51-63" aria-hidden="true" tabindex="-1"></a><span class="in">colnames(esa.salmon)</span></span>
+<span id="cb51-64"><a href="#cb51-64" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb51-65"><a href="#cb51-65" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>species: Chinook, Coho, Steelhead, Chum, Sockeye</span>
+<span id="cb51-66"><a href="#cb51-66" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>esu_dps: name of the ESU</span>
+<span id="cb51-67"><a href="#cb51-67" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>majorpopgroup: biological major group</span>
+<span id="cb51-68"><a href="#cb51-68" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>commonpopname: common population name, generally a stream or river</span>
+<span id="cb51-69"><a href="#cb51-69" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>run: run-timing</span>
+<span id="cb51-70"><a href="#cb51-70" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>spawningyear: the year that the spawners were counted on the spawning grounds</span>
+<span id="cb51-71"><a href="#cb51-71" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>value: total (natural-born and hatchery-born) spawners on the spawning ground. Generally some type of redd-count expansion or some other stream count of spawners. Redd = a gravel nest.</span>
+<span id="cb51-72"><a href="#cb51-72" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-73"><a href="#cb51-73" aria-hidden="true" tabindex="-1"></a><span class="fu">### Data plots</span></span>
+<span id="cb51-74"><a href="#cb51-74" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-75"><a href="#cb51-75" aria-hidden="true" tabindex="-1"></a>Let's load one ESU and make a plot. Create a function.</span>
+<span id="cb51-76"><a href="#cb51-76" aria-hidden="true" tabindex="-1"></a><span class="in">```{r plot-function}</span></span>
+<span id="cb51-77"><a href="#cb51-77" aria-hidden="true" tabindex="-1"></a><span class="in">plotesu &lt;- function(esuname){</span></span>
+<span id="cb51-78"><a href="#cb51-78" aria-hidden="true" tabindex="-1"></a><span class="in">  df &lt;- esa.salmon %&gt;% subset(esu_dps %in% esuname)</span></span>
+<span id="cb51-79"><a href="#cb51-79" aria-hidden="true" tabindex="-1"></a><span class="in">ggplot(df, aes(x=spawningyear, y=log(value), color=majorpopgroup)) + </span></span>
+<span id="cb51-80"><a href="#cb51-80" aria-hidden="true" tabindex="-1"></a><span class="in">  geom_point(size=0.2, na.rm = TRUE) + </span></span>
+<span id="cb51-81"><a href="#cb51-81" aria-hidden="true" tabindex="-1"></a><span class="in">  theme(strip.text.x = element_text(size = 3)) +</span></span>
+<span id="cb51-82"><a href="#cb51-82" aria-hidden="true" tabindex="-1"></a><span class="in">  theme(axis.text.x = element_text(size = 5, angle = 90)) +</span></span>
+<span id="cb51-83"><a href="#cb51-83" aria-hidden="true" tabindex="-1"></a><span class="in">  facet_wrap(~esapopname) +</span></span>
+<span id="cb51-84"><a href="#cb51-84" aria-hidden="true" tabindex="-1"></a><span class="in">  ggtitle(paste0(esuname, collapse="\n"))</span></span>
+<span id="cb51-85"><a href="#cb51-85" aria-hidden="true" tabindex="-1"></a><span class="in">}</span></span>
+<span id="cb51-86"><a href="#cb51-86" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb51-87"><a href="#cb51-87" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-90"><a href="#cb51-90" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb51-91"><a href="#cb51-91" aria-hidden="true" tabindex="-1"></a><span class="fu">plotesu</span>(esu[<span class="dv">7</span>])</span>
+<span id="cb51-92"><a href="#cb51-92" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb51-93"><a href="#cb51-93" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-96"><a href="#cb51-96" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb51-97"><a href="#cb51-97" aria-hidden="true" tabindex="-1"></a><span class="fu">plotesu</span>(esu[<span class="dv">11</span>])</span>
+<span id="cb51-98"><a href="#cb51-98" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb51-99"><a href="#cb51-99" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-102"><a href="#cb51-102" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb51-103"><a href="#cb51-103" aria-hidden="true" tabindex="-1"></a><span class="fu">plotesu</span>(esu[<span class="dv">2</span>])</span>
+<span id="cb51-104"><a href="#cb51-104" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb51-105"><a href="#cb51-105" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-106"><a href="#cb51-106" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-107"><a href="#cb51-107" aria-hidden="true" tabindex="-1"></a><span class="in">```{r plot-runs}</span></span>
+<span id="cb51-108"><a href="#cb51-108" aria-hidden="true" tabindex="-1"></a><span class="in">df &lt;- esa.salmon %&gt;% subset(species == "Chinook salmon")</span></span>
+<span id="cb51-109"><a href="#cb51-109" aria-hidden="true" tabindex="-1"></a><span class="in">ggplot(df, aes(x=spawningyear, y=log(value), color=run)) + </span></span>
+<span id="cb51-110"><a href="#cb51-110" aria-hidden="true" tabindex="-1"></a><span class="in">  geom_point(size=0.2, na.rm = TRUE) +</span></span>
+<span id="cb51-111"><a href="#cb51-111" aria-hidden="true" tabindex="-1"></a><span class="in">  theme(strip.text.x = element_text(size = 3)) +</span></span>
+<span id="cb51-112"><a href="#cb51-112" aria-hidden="true" tabindex="-1"></a><span class="in">  theme(axis.text.x = element_text(size = 5, angle = 90)) + </span></span>
+<span id="cb51-113"><a href="#cb51-113" aria-hidden="true" tabindex="-1"></a><span class="in">  facet_wrap(~esapopname)</span></span>
+<span id="cb51-114"><a href="#cb51-114" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb51-115"><a href="#cb51-115" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-116"><a href="#cb51-116" aria-hidden="true" tabindex="-1"></a><span class="fu">## Tasks for each group</span></span>
+<span id="cb51-117"><a href="#cb51-117" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-118"><a href="#cb51-118" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>Create estimates of spawner abundance for all missing years and provide estimates of the decline from the historical abundance.</span>
+<span id="cb51-119"><a href="#cb51-119" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-120"><a href="#cb51-120" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>Evaluate support for the major population groups. Are the populations in the groups more correlated than outside the groups?</span>
+<span id="cb51-121"><a href="#cb51-121" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-122"><a href="#cb51-122" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>Evaluate the evidence of correlation of salmon returns with climate indices. *We will talk about how to do this on the Tuesday after lab.*</span>
+<span id="cb51-123"><a href="#cb51-123" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-124"><a href="#cb51-124" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-125"><a href="#cb51-125" aria-hidden="true" tabindex="-1"></a><span class="fu">### Tips</span></span>
+<span id="cb51-126"><a href="#cb51-126" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-127"><a href="#cb51-127" aria-hidden="true" tabindex="-1"></a>**Simplify**</span>
+<span id="cb51-128"><a href="#cb51-128" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-129"><a href="#cb51-129" aria-hidden="true" tabindex="-1"></a>If your ESU has many populations, start with a smaller set of 4-7 populations.</span>
+<span id="cb51-130"><a href="#cb51-130" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-131"><a href="#cb51-131" aria-hidden="true" tabindex="-1"></a>**Assumptions**</span>
+<span id="cb51-132"><a href="#cb51-132" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-133"><a href="#cb51-133" aria-hidden="true" tabindex="-1"></a>You can assume that <span class="in">`R="diagonal and equal"`</span> and <span class="in">`A="scaling"`</span>. Assume that "historical" means the earliest years available for your group.</span>
+<span id="cb51-134"><a href="#cb51-134" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-135"><a href="#cb51-135" aria-hidden="true" tabindex="-1"></a>**States**</span>
+<span id="cb51-136"><a href="#cb51-136" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-137"><a href="#cb51-137" aria-hidden="true" tabindex="-1"></a>Your abundance estimate is the "x" or "state" estimates. You can get this from</span>
+<span id="cb51-138"><a href="#cb51-138" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb51-139"><a href="#cb51-139" aria-hidden="true" tabindex="-1"></a><span class="in">fit$states</span></span>
+<span id="cb51-140"><a href="#cb51-140" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb51-141"><a href="#cb51-141" aria-hidden="true" tabindex="-1"></a>or </span>
+<span id="cb51-142"><a href="#cb51-142" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb51-143"><a href="#cb51-143" aria-hidden="true" tabindex="-1"></a><span class="in">tsSmooth(fit)</span></span>
+<span id="cb51-144"><a href="#cb51-144" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb51-145"><a href="#cb51-145" aria-hidden="true" tabindex="-1"></a>where <span class="in">`fit`</span> is from <span class="in">`fit &lt;- MARSS()`</span></span>
+<span id="cb51-146"><a href="#cb51-146" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-147"><a href="#cb51-147" aria-hidden="true" tabindex="-1"></a>**plotting**</span>
+<span id="cb51-148"><a href="#cb51-148" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-149"><a href="#cb51-149" aria-hidden="true" tabindex="-1"></a>Estimate of the mean of the spawner counts based on your x model.</span>
+<span id="cb51-150"><a href="#cb51-150" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb51-151"><a href="#cb51-151" aria-hidden="true" tabindex="-1"></a><span class="in">autoplot(fit, plot.type="fitted.ytT")</span></span>
+<span id="cb51-152"><a href="#cb51-152" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb51-153"><a href="#cb51-153" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-154"><a href="#cb51-154" aria-hidden="true" tabindex="-1"></a>**diagnostics**</span>
+<span id="cb51-155"><a href="#cb51-155" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb51-156"><a href="#cb51-156" aria-hidden="true" tabindex="-1"></a><span class="in">autoplot(fit, plot.type="residuals")</span></span>
+<span id="cb51-157"><a href="#cb51-157" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb51-158"><a href="#cb51-158" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-159"><a href="#cb51-159" aria-hidden="true" tabindex="-1"></a><span class="fu">### Address the following in your methods</span></span>
+<span id="cb51-160"><a href="#cb51-160" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-161"><a href="#cb51-161" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>Describe your assumptions about the x and how the data time series are related to x.</span>
+<span id="cb51-162"><a href="#cb51-162" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-163"><a href="#cb51-163" aria-hidden="true" tabindex="-1"></a><span class="ss">   - </span>How are the x and y (data) related? 1 x for 1 y or will you assume 1 x for all y or 1 x for each major population group? How will you choose? </span>
+<span id="cb51-164"><a href="#cb51-164" aria-hidden="true" tabindex="-1"></a><span class="ss">   - </span>What will you assume about the U for the x's?</span>
+<span id="cb51-165"><a href="#cb51-165" aria-hidden="true" tabindex="-1"></a><span class="ss">   - </span>What will you assume about the Q matrix?</span>
+<span id="cb51-166"><a href="#cb51-166" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb51-167"><a href="#cb51-167" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>Write out your assumptions as different models **in matrix form**, fit each and then compare these with AIC or AICc.</span>
+<span id="cb51-168"><a href="#cb51-168" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-169"><a href="#cb51-169" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>Do your estimates differ depending on the assumptions you make about the structure of the data, i.e. you assumptions about the x's, Q, and U.</span>
+<span id="cb51-170"><a href="#cb51-170" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-171"><a href="#cb51-171" aria-hidden="true" tabindex="-1"></a><span class="fu">## Sample code</span></span>
+<span id="cb51-172"><a href="#cb51-172" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-173"><a href="#cb51-173" aria-hidden="true" tabindex="-1"></a>Here I show how I might analyze the Upper Columbia Steelhead data.</span>
+<span id="cb51-174"><a href="#cb51-174" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-175"><a href="#cb51-175" aria-hidden="true" tabindex="-1"></a><span class="in">```{r echo=FALSE, out.width="50%", fig.cap="Figure from 2022 5-Year Review: Summary &amp; Evaluation of Upper Columbia River Spring-run Chinook Salmon and Upper Columbia River Steelhead. NMFS. West Coast Region. https://doi.org/10.25923/p4w5-dp31"}</span></span>
+<span id="cb51-176"><a href="#cb51-176" aria-hidden="true" tabindex="-1"></a><span class="in">knitr::include_graphics("Data_Images/UCR-Steelhead-regions.png")</span></span>
+<span id="cb51-177"><a href="#cb51-177" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb51-178"><a href="#cb51-178" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-179"><a href="#cb51-179" aria-hidden="true" tabindex="-1"></a>Set up the data. We need the time series in a matrix with time across the columns.</span>
+<span id="cb51-180"><a href="#cb51-180" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-181"><a href="#cb51-181" aria-hidden="true" tabindex="-1"></a>Load the data.</span>
+<span id="cb51-184"><a href="#cb51-184" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb51-185"><a href="#cb51-185" aria-hidden="true" tabindex="-1"></a><span class="fu">load</span>(<span class="st">"Data_Images/esa-salmon.rda"</span>)</span>
+<span id="cb51-186"><a href="#cb51-186" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb51-187"><a href="#cb51-187" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-188"><a href="#cb51-188" aria-hidden="true" tabindex="-1"></a>Wrangle the data.</span>
+<span id="cb51-191"><a href="#cb51-191" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb51-192"><a href="#cb51-192" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb51-193"><a href="#cb51-193" aria-hidden="true" tabindex="-1"></a>esunum <span class="ot">&lt;-</span> <span class="fu">which</span>(esu <span class="sc">==</span> <span class="st">"Steelhead (Upper Columbia River DPS)"</span>)</span>
+<span id="cb51-194"><a href="#cb51-194" aria-hidden="true" tabindex="-1"></a>esuname <span class="ot">&lt;-</span> esu[esunum]</span>
+<span id="cb51-195"><a href="#cb51-195" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-196"><a href="#cb51-196" aria-hidden="true" tabindex="-1"></a>dat <span class="ot">&lt;-</span> esa.salmon <span class="sc">%&gt;%</span> </span>
+<span id="cb51-197"><a href="#cb51-197" aria-hidden="true" tabindex="-1"></a>  <span class="fu">subset</span>(esu_dps <span class="sc">==</span> esuname) <span class="sc">%&gt;%</span> <span class="co"># get only this ESU</span></span>
+<span id="cb51-198"><a href="#cb51-198" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">log.spawner =</span> <span class="fu">log</span>(value)) <span class="sc">%&gt;%</span> <span class="co"># create a column called log.spawner</span></span>
+<span id="cb51-199"><a href="#cb51-199" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(esapopname, spawningyear, log.spawner) <span class="sc">%&gt;%</span> <span class="co"># get just the columns that I need</span></span>
+<span id="cb51-200"><a href="#cb51-200" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> <span class="st">"esapopname"</span>, <span class="at">values_from =</span> <span class="st">"log.spawner"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb51-201"><a href="#cb51-201" aria-hidden="true" tabindex="-1"></a>  <span class="fu">column_to_rownames</span>(<span class="at">var =</span> <span class="st">"spawningyear"</span>) <span class="sc">%&gt;%</span> <span class="co"># make the years rownames</span></span>
+<span id="cb51-202"><a href="#cb51-202" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as.matrix</span>() <span class="sc">%&gt;%</span> <span class="co"># turn into a matrix with year down the rows</span></span>
+<span id="cb51-203"><a href="#cb51-203" aria-hidden="true" tabindex="-1"></a>  <span class="fu">t</span>() <span class="co"># make time across the columns</span></span>
+<span id="cb51-204"><a href="#cb51-204" aria-hidden="true" tabindex="-1"></a><span class="co"># MARSS complains if I don't do this</span></span>
+<span id="cb51-205"><a href="#cb51-205" aria-hidden="true" tabindex="-1"></a>dat[<span class="fu">is.na</span>(dat)] <span class="ot">&lt;-</span> <span class="cn">NA</span></span>
+<span id="cb51-206"><a href="#cb51-206" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb51-207"><a href="#cb51-207" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-208"><a href="#cb51-208" aria-hidden="true" tabindex="-1"></a>Clean up the row names</span>
+<span id="cb51-211"><a href="#cb51-211" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb51-212"><a href="#cb51-212" aria-hidden="true" tabindex="-1"></a>tmp <span class="ot">&lt;-</span> <span class="fu">rownames</span>(dat)</span>
+<span id="cb51-213"><a href="#cb51-213" aria-hidden="true" tabindex="-1"></a>tmp <span class="ot">&lt;-</span> stringr<span class="sc">::</span><span class="fu">str_replace</span>(tmp, <span class="st">"Steelhead [(]Upper Columbia River DPS[)]"</span>, <span class="st">""</span>)</span>
+<span id="cb51-214"><a href="#cb51-214" aria-hidden="true" tabindex="-1"></a>tmp <span class="ot">&lt;-</span> stringr<span class="sc">::</span><span class="fu">str_replace</span>(tmp, <span class="st">"River - summer"</span>, <span class="st">""</span>)</span>
+<span id="cb51-215"><a href="#cb51-215" aria-hidden="true" tabindex="-1"></a>tmp <span class="ot">&lt;-</span> stringr<span class="sc">::</span><span class="fu">str_trim</span>(tmp)</span>
+<span id="cb51-216"><a href="#cb51-216" aria-hidden="true" tabindex="-1"></a><span class="fu">rownames</span>(dat) <span class="ot">&lt;-</span> tmp</span>
+<span id="cb51-217"><a href="#cb51-217" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb51-218"><a href="#cb51-218" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-219"><a href="#cb51-219" aria-hidden="true" tabindex="-1"></a>Specify a model</span>
+<span id="cb51-222"><a href="#cb51-222" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb51-223"><a href="#cb51-223" aria-hidden="true" tabindex="-1"></a>mod.list1 <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb51-224"><a href="#cb51-224" aria-hidden="true" tabindex="-1"></a>  <span class="at">U =</span> <span class="st">"unequal"</span>,</span>
+<span id="cb51-225"><a href="#cb51-225" aria-hidden="true" tabindex="-1"></a>  <span class="at">R =</span> <span class="st">"diagonal and equal"</span>,</span>
+<span id="cb51-226"><a href="#cb51-226" aria-hidden="true" tabindex="-1"></a>  <span class="at">Q =</span> <span class="st">"unconstrained"</span></span>
+<span id="cb51-227"><a href="#cb51-227" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb51-228"><a href="#cb51-228" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb51-229"><a href="#cb51-229" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-230"><a href="#cb51-230" aria-hidden="true" tabindex="-1"></a>Fit the model. In this case, a BFGS algorithm is faster.</span>
+<span id="cb51-233"><a href="#cb51-233" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb51-234"><a href="#cb51-234" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(MARSS)</span>
+<span id="cb51-235"><a href="#cb51-235" aria-hidden="true" tabindex="-1"></a>fit1 <span class="ot">&lt;-</span> <span class="fu">MARSS</span>(dat, <span class="at">model=</span>mod.list1, <span class="at">method=</span><span class="st">"BFGS"</span>)</span>
+<span id="cb51-236"><a href="#cb51-236" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb51-237"><a href="#cb51-237" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-238"><a href="#cb51-238" aria-hidden="true" tabindex="-1"></a>Hmmmmm, the Q variance is so high that it perfectly fits the data. That doesn't seem right.</span>
+<span id="cb51-241"><a href="#cb51-241" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb51-242"><a href="#cb51-242" aria-hidden="true" tabindex="-1"></a><span class="fu">autoplot</span>(fit1, <span class="at">plot.type=</span><span class="st">"fitted.ytT"</span>)</span>
+<span id="cb51-243"><a href="#cb51-243" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb51-244"><a href="#cb51-244" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-245"><a href="#cb51-245" aria-hidden="true" tabindex="-1"></a>Let's look at the corrplot. Interesting. The Methow and Entiat are almost perfectly correlated while the Entiat and Wenatchee are somewhat correlated. That makes sense if you look at a map.</span>
+<span id="cb51-248"><a href="#cb51-248" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb51-249"><a href="#cb51-249" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(corrplot)</span>
+<span id="cb51-250"><a href="#cb51-250" aria-hidden="true" tabindex="-1"></a>Q <span class="ot">&lt;-</span> <span class="fu">coef</span>(fit1, <span class="at">type=</span><span class="st">"matrix"</span>)<span class="sc">$</span>Q</span>
+<span id="cb51-251"><a href="#cb51-251" aria-hidden="true" tabindex="-1"></a>corrmat <span class="ot">&lt;-</span> <span class="fu">diag</span>(<span class="dv">1</span><span class="sc">/</span><span class="fu">sqrt</span>(<span class="fu">diag</span>(Q))) <span class="sc">%*%</span> Q <span class="sc">%*%</span> <span class="fu">diag</span>(<span class="dv">1</span><span class="sc">/</span><span class="fu">sqrt</span>(<span class="fu">diag</span>(Q)))</span>
+<span id="cb51-252"><a href="#cb51-252" aria-hidden="true" tabindex="-1"></a><span class="fu">corrplot</span>(corrmat)</span>
+<span id="cb51-253"><a href="#cb51-253" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb51-254"><a href="#cb51-254" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-255"><a href="#cb51-255" aria-hidden="true" tabindex="-1"></a>I need to use the EM algorithm (remove <span class="in">`method="BFGS"`</span>) because the BFGS algorithm doesn't allow constraints on the Q matrix.</span>
+<span id="cb51-258"><a href="#cb51-258" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb51-259"><a href="#cb51-259" aria-hidden="true" tabindex="-1"></a>mod.list2 <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb51-260"><a href="#cb51-260" aria-hidden="true" tabindex="-1"></a>  <span class="at">U =</span> <span class="st">"unequal"</span>,</span>
+<span id="cb51-261"><a href="#cb51-261" aria-hidden="true" tabindex="-1"></a>  <span class="at">R =</span> <span class="st">"diagonal and equal"</span>,</span>
+<span id="cb51-262"><a href="#cb51-262" aria-hidden="true" tabindex="-1"></a>  <span class="at">Q =</span> <span class="st">"equalvarcov"</span></span>
+<span id="cb51-263"><a href="#cb51-263" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb51-264"><a href="#cb51-264" aria-hidden="true" tabindex="-1"></a>fit2 <span class="ot">&lt;-</span> <span class="fu">MARSS</span>(dat, <span class="at">model=</span>mod.list2, <span class="at">control =</span> <span class="fu">list</span>(<span class="at">maxit=</span><span class="dv">1000</span>))</span>
+<span id="cb51-265"><a href="#cb51-265" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb51-266"><a href="#cb51-266" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-269"><a href="#cb51-269" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb51-270"><a href="#cb51-270" aria-hidden="true" tabindex="-1"></a><span class="fu">autoplot</span>(fit2, <span class="at">plot.type=</span><span class="st">"fitted.ytT"</span>)</span>
+<span id="cb51-271"><a href="#cb51-271" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb51-272"><a href="#cb51-272" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-273"><a href="#cb51-273" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-274"><a href="#cb51-274" aria-hidden="true" tabindex="-1"></a>Now I want try something different. I will treat the Methow-Okanogan as one state and the Entiat-Wenatchee as another. I'll let these be correlated together. Interesting, these two are estimated to be perfectly correlated.</span>
+<span id="cb51-277"><a href="#cb51-277" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb51-278"><a href="#cb51-278" aria-hidden="true" tabindex="-1"></a>mod.list3 <span class="ot">&lt;-</span> mod.list1</span>
+<span id="cb51-279"><a href="#cb51-279" aria-hidden="true" tabindex="-1"></a>mod.list3<span class="sc">$</span>Q <span class="ot">&lt;-</span> <span class="st">"unconstrained"</span></span>
+<span id="cb51-280"><a href="#cb51-280" aria-hidden="true" tabindex="-1"></a>mod.list3<span class="sc">$</span>Z <span class="ot">&lt;-</span> <span class="fu">factor</span>(<span class="fu">c</span>(<span class="st">"ew"</span>, <span class="st">"mo"</span>, <span class="st">"mo"</span>, <span class="st">"ew"</span>))</span>
+<span id="cb51-281"><a href="#cb51-281" aria-hidden="true" tabindex="-1"></a>fit3 <span class="ot">&lt;-</span> <span class="fu">MARSS</span>(dat, <span class="at">model =</span> mod.list3)</span>
+<span id="cb51-282"><a href="#cb51-282" aria-hidden="true" tabindex="-1"></a><span class="fu">autoplot</span>(fit3, <span class="at">plot.type=</span><span class="st">"fitted.ytT"</span>)</span>
+<span id="cb51-283"><a href="#cb51-283" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb51-284"><a href="#cb51-284" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-285"><a href="#cb51-285" aria-hidden="true" tabindex="-1"></a>Finally, let's look at the AIC values. Fit1 was very flexible and can put a line through the data so I know I have at least one model in the set that can fit the data. Well, the most flexible model is the best. At this point, I'd like to look just at data after 1980 or so. I don't like the big dip that happened in the Wenatchee River. I'd want to talk to the biologists to find out what happened, especially because I know that there might be hatchery releases in this system.</span>
+<span id="cb51-288"><a href="#cb51-288" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb51-289"><a href="#cb51-289" aria-hidden="true" tabindex="-1"></a>aic <span class="ot">&lt;-</span> <span class="fu">c</span>(fit1<span class="sc">$</span>AICc, fit2<span class="sc">$</span>AICc, fit3<span class="sc">$</span>AICc)</span>
+<span id="cb51-290"><a href="#cb51-290" aria-hidden="true" tabindex="-1"></a>aic<span class="sc">-</span><span class="fu">min</span>(aic)</span>
+<span id="cb51-291"><a href="#cb51-291" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb51-292"><a href="#cb51-292" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-293"><a href="#cb51-293" aria-hidden="true" tabindex="-1"></a><span class="fu">### Including cycling</span></span>
+<span id="cb51-294"><a href="#cb51-294" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-295"><a href="#cb51-295" aria-hidden="true" tabindex="-1"></a>Let's just look at the data after 1987 to eliminate that string of NAs in the 3 rivers.</span>
+<span id="cb51-296"><a href="#cb51-296" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-299"><a href="#cb51-299" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb51-300"><a href="#cb51-300" aria-hidden="true" tabindex="-1"></a>dat87 <span class="ot">&lt;-</span> dat[,<span class="fu">colnames</span>(dat)<span class="sc">&gt;</span><span class="dv">1987</span>]</span>
+<span id="cb51-301"><a href="#cb51-301" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb51-302"><a href="#cb51-302" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-303"><a href="#cb51-303" aria-hidden="true" tabindex="-1"></a>Let's look the acf to look for evidence of cycling. Due to the nature of their life-cycle where they tend to return back to their spawning grounds after a certain numbers of years, we might expect some cycling although steelhead aren't really known for this (unlike sockeye, chinook and pink).</span>
+<span id="cb51-304"><a href="#cb51-304" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-305"><a href="#cb51-305" aria-hidden="true" tabindex="-1"></a>Well no obvious cycles.</span>
+<span id="cb51-306"><a href="#cb51-306" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-309"><a href="#cb51-309" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb51-310"><a href="#cb51-310" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow=</span><span class="fu">c</span>(<span class="dv">2</span>,<span class="dv">2</span>))</span>
+<span id="cb51-311"><a href="#cb51-311" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>){</span>
+<span id="cb51-312"><a href="#cb51-312" aria-hidden="true" tabindex="-1"></a>  <span class="fu">acf</span>(dat87[i,], <span class="at">na.action=</span>na.pass, <span class="at">main=</span><span class="fu">rownames</span>(dat87)[i])</span>
+<span id="cb51-313"><a href="#cb51-313" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb51-314"><a href="#cb51-314" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb51-315"><a href="#cb51-315" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-316"><a href="#cb51-316" aria-hidden="true" tabindex="-1"></a>But let's go through how we might include cycles. We are going to include cycles with frequency 3, 4, and 5, choosen to reflect steelhead returning after 3, 4 or 5 years.</span>
+<span id="cb51-317"><a href="#cb51-317" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-320"><a href="#cb51-320" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb51-321"><a href="#cb51-321" aria-hidden="true" tabindex="-1"></a>TT <span class="ot">&lt;-</span> <span class="fu">dim</span>(dat87)[<span class="dv">2</span>] <span class="co">#number of time steps</span></span>
+<span id="cb51-322"><a href="#cb51-322" aria-hidden="true" tabindex="-1"></a>covariates <span class="ot">&lt;-</span> <span class="fu">rbind</span>(</span>
+<span id="cb51-323"><a href="#cb51-323" aria-hidden="true" tabindex="-1"></a>  forecast<span class="sc">::</span><span class="fu">fourier</span>(<span class="fu">ts</span>(<span class="dv">1</span><span class="sc">:</span>TT, <span class="at">freq=</span><span class="dv">3</span>), <span class="at">K=</span><span class="dv">1</span>) <span class="sc">|&gt;</span> <span class="fu">t</span>(),</span>
+<span id="cb51-324"><a href="#cb51-324" aria-hidden="true" tabindex="-1"></a>  forecast<span class="sc">::</span><span class="fu">fourier</span>(<span class="fu">ts</span>(<span class="dv">1</span><span class="sc">:</span>TT, <span class="at">freq=</span><span class="dv">4</span>), <span class="at">K=</span><span class="dv">1</span>) <span class="sc">|&gt;</span> <span class="fu">t</span>(),</span>
+<span id="cb51-325"><a href="#cb51-325" aria-hidden="true" tabindex="-1"></a>  forecast<span class="sc">::</span><span class="fu">fourier</span>(<span class="fu">ts</span>(<span class="dv">1</span><span class="sc">:</span>TT, <span class="at">freq=</span><span class="dv">5</span>), <span class="at">K=</span><span class="dv">1</span>) <span class="sc">|&gt;</span> <span class="fu">t</span>()</span>
+<span id="cb51-326"><a href="#cb51-326" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb51-327"><a href="#cb51-327" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb51-328"><a href="#cb51-328" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-329"><a href="#cb51-329" aria-hidden="true" tabindex="-1"></a>Now let's fit a model with these covariates. Let's analyze the populations separately, so Q is diagonal.</span>
+<span id="cb51-332"><a href="#cb51-332" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb51-333"><a href="#cb51-333" aria-hidden="true" tabindex="-1"></a>mod.list4 <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb51-334"><a href="#cb51-334" aria-hidden="true" tabindex="-1"></a>  <span class="at">Q =</span> <span class="st">"unconstrained"</span>,</span>
+<span id="cb51-335"><a href="#cb51-335" aria-hidden="true" tabindex="-1"></a>  <span class="at">U =</span> <span class="st">"unequal"</span>,</span>
+<span id="cb51-336"><a href="#cb51-336" aria-hidden="true" tabindex="-1"></a>  <span class="at">R =</span> <span class="st">"diagonal and equal"</span>,</span>
+<span id="cb51-337"><a href="#cb51-337" aria-hidden="true" tabindex="-1"></a>  <span class="at">D =</span> <span class="st">"unconstrained"</span>,</span>
+<span id="cb51-338"><a href="#cb51-338" aria-hidden="true" tabindex="-1"></a>  <span class="at">d =</span> covariates</span>
+<span id="cb51-339"><a href="#cb51-339" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb51-340"><a href="#cb51-340" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb51-341"><a href="#cb51-341" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb51-342"><a href="#cb51-342" aria-hidden="true" tabindex="-1"></a><span class="in">```{r acf-entiat}</span></span>
+<span id="cb51-343"><a href="#cb51-343" aria-hidden="true" tabindex="-1"></a><span class="in">fit4.87 &lt;- MARSS(dat87, model=mod.list4)</span></span>
+<span id="cb51-344"><a href="#cb51-344" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb51-345"><a href="#cb51-345" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-346"><a href="#cb51-346" aria-hidden="true" tabindex="-1"></a>Let's plot the estimates. <span class="in">`broom::tidy()`</span> will get a data frame with the terms, estimates and CIs.</span>
+<span id="cb51-349"><a href="#cb51-349" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb51-350"><a href="#cb51-350" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(broom)</span>
+<span id="cb51-351"><a href="#cb51-351" aria-hidden="true" tabindex="-1"></a><span class="co"># get all the parameter estimates for D</span></span>
+<span id="cb51-352"><a href="#cb51-352" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">tidy</span>(fit4<span class="fl">.87</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb51-353"><a href="#cb51-353" aria-hidden="true" tabindex="-1"></a>  <span class="fu">subset</span>(stringr<span class="sc">::</span><span class="fu">str_sub</span>(term,<span class="dv">1</span>,<span class="dv">1</span>)<span class="sc">==</span><span class="st">"D"</span>)</span>
+<span id="cb51-354"><a href="#cb51-354" aria-hidden="true" tabindex="-1"></a><span class="co"># add a column with the river names</span></span>
+<span id="cb51-355"><a href="#cb51-355" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>river <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(<span class="fu">rep</span>(<span class="fu">rownames</span>(dat87),<span class="fu">nrow</span>(covariates)))</span>
+<span id="cb51-356"><a href="#cb51-356" aria-hidden="true" tabindex="-1"></a><span class="co"># add a column for the lag or frequency</span></span>
+<span id="cb51-357"><a href="#cb51-357" aria-hidden="true" tabindex="-1"></a>lags <span class="ot">&lt;-</span> stringr<span class="sc">::</span><span class="fu">str_split</span>(<span class="fu">rownames</span>(covariates), <span class="st">"-"</span>) <span class="sc">%&gt;%</span> <span class="fu">lapply</span>(<span class="cf">function</span>(x){x[[<span class="dv">2</span>]]}) <span class="sc">%&gt;%</span> <span class="fu">unlist</span>()</span>
+<span id="cb51-358"><a href="#cb51-358" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>lag <span class="ot">&lt;-</span> <span class="fu">rep</span>(lags, <span class="at">each=</span><span class="fu">nrow</span>(dat87))</span>
+<span id="cb51-359"><a href="#cb51-359" aria-hidden="true" tabindex="-1"></a><span class="co"># add column for the type of fourier</span></span>
+<span id="cb51-360"><a href="#cb51-360" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>type <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="fu">rownames</span>(covariates), <span class="at">each=</span><span class="fu">nrow</span>(dat87))</span>
+<span id="cb51-361"><a href="#cb51-361" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb51-362"><a href="#cb51-362" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-363"><a href="#cb51-363" aria-hidden="true" tabindex="-1"></a>We can then plot this. Interesting. Some support for 5 year cycles.</span>
+<span id="cb51-366"><a href="#cb51-366" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb51-367"><a href="#cb51-367" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(df, <span class="fu">aes</span>(<span class="at">x=</span>type, <span class="at">y=</span>estimate, <span class="at">col=</span>lag)) <span class="sc">+</span> </span>
+<span id="cb51-368"><a href="#cb51-368" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb51-369"><a href="#cb51-369" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_errorbar</span>(<span class="fu">aes</span>(<span class="at">ymin=</span>conf.low, <span class="at">ymax=</span>conf.up), <span class="at">width=</span>.<span class="dv">2</span>, <span class="at">position=</span><span class="fu">position_dodge</span>(.<span class="dv">9</span>)) <span class="sc">+</span></span>
+<span id="cb51-370"><a href="#cb51-370" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">0</span>) <span class="sc">+</span></span>
+<span id="cb51-371"><a href="#cb51-371" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>river) <span class="sc">+</span></span>
+<span id="cb51-372"><a href="#cb51-372" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggtitle</span>(<span class="st">"The cycle estimates with CIs"</span>)</span>
+<span id="cb51-373"><a href="#cb51-373" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb51-374"><a href="#cb51-374" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-375"><a href="#cb51-375" aria-hidden="true" tabindex="-1"></a>Let's compare some other models.</span>
+<span id="cb51-378"><a href="#cb51-378" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb51-379"><a href="#cb51-379" aria-hidden="true" tabindex="-1"></a><span class="co"># No cycles</span></span>
+<span id="cb51-380"><a href="#cb51-380" aria-hidden="true" tabindex="-1"></a>mod.list <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb51-381"><a href="#cb51-381" aria-hidden="true" tabindex="-1"></a>  <span class="at">Q =</span> <span class="st">"unconstrained"</span>,</span>
+<span id="cb51-382"><a href="#cb51-382" aria-hidden="true" tabindex="-1"></a>  <span class="at">U =</span> <span class="st">"unequal"</span>,</span>
+<span id="cb51-383"><a href="#cb51-383" aria-hidden="true" tabindex="-1"></a>  <span class="at">R =</span> <span class="st">"diagonal and equal"</span></span>
+<span id="cb51-384"><a href="#cb51-384" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb51-385"><a href="#cb51-385" aria-hidden="true" tabindex="-1"></a>fit1<span class="fl">.87</span> <span class="ot">&lt;-</span> <span class="fu">MARSS</span>(dat87, <span class="at">model=</span>mod.list, <span class="at">silent=</span><span class="cn">TRUE</span>)</span>
+<span id="cb51-386"><a href="#cb51-386" aria-hidden="true" tabindex="-1"></a><span class="co"># Only lag 5 cycles</span></span>
+<span id="cb51-387"><a href="#cb51-387" aria-hidden="true" tabindex="-1"></a>mod.list <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb51-388"><a href="#cb51-388" aria-hidden="true" tabindex="-1"></a>  <span class="at">Q =</span> <span class="st">"unconstrained"</span>,</span>
+<span id="cb51-389"><a href="#cb51-389" aria-hidden="true" tabindex="-1"></a>  <span class="at">U =</span> <span class="st">"unequal"</span>,</span>
+<span id="cb51-390"><a href="#cb51-390" aria-hidden="true" tabindex="-1"></a>  <span class="at">R =</span> <span class="st">"diagonal and equal"</span>,</span>
+<span id="cb51-391"><a href="#cb51-391" aria-hidden="true" tabindex="-1"></a>  <span class="at">D =</span> <span class="st">"unconstrained"</span>,</span>
+<span id="cb51-392"><a href="#cb51-392" aria-hidden="true" tabindex="-1"></a>  <span class="at">d =</span> covariates[<span class="dv">5</span><span class="sc">:</span><span class="dv">6</span>,]</span>
+<span id="cb51-393"><a href="#cb51-393" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb51-394"><a href="#cb51-394" aria-hidden="true" tabindex="-1"></a>fit5<span class="fl">.87</span> <span class="ot">&lt;-</span> <span class="fu">MARSS</span>(dat87, <span class="at">model=</span>mod.list, <span class="at">silent=</span><span class="cn">TRUE</span>)</span>
+<span id="cb51-395"><a href="#cb51-395" aria-hidden="true" tabindex="-1"></a><span class="co"># Cycles in the process</span></span>
+<span id="cb51-396"><a href="#cb51-396" aria-hidden="true" tabindex="-1"></a><span class="co"># which doesn't really make sense for salmon since the cycles are age-structure cycles </span></span>
+<span id="cb51-397"><a href="#cb51-397" aria-hidden="true" tabindex="-1"></a><span class="co"># which act like cycles in the observations</span></span>
+<span id="cb51-398"><a href="#cb51-398" aria-hidden="true" tabindex="-1"></a>mod.list <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb51-399"><a href="#cb51-399" aria-hidden="true" tabindex="-1"></a>  <span class="at">Q =</span> <span class="st">"unconstrained"</span>,</span>
+<span id="cb51-400"><a href="#cb51-400" aria-hidden="true" tabindex="-1"></a>  <span class="at">U =</span> <span class="st">"unequal"</span>,</span>
+<span id="cb51-401"><a href="#cb51-401" aria-hidden="true" tabindex="-1"></a>  <span class="at">R =</span> <span class="st">"diagonal and equal"</span>,</span>
+<span id="cb51-402"><a href="#cb51-402" aria-hidden="true" tabindex="-1"></a>  <span class="at">C =</span> <span class="st">"unconstrained"</span>,</span>
+<span id="cb51-403"><a href="#cb51-403" aria-hidden="true" tabindex="-1"></a>  <span class="at">c =</span> covariates</span>
+<span id="cb51-404"><a href="#cb51-404" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb51-405"><a href="#cb51-405" aria-hidden="true" tabindex="-1"></a>fit6<span class="fl">.87</span> <span class="ot">&lt;-</span> <span class="fu">MARSS</span>(dat87, <span class="at">model=</span>mod.list, <span class="at">silent=</span><span class="cn">TRUE</span>)</span>
+<span id="cb51-406"><a href="#cb51-406" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb51-407"><a href="#cb51-407" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-408"><a href="#cb51-408" aria-hidden="true" tabindex="-1"></a>Hmm model without cyles is much better (lower AICc). Even if we only have the 5 year cycles (<span class="in">`covariates[5:6,]`</span>), the AICc is larger than for the models with cycles.</span>
+<span id="cb51-411"><a href="#cb51-411" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb51-412"><a href="#cb51-412" aria-hidden="true" tabindex="-1"></a>aic <span class="ot">&lt;-</span> <span class="fu">c</span>(fit1<span class="fl">.87</span><span class="sc">$</span>AICc, fit4<span class="fl">.87</span><span class="sc">$</span>AICc, fit5<span class="fl">.87</span><span class="sc">$</span>AICc, fit6<span class="fl">.87</span><span class="sc">$</span>AICc)</span>
+<span id="cb51-413"><a href="#cb51-413" aria-hidden="true" tabindex="-1"></a>aic<span class="sc">-</span><span class="fu">min</span>(aic)</span>
+<span id="cb51-414"><a href="#cb51-414" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb51-415"><a href="#cb51-415" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-416"><a href="#cb51-416" aria-hidden="true" tabindex="-1"></a><span class="fu">## Resources</span></span>
+<span id="cb51-417"><a href="#cb51-417" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-418"><a href="#cb51-418" aria-hidden="true" tabindex="-1"></a>Chapter 7 MARSS models. ATSA Lab Book. <span class="ot">&lt;https://atsa-es.github.io/atsa-labs/chap-mss.html&gt;</span></span>
+<span id="cb51-419"><a href="#cb51-419" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-420"><a href="#cb51-420" aria-hidden="true" tabindex="-1"></a>Chapter 8 MARSS models with covariate. ATSA Lab Book. <span class="ot">&lt;https://atsa-es.github.io/atsa-labs/chap-msscov.html&gt;</span></span>
+<span id="cb51-421"><a href="#cb51-421" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-422"><a href="#cb51-422" aria-hidden="true" tabindex="-1"></a>Chapter 16 Modeling cyclic sockeye <span class="ot">&lt;https://atsa-es.github.io/atsa-labs/chap-cyclic-sockeye.html&gt;</span></span>
 </code><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></pre></div>
 </div></div></div></div></div>
 </div> <!-- /content -->

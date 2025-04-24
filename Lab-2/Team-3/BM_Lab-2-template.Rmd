@@ -117,243 +117,188 @@ run_vec <- meta_info$run_timing[match(rownames(Stl_mat), meta_info$esapopname)]
 
 Models 
 
-# Hypotheses to test 
-
-#################
-### Hypothesis 1 
-
-
 2. Evaluate support for the major population groups. Are the populations in the groups more correlated than outside the groups?
 
 ```{r}
 # Hypotheses to test 
 #################
-### Hypothesis 1 
-# Evaluate support for the major population groups. Are the populations in the groups more correlated than outside the groups?
+### Hypotheses
+# H1: All populations act the same 
+# H2: Each "Region" Lower, Middle, "Upper" acts differently
+# H3: Each "Run" Summer, Winter acts differently
 
 # Load required packages
 library(MARSS)
 
-# First let's examine our data structure after wrangling
-dim(Stl)
-pop_names <- rownames(Stl)
-n_pops <- length(pop_names)
-print(pop_names)
-
-# Let's log-transform the data since we're working with population abundances
-# Log transformation stabilizes variance and makes data more normally distributed
-Stl_log <- log(Stl)
+# First let's log-transform the data for analysis
+Stl_log <- log(Stl_mat)
 # Replace -Inf values (from log(0)) with NA
 Stl_log[is.infinite(Stl_log)] <- NA
 
-# Identify the major population groups based on the ESA designations
-# Extract group information from the population names
-# We'll create a function to identify the group for each population
-get_group <- function(pop_name) {
-  if(grepl("Middle Columbia", pop_name)) return("Middle Columbia")
-  if(grepl("Upper Columbia", pop_name)) return("Upper Columbia")
-  if(grepl("Snake River", pop_name)) return("Snake River")
-  if(grepl("Lower Columbia", pop_name)) return("Lower Columbia")
-  return("Other")
-}
+# Examine our data structure
+dim(Stl_log)
+n_pops <- nrow(Stl_log)
+n_years <- ncol(Stl_log)
 
-# Apply the function to get group for each population
-pop_groups <- sapply(pop_names, get_group)
-unique_groups <- unique(pop_groups)
-n_groups <- length(unique_groups)
-
-# Create a table showing the number of populations in each group
-table(pop_groups)
-
-# Create a matrix to define the population-to-group mapping for MARSS
-Z_groups <- matrix(0, nrow = n_pops, ncol = n_groups)
-colnames(Z_groups) <- unique_groups
-rownames(Z_groups) <- pop_names
-
-# Fill in the group membership matrix
-for (i in 1:n_pops) {
-  group_idx <- which(unique_groups == pop_groups[i])
-  Z_groups[i, group_idx] <- 1
-}
-
-# Print the group matrix to verify
-print(Z_groups)
-
-# We'll now define and fit several competing models to test our hypothesis
-# For each model, we'll provide detailed explanation of parameter choices
+# Print the region and run timing vectors to verify
+print(table(region_vec))
+print(table(run_vec))
 
 #------------------------------------------------------------------------------
-# MODEL 1: Fully independent populations (null model)
+# MODEL 1: Single trend (H1: All populations act the same)
 #------------------------------------------------------------------------------
-# In this model, each population has its own trend parameter
+# In this model, all populations follow one shared trend with different loadings
 mod1 <- list(
-  Z = "identity",           # Each population has its own trend
+  Z = "unconstrained",     # Each population loads differently on a single shared trend
   R = "diagonal and unequal", # Each population has its own observation variance
-  Q = "diagonal and unequal", # Each population has its own process variance
-  U = "unequal",            # Each population has its own mean growth rate
-  x0 = "unequal"            # Each population has its own initial state
+  Q = "identity",          # Single process variance for the shared trend
+  U = "identity",          # Single mean growth rate
+  x0 = "identity"          # Single initial state
 )
 
 # Parameter choice explanations:
-# Z = "identity": One-to-one mapping between states and observations
-#   - This assumes each population follows its own independent trajectory
-#   - No shared dynamics between populations
+# Z = "unconstrained":
+#   - There is only one underlying trend that all populations follow
+#   - Each population can have a different relationship (loading) with this trend
+#   - "unconstrained" means loadings can be any value (+ or -) and different for each population
 # 
 # R = "diagonal and unequal":
 #   - Diagonal: Observation errors are independent across populations
 #   - Unequal: Each population has its own observation error variance
-#   - This is realistic as monitoring methods and precision may differ by population
+#   - This accounts for different monitoring methods/accuracy between populations
 # 
-# Q = "diagonal and unequal":
-#   - Diagonal: Process errors (environmental stochasticity) are independent
-#   - Unequal: Each population experiences different environmental variation
-#   - This allows for different magnitudes of year-to-year fluctuations
+# Q = "identity":
+#   - Single process variance as we have only one underlying trend
 # 
-# U = "unequal":
-#   - Each population has its own growth trend
-#   - This allows populations to have different long-term trajectories
+# U = "identity":
+#   - Single mean growth rate for the shared trend
 # 
-# x0 = "unequal":
-#   - Each population starts from a different initial state
-#   - Reflects different initial abundances and historical conditions
+# x0 = "identity":
+#   - Single initial state for the shared trend
 
-# Fit model 1 (this may take some time)
+# Fit model 1
 fit1 <- MARSS(Stl_log, model = mod1, silent = TRUE, control = list(maxit = 1000))
 
 #------------------------------------------------------------------------------
-# MODEL 2: Group-based trends (our hypothesis model)
+# MODEL 2: Region-based trends (H2: Each Region acts differently)
 #------------------------------------------------------------------------------
-# In this model, populations within the same ESA group share a trend
+# In this model, populations within the same region share a trend
+
+# Create region-based groups mapping matrix
+unique_regions <- unique(region_vec)
+n_regions <- length(unique_regions)
+
+# Create a region membership matrix for MARSS
+Z_regions <- matrix(0, nrow = n_pops, ncol = n_regions)
+colnames(Z_regions) <- unique_regions
+rownames(Z_regions) <- rownames(Stl_log)
+
+# Fill in the region membership matrix
+for (i in 1:n_pops) {
+  region_idx <- which(unique_regions == region_vec[i])
+  Z_regions[i, region_idx] <- 1
+}
+
 mod2 <- list(
-  Z = Z_groups,           # Populations map to their respective group trends
+  Z = Z_regions,           # Populations map to their respective region trends
   R = "diagonal and unequal", # Each population has its own observation variance
-  Q = "diagonal and equal",   # Each group has the same process variance
-  U = "unequal",            # Each group has its own mean growth rate
-  x0 = "unequal"            # Each group has its own initial state
+  Q = "diagonal and equal",   # Each region has the same process variance
+  U = "unequal",            # Each region has its own mean growth rate
+  x0 = "unequal"            # Each region has its own initial state
 )
 
 # Parameter choice explanations:
-# Z = Z_groups:
-#   - Custom matrix that maps populations to their ESA groups
-#   - Populations in the same group share the same underlying state (trend)
-#   - This directly tests our hypothesis that populations within groups are more correlated
+# Z = Z_regions:
+#   - Custom matrix that maps populations to their geographical regions
+#   - Populations in the same region share the same underlying state (trend)
 # 
 # R = "diagonal and unequal":
-#   - Observation errors remain independent between populations
-#   - Allows for different monitoring precision for each population
+#   - Each population has its own observation error variance
 # 
 # Q = "diagonal and equal":
-#   - Process errors are independent between groups
-#   - Equal: All groups experience the same magnitude of environmental stochasticity
-#   - This simplification reduces parameters and assumes similar environmental drivers
+#   - Process errors are independent between regions
+#   - Equal: All regions experience the same magnitude of environmental stochasticity
 # 
 # U = "unequal":
-#   - Each group has its own mean growth rate
-#   - Different ESA groups may have different overall trends
+#   - Each region has its own mean growth rate
 # 
 # x0 = "unequal":
-#   - Each group starts from a different initial state
-#   - Different groups may have different historical abundances
+#   - Each region starts from a different initial state
 
 # Fit model 2
 fit2 <- MARSS(Stl_log, model = mod2, silent = TRUE, control = list(maxit = 1000))
 
 #------------------------------------------------------------------------------
-# MODEL 3: Shared trend with group-specific loadings
+# MODEL 3: Run-timing based trends (H3: Each Run acts differently)
 #------------------------------------------------------------------------------
-# In this model, all populations follow one shared trend but with different loadings
-mod3 <- list(
-  Z = "unconstrained",     # Each population loads differently on the shared trend
-  R = "diagonal and unequal", # Each population has its own observation variance
-  Q = "identity",          # Single process variance for the shared trend
-  U = "equal",             # Single mean growth rate
-  x0 = "equal"             # Single initial state
-)
+# In this model, populations with the same run timing share a trend
 
-# Parameter choice explanations:
-# Z = "unconstrained":
-#   - Allows each population to load differently on a single shared trend
-#   - Some populations may be more responsive to the shared drivers than others
-#   - The sign can also differ (some may increase while others decrease)
-# 
-# R = "diagonal and unequal":
-#   - Consistent with previous models
-# 
-# Q = "identity":
-#   - Single process variance as we have only one underlying trend
-# 
-# U = "equal":
-#   - Single mean growth rate for the shared trend
-# 
-# x0 = "equal":
-#   - Single initial state for the shared trend
+# Create run-timing based groups mapping matrix
+unique_runs <- unique(run_vec)
+n_runs <- length(unique_runs)
 
-# Fit model 3
-fit3 <- MARSS(Stl_log, model = mod3, silent = TRUE, control = list(maxit = 1000, safe = TRUE))
+# Create a run timing membership matrix for MARSS
+Z_runs <- matrix(0, nrow = n_pops, ncol = n_runs)
+colnames(Z_runs) <- unique_runs
+rownames(Z_runs) <- rownames(Stl_log)
 
-#------------------------------------------------------------------------------
-# MODEL 4: Correlated trends within groups
-#------------------------------------------------------------------------------
-# In this model, populations have individual trends but are correlated within groups
-# First, create a block-diagonal Q matrix structure
-Q_blocks <- list()
-for (g in unique_groups) {
-  # Find which populations are in this group
-  group_pops <- which(pop_groups == g)
-  n_in_group <- length(group_pops)
-  
-  # Create a matrix of 1s (will be converted to "unconstrained")
-  if (n_in_group > 1) {
-    Q_blocks[[g]] <- matrix("unconstrained", n_in_group, n_in_group)
-    diag(Q_blocks[[g]]) <- paste0("q", g) # Diagonal elements share the same parameter
-  } else if (n_in_group == 1) {
-    Q_blocks[[g]] <- matrix(paste0("q", g), 1, 1)
-  }
+# Fill in the run timing membership matrix
+for (i in 1:n_pops) {
+  run_idx <- which(unique_runs == run_vec[i])
+  Z_runs[i, run_idx] <- 1
 }
 
-# Construct the block diagonal Q matrix
-Q_matrix <- MARSS:::build.block.diagonal(Q_blocks)
-
-mod4 <- list(
-  Z = "identity",           # Each population has its own trend
+mod3 <- list(
+  Z = Z_runs,              # Populations map to their respective run timing trends
   R = "diagonal and unequal", # Each population has its own observation variance
-  Q = Q_matrix,             # Block diagonal - correlated within groups
-  U = "unequal",            # Each population has its own mean growth rate
-  x0 = "unequal"            # Each population has its own initial state
+  Q = "diagonal and equal",   # Each run timing has the same process variance
+  U = "unequal",            # Each run timing has its own mean growth rate
+  x0 = "unequal"            # Each run timing has its own initial state
 )
 
 # Parameter choice explanations:
-# Z = "identity":
-#   - Each population still has its own state
-#   - Unlike model 2, populations don't share states, but they are correlated
+# Z = Z_runs:
+#   - Custom matrix that maps populations to their run timing groups (Summer, Winter)
+#   - Populations with the same run timing share the same underlying state (trend)
 # 
 # R = "diagonal and unequal":
-#   - Consistent with previous models
+#   - Each population has its own observation error variance
 # 
-# Q = Q_matrix:
-#   - Block diagonal structure where populations in the same group have correlated process errors
-#   - This allows for within-group correlation of environmental responses
-#   - Between-group processes remain independent
-#   - This directly tests if populations within the same group respond similarly to environmental variation
+# Q = "diagonal and equal":
+#   - Process errors are independent between run timing groups
+#   - All run timing groups have the same environmental stochasticity magnitude
 # 
 # U = "unequal":
-#   - Each population maintains its own growth trend
+#   - Each run timing group has its own mean growth rate
 # 
 # x0 = "unequal":
-#   - Each population has its own initial state
+#   - Each run timing group starts from a different initial state
 
-# Fit model 4 (this is more complex and might take longer)
-fit4 <- MARSS(Stl_log, model = mod4, silent = TRUE, control = list(maxit = 1000, safe = TRUE))
+# Fit model 3
+fit3 <- MARSS(Stl_log, model = mod3, silent = TRUE, control = list(maxit = 1000))
 
 #------------------------------------------------------------------------------
-# Compare all models
+# Compare all models using AIC
 #------------------------------------------------------------------------------
-# Use AIC to compare model fit
+# Calculate AIC for each model
+AIC1 <- fit1$AIC
+AIC2 <- fit2$AIC
+AIC3 <- fit3$AIC
+
+# Calculate AICc (corrected AIC) for each model
+AICc1 <- fit1$AICc
+AICc2 <- fit2$AICc
+AICc3 <- fit3$AICc
+
+# Create a comparison table
 model_table <- data.frame(
-  Model = c("Independent", "Shared Group Trends", "Single Trend", "Correlated Group Trends"),
-  AICc = c(fit1$AICc, fit2$AICc, fit3$AICc, fit4$AICc),
-  num_params = c(fit1$num.params, fit2$num.params, fit3$num.params, fit4$num.params),
-  logLik = c(fit1$logLik, fit2$logLik, fit3$logLik, fit4$logLik)
+  Model = c("H1: All populations act the same", 
+            "H2: Each Region acts differently", 
+            "H3: Each Run acts differently"),
+  AIC = c(AIC1, AIC2, AIC3),
+  AICc = c(AICc1, AICc2, AICc3),
+  num_params = c(fit1$num.params, fit2$num.params, fit3$num.params),
+  logLik = c(fit1$logLik, fit2$logLik, fit3$logLik)
 )
 
 # Calculate delta AICc and weights
@@ -366,72 +311,20 @@ model_table <- model_table[order(model_table$AICc), ]
 # Print the table
 print(model_table)
 
-# Plot the results for the best model
-best_model_idx <- which.min(c(fit1$AICc, fit2$AICc, fit3$AICc, fit4$AICc))
-best_fits <- list(fit1, fit2, fit3, fit4)[[best_model_idx]]
+# Identify best model
+best_model_idx <- which.min(c(AICc1, AICc2, AICc3))
+best_model_name <- c("H1: All populations act the same", 
+                     "H2: Each Region acts differently", 
+                     "H3: Each Run acts differently")[best_model_idx]
 
-# Plot the fitted values vs observed
-# We'll need to autoplot for this
-autoplot(best_fits, plot.type = "fitted.ytT")
+cat("\nThe best model according to AICc is:", best_model_name, "\n")
 
-# If the group-based model (Model 2) is best, we can examine group-specific trends
-if (best_model_idx == 2) {
-  # Extract the estimated states (trends) for each group
-  states <- best_fits$states
-  state_CIs <- best_fits$states.se * 1.96 # For 95% CI
-  
-  # Create a data frame for plotting
-  states_df <- data.frame(
-    Year = as.numeric(colnames(Stl_log)),
-    t(states)
-  )
-  colnames(states_df)[-1] <- unique_groups
-  
-  # Plot the group trends
-  states_long <- pivot_longer(states_df, -Year, names_to = "Group", values_to = "Trend")
-  
-  ggplot(states_long, aes(x = Year, y = Trend, color = Group)) +
-    geom_line() +
-    theme_bw() +
-    labs(title = "Estimated population trends by ESA group",
-         x = "Year",
-         y = "Log Abundance")
-}
+# Calculate AICc differences for interpretation
+cat("\nInterpretation guideline for delta_AICc:\n")
+cat("delta_AICc < 2: Models have substantial support\n")
+cat("delta_AICc 4-7: Models have considerably less support\n")
+cat("delta_AICc > 10: Models have essentially no support\n")
 
-# Examine the degree of correlation within vs between groups if Model 4 is best
-if (best_model_idx == 4) {
-  # Extract the Q matrix which contains the covariance structure
-  Q_est <- coef(best_fits, type = "matrix")$Q
-  
-  # Convert to correlation matrix
-  Q_sds <- sqrt(diag(Q_est))
-  Q_cor <- Q_est / (Q_sds %*% t(Q_sds))
-  
-  # Create a heatmap of the correlation matrix
-  Q_cor_df <- as.data.frame(Q_cor)
-  rownames(Q_cor_df) <- pop_names
-  
-  # Add group information for sorting
-  Q_cor_df$Group <- pop_groups
-  Q_cor_df <- Q_cor_df[order(Q_cor_df$Group), ]
-  Q_cor_df$Group <- NULL
-  
-  # Reorder the columns the same way
-  Q_cor_df <- Q_cor_df[, rownames(Q_cor_df)]
-  
-  # Plot the correlation heatmap
-  library(reshape2)
-  Q_cor_melt <- melt(as.matrix(Q_cor_df))
-  colnames(Q_cor_melt) <- c("Population1", "Population2", "Correlation")
-  
-  ggplot(Q_cor_melt, aes(x = Population1, y = Population2, fill = Correlation)) +
-    geom_tile() +
-    scale_fill_gradient2(low = "blue", high = "red", mid = "white", midpoint = 0) +
-    theme_minimal() +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-    labs(title = "Correlation structure between populations",
-         x = "", y = "")
-}
 
 ```
 

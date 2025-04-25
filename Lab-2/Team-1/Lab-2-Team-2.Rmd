@@ -12,7 +12,7 @@ output:
 
 # Data
 
-Our lab team looked at the Oregon Coast coho salmon ESU. We subset this data from the esa-salmon.rda into one matrix 'coho' that contained time series data for 26 sub-populatins within this ESU. We also created a reference matrix called 'pop.groups' that assigned the 26 sub-populations into five assumed groups.
+Our lab team looked at the Oregon Coast coho salmon ESU. We subset this data from the esa-salmon.rda into one matrix 'coho' that contained time series data for 21 sub-populatins within this ESU. We also created a reference matrix called 'pop.groups' that assigned the 21 sub-populations into five assumed groups.
 
 ```{r, include=FALSE}
 load(here::here("Lab-2", "Data_Images", "esa-salmon.rda"))
@@ -57,7 +57,7 @@ pop.groups <- esa_filtered %>%
   select(esapopname, majorpopgroup) %>%
   distinct()%>%
   as.matrix()
-
+pop.groups<-pop.groups[-c(1,7,15, 20, 26),]
 # Time series matrix for MARSS
 coho<- esa_filtered %>%
   select(esapopname, spawningyear, log.spawner) %>%
@@ -71,7 +71,9 @@ coho<- esa_filtered %>%
   t()
 coho[is.na(coho)] <- NA
 
-
+#subset fall runs (don't know what "Stratum" rows are)
+coho<-coho[-c(1,7,15, 20, 26),]
+nrow(coho)
 #clean up row names- our 26 sub-pops
 tmp <- rownames(coho)
 tmp <- stringr::str_replace(tmp, "Steelhead [(]Upper Columbia River DPS[)]", "")
@@ -81,6 +83,8 @@ rownames(coho) <- tmp
 rownames(pop.groups)<-tmp
 #subset colnames in case we need them later
 cohocolnames<-colnames(coho)
+
+
 ```
 
 # General Questions
@@ -107,8 +111,6 @@ obj<-MARSS(coho, mod.list)
 cohofit<-obj$states
 rownames(cohofit)<-tmp
 colnames(cohofit)<-cohocolnames
-head(cohofit)
-
 #cohofit is the estimated "states" from an unbiased random walk
 ```
 
@@ -116,7 +118,7 @@ head(cohofit)
 autoplot(obj, plot.type="fitted.ytT")
 autoplot(obj, plot.type="residuals")
 ```
-To estimate the population trends over time, we fit biased random walk models to each subpopulation's data. In one model, we assumed the U term is equal across all sub-populations. This model estimated U to be 0.0349, which indicates that the Oregon Coast coho ESU is generally stable and experiencing a slight increase from historical abundances. When we change this assumption of U being equal to U being unequal, the model estimated a population trend for each of the 26 sub-populations in the ESU. 
+To estimate the population trends over time, we fit biased random walk models to each subpopulation's data. In one model, we assumed the U term is equal across all sub-populations. This model estimated U to be 0.0349, which indicates that the Oregon Coast coho ESU is generally stable and experiencing a slight increase from historical abundances. When we change this assumption of U being equal to U being unequal, the model estimated a population trend for each of the 21 sub-populations in the ESU. 
 
 ``` {r, include=FALSE}
 ## Part 2: Estimates of decrease from historical abundance
@@ -152,7 +154,6 @@ print(cohoU)
 ```
 
 ### Question 2
-
 
 ### Question 3
 

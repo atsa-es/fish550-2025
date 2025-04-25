@@ -319,20 +319,30 @@ Q.tab
 
 The alternative groupings we considered were:
 ```{r}
-# 4 groups- no lake
+mod.list<-list(
+  B = "identity",            # random walk
+  U = "unequal",                # no drift
+  Q = "equalvarcov",         # hidden states allowed to correlate
+  R = "diagonal and unequal",# each site has its own observation error
+  A = "scaling"              # site-specific intercepts
+)
 
-#4 groups- no umpqua
+# 4 groups- no lake, all lakes in mid-Coast
 
-#3 groups- lake, coast, umpqua
+# 4 groups- no umpqua- umpqua is in mid-south coast
+
+# 4 groups- no umpwua- umpqua is in mid-coast
+
+# 3 groups- lake, coast, umpqua
 
 
 # 3 groups- N, M, S coast (lake and umpqua divied up between them based on lat)
 
-#2 groups- North and South (lake and umpqua divied up between them based on lat)
+# 2 groups- North and South (lake and umpqua divied up between them based on lat)
 
-#2 groups- Coast+Lake, Umpqua
+# 2 groups- Coast+Lake, Umpqua
 
-
+# 2 groups- Coast+Umpqua, lakes
 
 ```
 

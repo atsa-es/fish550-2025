@@ -1,7 +1,9 @@
 library(atsalibrary)
 library(MARSS)
 library(panelr)
+library(readr)
 library(tidyverse)
+library(zoo)
 
 # pull in data
 load("Lab-2/Data_Images/esa-salmon.rda")
@@ -47,6 +49,7 @@ n <- nrow(w_esu2)
 # convert counts to matrix
 dat <- data.matrix(w_esu2[2:ncol(w_esu2)])
 dat
+
 
 ## QUESTION 1
 # specify matrices for MARSS models
@@ -134,7 +137,8 @@ plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
   geom_line() +
   labs(x = "", 
        y="State Estimate",
-       title='Spring Summer Chinook Abundance, Upper Columbia/Snake River') +
+       title='Spring Summer Chinook Abundance, Upper Columbia/Snake River',
+       subtitle="28 populations, equal process variance") +
   geom_ribbon(aes(ymin=lb, ymax=ub, fill=state), alpha=0.35, linetype=0) +
   theme_classic() +
   theme(legend.position="bottom") + 
@@ -236,12 +240,14 @@ plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
   geom_line() +
   labs(x = "", 
        y="State Estimate",
-       title='Spring Summer Chinook Abundance, Upper Columbia/Snake River') +
+       title='Spring Summer Chinook Abundance, Upper Columbia/Snake River',
+       subtitle="5 populations, equal process variance") +
   geom_ribbon(aes(ymin=lb, ymax=ub, fill=state), alpha=0.35, linetype=0) +
   theme_classic() +
   theme(legend.position="bottom") +
   scale_x_discrete(breaks = c(1950, 1964, 1978, 1992, 2006, 2020))
 plot
+
 
 ## QUESTION 2
 b.model <- "identity"
@@ -294,7 +300,7 @@ if(!file.exists("Lab-2/Team-2/ss2.rds")){
 }
 proc.time()[3] - ptm
 
-# load in ss1
+# load in ss2
 ss2 <- readRDS(file="Lab-2/Team-2/ss2.rds")
 
 # grabbing data for figures
@@ -333,7 +339,8 @@ plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
   geom_line() +
   labs(x = "", 
        y="State Estimate",
-       title='Spring Summer Chinook Abundance, Upper Columbia/Snake River') +
+       title='Spring Summer Chinook Abundance, Upper Columbia/Snake River',
+       subtitle="5 populations, unequal process variance") +
   geom_ribbon(aes(ymin=lb, ymax=ub, fill=state), alpha=0.35, linetype=0) +
   theme_classic() +
   theme(legend.position="bottom") +
@@ -344,3 +351,147 @@ plot
 esu2$data_available <- ifelse(is.na(esu2$value), 0, 1)
 majpop_avaliable <- esu2[-c(1, 2, 4:10)]
 aggregate(data_available ~ majorpopgroup, majpop_avaliable, sum)
+
+
+## QUESTION 3
+# get pdo data
+# read in data from table
+if(!file.exists("Lab-2/Team-2/pdo_raw.Rda")){
+  pdo <- read.table("https://www.ncei.noaa.gov/pub/data/cmb/ersst/v5/index/ersst.v5.pdo.dat",
+                    sep = "",
+                    header = TRUE,
+                    skip = 1)
+  save(pdo, file="Lab-2/Team-2/pdo_raw.Rda")
+} 
+
+if(file.exists("Lab-2/Team-2/pdo_raw.Rda")) {
+  load("Lab-2/Team-2/pdo_raw.Rda")
+}
+
+#annual average
+# annual average - is this smart?
+annual <- rowMeans(pdo[ ,2:13])
+annual
+pdo$annual <- annual
+
+# drop month vars and years before 1960
+pdo <- pdo[-c(2:13)]
+pdo <- pdo %>% filter(Year >= 1946)
+pdo <- pdo %>% filter(Year < 2025)
+
+# create lagged average (taking average of three prior years)
+pdo$pdo_03ya <- zoo::rollmean(pdo$annual ,k=3, align="right", fill=NA)
+pdo$spawningyear <- pdo$Year + 1
+head(pdo)
+  # convinced?
+pdo <- pdo[-c(1,2)]
+pdo <- pdo %>% filter(spawningyear >= 1949)
+pdo <- pdo %>% filter(spawningyear < 2025)
+
+# set wide
+pdo_yrs <- pdo$spawningyear
+pdo_idx <- pdo$pdo_03ya
+
+Wpdo <- as.data.frame(matrix(pdo_idx, nrow=1, byrow=TRUE))
+names(Wpdo) <- pdo_yrs
+Wpdo <- data.matrix(Wpdo)
+
+# model build
+b.model <- "identity"
+u.model <- matrix(paste0("u", seq(5)))
+c.model <- matrix("pdo", 5, 1)
+q.model <- "diagonal and unequal"
+z.model <- matrix(c(1,0,0,0,0,
+                    0,1,0,0,0,
+                    0,1,0,0,0,
+                    0,1,0,0,0,
+                    0,0,1,0,0,
+                    0,1,0,0,0,
+                    0,0,0,1,0,
+                    0,0,0,0,1,
+                    0,0,1,0,0,
+                    0,0,1,0,0,
+                    0,0,0,1,0,
+                    0,1,0,0,0,
+                    0,1,0,0,0,
+                    0,1,0,0,0,
+                    0,1,0,0,0,
+                    0,0,1,0,0,
+                    0,0,0,1,0,
+                    0,0,0,1,0,
+                    0,0,0,1,0,
+                    0,0,0,1,0,
+                    0,0,0,0,1,
+                    0,0,0,0,1,
+                    0,1,0,0,0,
+                    1,0,0,0,0,
+                    0,0,0,1,0,
+                    0,0,1,0,0,
+                    0,0,1,0,0,
+                    0,0,0,1,0), 
+                  nrow=28, ncol=5)
+a.model <- "zero"
+r.model <- "diagonal and equal" 
+x0.model <- "unequal"
+v0.model <- "zero"
+
+model.list <- list(
+  B = b.model, U = u.model, Q = q.model,
+  Z = z.model, A = a.model, R = r.model,
+  C = c.model, c = Wpdo, 
+  x0 = x0.model, V0 = v0.model, tinitx = 0)
+
+# modeling
+ptm <- proc.time()
+if(!file.exists("Lab-2/Team-2/ss3.rds")){
+  ss3 <- MARSS(dat, model = model.list, method = "kem")
+  saveRDS(ss3, file="Lab-2/Team-2/ss3.rds")
+}
+proc.time()[3] - ptm
+
+# load in ss3
+ss3 <- readRDS(file="Lab-2/Team-2/ss3.rds")
+
+# grabbing data for figures
+states <- ss3$states
+statesSE <- ss3$states.se
+
+states <- as.data.frame(states)
+statesSE <- as.data.frame(statesSE)
+
+states_long <- states %>% 
+  pivot_longer("V1":"V76", names_to="Year", values_to="fitted")
+states_long <- states_long %>% 
+  mutate(Year = rep(years, 5))
+
+states_long <- states_long %>% 
+  mutate(state = c(rep("lower snake", 76),
+                   rep("middle fork snake", 76),
+                   rep("gradne ronde", 76),
+                   rep("upper salmon", 76),
+                   rep("south fork salmon", 76)
+  ))
+
+statesSE_long <- statesSE %>% 
+  pivot_longer("V1":"V76", names_to="Year", values_to="se")
+
+states_long <- states_long %>% 
+  mutate(se = statesSE_long$se)
+
+states_long$lb <- states_long$fitted - states_long$se
+states_long$ub <- states_long$fitted + states_long$se
+
+# save long state estimates
+save(states_long, file="Lab-2/Team-2/ss3states_long.Rda")
+
+plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
+  geom_line() +
+  labs(x = "", 
+       y="State Estimate",
+       title='Spring Summer Chinook Abundance, Upper Columbia/Snake River',
+       subtitle="5 populations, unequal process variance, PDO covariate") +
+  geom_ribbon(aes(ymin=lb, ymax=ub, fill=state), alpha=0.35, linetype=0) +
+  theme_classic() +
+  theme(legend.position="bottom") +
+  scale_x_discrete(breaks = c(1950, 1964, 1978, 1992, 2006, 2020))
+plot

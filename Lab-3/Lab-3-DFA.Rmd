@@ -2,7 +2,7 @@
 title: Lab Intro
 subtitle: "Lab 3 Common trends in plankton data"
 author: "Mark Scheuerell"
-date: "Due date April X, 2025"
+date: "Due May 6, 2025"
 output: 
   html_document:
     code-folding: true
@@ -16,18 +16,16 @@ options(dplyr.summarise.inform = FALSE)
 
 ## Background
 
-For this lab you will use dynamic factor analysis (DFA) to examine common temporal patterns in multivariate plankton data from Lake Washington. These data are a bit noisy and gappy, so you will need to make some choices about which species and time period(s) to examine.
+For this lab you will use dynamic factor analysis (DFA) to examine common temporal patterns in plankton data from Lake Washington. These data are a bit noisy and gappy, so you will need to make some choices about which species and time period(s) to examine.
 
 
 ## Teams
 
-1) 
+Team 1: Anna, Mary, Emma
 
-2) 
+Team 2: Matheus, Brian, Tina
 
-3) 
-
-4) 
+Team 3: Ben, Nicole, Lilac
 
 
 ## Lake Washington data
@@ -65,6 +63,15 @@ For reference, here are the columns in the Lake Washington data set:
 * `Neomysis`: opossum shrimp (predator)  
 * `Non.daphnid.cladocerans`: catch-all for other cladocerans (grazers)
 * `Non.colonial.rotifers`: free-floating rotifers (grazers)
+
+
+## Tasks
+
+1. Plot time series of densities for the different taxa and environmental covariates.
+
+2. Select an appropriate time period of at least 5 years (60 months) and fit different forms of DFA models with and without covariates.
+
+3. Evaluate the model fits relative to the observed data for your best (or top 3) models. 
 
 
 ## Resources

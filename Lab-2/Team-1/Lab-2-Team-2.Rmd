@@ -1,0 +1,209 @@
+---
+title: Team X - Lab 2
+subtitle: MARSS models
+author: "Nicole, Mary, Tina"
+date: April 22, 2025
+output: 
+  html_document:
+    code-folding: true
+    toc: true
+    toc_float: true
+---
+
+# Data
+
+Our lab team looked at the Oregon Coast coho salmon ESU. We subset this data from the esa-salmon.rda into one matrix 'coho' that contained time series data for 21 sub-populatins within this ESU. We also created a reference matrix called 'pop.groups' that assigned the 21 sub-populations into five assumed groups.
+
+```{r, include=FALSE}
+load(here::here("Lab-2", "Data_Images", "esa-salmon.rda"))
+library(MARSS)
+library(ggplot2)
+library(dplyr)
+library(forecast)
+library(tidyverse)
+library(zoo)
+library(corrplot)
+```
+
+```{r, echo=FALSE}
+### Data exploration
+esu <- unique(esa.salmon$esu_dps)
+esunum <- which(esu == esu[7])
+esuname <- esu[esunum]
+
+#Data visualization
+plotesu <- function(esuname){
+  df <- esa.salmon %>% subset(esu_dps %in% esuname)
+  ggplot(df, aes(x=spawningyear, y=log(value), color=majorpopgroup)) + 
+    geom_point(size=0.2, na.rm = TRUE) + 
+    theme(strip.text.x = element_text(size = 3)) +
+    theme(axis.text.x = element_text(size = 5, angle = 90)) +
+    facet_wrap(~esapopname) +
+    ggtitle(paste0(esuname, collapse="\n"))
+}
+
+#Plot of our ESU sub-pops
+plotesu(esu[7])
+
+## Create data frames for our ESU
+esa_filtered <- esa.salmon %>%
+  filter(esu_dps == esuname, esapopname != "") %>%
+  mutate(log.spawner = log(value)) %>%
+  mutate(log.spawner = replace(log.spawner, is.infinite(log.spawner), NA))
+
+
+#Lookup data frame for major pop groups
+pop.groups <- esa_filtered %>%
+  select(esapopname, majorpopgroup) %>%
+  distinct()%>%
+  as.matrix()
+pop.groups<-pop.groups[-c(1,7,15, 20, 26),]
+# Time series matrix for MARSS
+coho<- esa_filtered %>%
+  select(esapopname, spawningyear, log.spawner) %>%
+  pivot_wider(
+    names_from = "esapopname",
+    values_from = "log.spawner",
+    values_fn = mean
+  ) %>%
+  column_to_rownames(var = "spawningyear") %>%
+  as.matrix() %>%
+  t()
+coho[is.na(coho)] <- NA
+
+#subset fall runs (don't know what "Stratum" rows are)
+coho<-coho[-c(1,7,15, 20, 26),]
+nrow(coho)
+#clean up row names- our 26 sub-pops
+tmp <- rownames(coho)
+tmp <- stringr::str_replace(tmp, "Steelhead [(]Upper Columbia River DPS[)]", "")
+tmp <- stringr::str_replace(tmp, "River - summer", "")
+tmp <- stringr::str_trim(tmp)
+rownames(coho) <- tmp
+rownames(pop.groups)<-tmp
+#subset colnames in case we need them later
+cohocolnames<-colnames(coho)
+
+
+```
+
+# General Questions
+
+1. Create estimates of spawner abundance for all missing years and provide estimates of the decline from the historical abundance.
+
+2. Evaluate support for the major population groups. Are the populations in the groups more correlated than outside the groups?
+
+3. Evaluate the evidence of cycling in the data. *We will talk about how to do this on the Tuesday after lab.*
+
+# Methods
+### Question 1
+To create estimates of spawner abundance, we fit an unbiased random walk model using the MARSS function to create estimates of the "states" or x values. For this first model, we assumed R and Q are diagonal and equal, and U is equal to zero, thus no bias term will be included in this estimate. Below is a plot of sub-populations with the state estimates and observed spawner abundances.
+```{r, include=FALSE}
+#Part 1: Getting spawner abundance estiamtes
+# `R="diagonal and equal"` and `A="scaling"
+mod.list<-list(
+  R="diagonal and equal",
+  Q="diagonal and equal",
+  A="scaling", 
+  U="zero"
+)
+obj<-MARSS(coho, mod.list)
+cohofit<-obj$states
+rownames(cohofit)<-tmp
+colnames(cohofit)<-cohocolnames
+#cohofit is the estimated "states" from an unbiased random walk
+```
+
+```{r, echo=FALSE}
+autoplot(obj, plot.type="fitted.ytT")
+autoplot(obj, plot.type="residuals")
+```
+To estimate the population trends over time, we fit biased random walk models to each subpopulation's data. In one model, we assumed the U term is equal across all sub-populations. This model estimated U to be 0.0349, which indicates that the Oregon Coast coho ESU is generally stable and experiencing a slight increase from historical abundances. When we change this assumption of U being equal to U being unequal, the model estimated a population trend for each of the 21 sub-populations in the ESU. 
+
+``` {r, include=FALSE}
+## Part 2: Estimates of decrease from historical abundance
+#Fit with biased random walk
+mod.list<-list(
+  R="diagonal and equal",
+  Q="diagonal and equal",
+  A="scaling", 
+  U="equal"
+)
+cohofit.biased<-MARSS(coho, mod.list)
+```
+```{r, echo=FALSE}
+U<-matrix(coef(cohofit.biased)$U)
+rownames(U)<-c("U=")
+colnames(U)<-"U Estimate for total ESU"
+print(U)
+```
+Oregon Coast ESU sub-population U estimates from biased random walk with unequal U terms
+```{r, include=FALSE}
+#Unequal U biased random walk
+#Are sub-groups experiencing same trends over time?
+mod.list<-list(
+  R="diagonal and equal",
+  Q="diagonal and equal",
+  A="scaling", 
+  U="unequal"
+)
+coho.unequal<-MARSS(coho, mod.list)
+cohoU<-coef(coho.unequal, type="matrix")$U
+colnames(cohoU)<-c("U Estimate")
+print(cohoU)
+```
+
+### Question 2
+
+### Question 3
+
+
+
+
+
+
+
+
+
+
+
+Address the following in your methods
+
+* Describe your assumptions about the x and how the data time series are related to x.
+
+   - How are the x and y (data) related? 1 x for 1 y or will you assume 1 x for all y or 1 x for each major population group? How will you choose? 
+   - What will you assume about the U for the x's?
+   - What will you assume about the Q matrix?
+   
+* Write out your assumptions as different models **in matrix form**, fit each and then compare these with AIC or AICc.
+
+* Do your estimates differ depending on the assumptions you make about the structure of the data, i.e. you assumptions about the x's, Q, and U.
+
+**Assumptions**
+
+You can assume that `R="diagonal and equal"` and `A="scaling"`. Assume that "historical" means the earliest years available for your group.
+
+**plotting**
+
+Estimate of the mean of the spawner counts based on your x model.
+```
+autoplot(fit, plot.type="fitted.ytT")
+```
+
+**diagnostics**
+```
+autoplot(fit, plot.type="residuals")
+```
+
+# Results
+### Estimating Population Trends
+
+Both of the models we fit to estimate population trends for the Oregon Coast ESU populations found they are relatively stable, and have experienced slight increases since 1990. Below is a histogram of the distribution of estimated population trends for each sub-population in this ESU. There is some variation in the population trends among the sub-populations in this ESU, but the Floras Creek/New River and Sixes River fall spawners are the only groups that are experiencing a declining trend.
+```{r, echo=FALSE}
+hist(cohoU, main="Coho Population Trends", xlab="U coefficient")
+```
+
+# Discussion
+
+# Description of each team member's contributions
+

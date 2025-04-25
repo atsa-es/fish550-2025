@@ -189,17 +189,17 @@ ndiffs(WAprice.train)
 ndiffs(WAvalue.train)
 
 ## ACF plots
-acf(CAlands.train, main= "California Landings ACF", na.action = na.pass, las = 1/12)
-acf(CAprice.train, main= "California Prices ACF", na.action = na.pass, las = 1/12)
-acf(CAvalue.train, main= "California Values ACF", na.action = na.pass, las = 1/12)
+CAl_acf <- acf(CAlands.train, main= "California Landings ACF", na.action = na.pass, las = 1/12)
+CAp_acf <- acf(CAprice.train, main= "California Prices ACF", na.action = na.pass, las = 1/12)
+CAv_acf <- acf(CAvalue.train, main= "California Values ACF", na.action = na.pass, las = 1/12)
 
-acf(ORlands.train, main= "Oregon Landings ACF", na.action = na.pass, las = 1/12)
-acf(ORprice.train, main= "Oregon Prices ACF", na.action = na.pass, las = 1/12)
-acf(ORvalue.train, main= "Oregon Values ACF", na.action = na.pass, las = 1/12)
+ORl_acf <- acf(ORlands.train, main= "Oregon Landings ACF", na.action = na.pass, las = 1/12)
+ORp_acf <- acf(ORprice.train, main= "Oregon Prices ACF", na.action = na.pass, las = 1/12)
+ORv_acf <- acf(ORvalue.train, main= "Oregon Values ACF", na.action = na.pass, las = 1/12)
 
-acf(WAlands.train, main= "Washington Landings ACF", na.action = na.pass, las = 1/12)
-acf(WAprice.train, main= "Washington Prices ACF", na.action = na.pass, las = 1/12)
-acf(WAvalue.train, main= "Washington Values ACF", na.action = na.pass, las = 1/12)
+WAl_acf <- acf(WAlands.train, main= "Washington Landings ACF", na.action = na.pass, las = 1/12)
+WAp_acf <- acf(WAprice.train, main= "Washington Prices ACF", na.action = na.pass, las = 1/12)
+WAv_acf <- acf(WAvalue.train, main= "Washington Values ACF", na.action = na.pass, las = 1/12)
 
 #PACF
 pacf(CAlands.train, main= "California Landings pACF", na.action = na.pass, las = 1/12)
@@ -325,6 +325,39 @@ points(WAvalue.test)
 
 plot(WAvalue.fc$mean)
 points(WAvalue.test)
+
+#MSE
+OR <- data.frame(date=as.Date(as.yearmon(time(ORvalue.fc$mean))), 
+                 value=as.matrix(ORvalue.fc$mean),
+                 compound=as.matrix(ORvalue.compoundfc),
+                 test=as.matrix(ORvalue.test))
+
+OR$value_error <- (OR$test - OR$value)^2
+OR$compound_error <- (OR$test - OR$compound)^2
+
+MSE_ORvalue <- mean(OR$value_error, na.rm=TRUE)
+MSE_ORcompound <- mean(OR$compound_error, na.rm=TRUE)
+
+WA <- data.frame(date=as.Date(as.yearmon(time(WAvalue.fc$mean))), 
+                 value=as.matrix(WAvalue.fc$mean),
+                 compound=as.matrix(WAvalue.compoundfc),
+                 test=as.matrix(WAvalue.test))
+
+WA$value_error <- (WA$test - WA$value)^2
+WA$compound_error <- (WA$test - WA$compound)^2
+
+MSE_WAvalue <- mean(WA$value_error, na.rm=TRUE)
+MSE_WAcompound <- mean(WA$compound_error, na.rm=TRUE)
+
+forecastmse<-matrix(nrow=2, ncol=2)
+rownames(forecastmse)<-c("Oregon", "Washington")
+colnames(forecastmse)<-c("Value forecast", "Interacted forecast")
+forecastmse[1,1] <- MSE_ORvalue
+forecastmse[1,2] <- MSE_ORcompound
+forecastmse[2,1] <- MSE_WAvalue
+forecastmse[2,2] <- MSE_WAcompound
+print(forecastmse)
+
 
 ## NEW SNADBOX (pt. 2)
 # plotting this bs with ggplot

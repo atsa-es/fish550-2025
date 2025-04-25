@@ -1,6 +1,16 @@
 # Create data files
+# First install devtools if you don't have it
+install.packages("devtools")
+library(devtools)
+
+# Install from GitHub (replace with actual repo)
+install_github("nwfsc-cb/rCAX")
+
 library(rCAX)
+install.packages("tidyverse")
 library(tidyr)
+library(dplyr)
+
 columbia.river <- NULL
 for(i in c(17, 20, 15, 11, 2)){
 esuname <- rCAX:::caxesu[i]
@@ -50,3 +60,4 @@ ggplot(df, aes(x=spawningyear, y=log(value), color=majorpopgroup)) +
   theme(strip.text.x = element_text(size = 2)) +
   theme(axis.text.x = element_text(size = 5, angle = 90)) +
   facet_wrap(~esapopname)
+

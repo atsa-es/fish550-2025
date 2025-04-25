@@ -1,13 +1,15 @@
 ---
-title: Team X - Lab 2
-subtitle: MARSS models
+title: "Team X - Lab 2"
 author: "Nicole, Mary, Tina"
-date: April 22, 2025
-output: 
+date: "April 22, 2025"
+output:
   html_document:
-    code-folding: true
-    toc: true
-    toc_float: true
+    code-folding: yes
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+subtitle: MARSS models
 ---
 
 # Data
@@ -48,10 +50,7 @@ plotesu <- function(esuname, keep_set = NULL) {
 }
 ```
 
-
-
-
-```{r}
+```{r, echo=FALSE}
 ## ---- pick-a-handful --------------------------------------------------------
 keep <- head(unique(esa.salmon$esapopname[esa.salmon$esu_dps == esu[7]]), 6)
 
@@ -89,8 +88,8 @@ coho<-coho[-c(1,7,15, 20, 26),]
 nrow(coho)
 #clean up row names- our 26 sub-pops
 tmp <- rownames(coho)
-tmp <- stringr::str_replace(tmp, "Steelhead [(]Upper Columbia River DPS[)]", "")
-tmp <- stringr::str_replace(tmp, "River - summer", "")
+tmp <- stringr::str_replace(tmp, "Salmon, coho [(]Oregon Coast ESU[)]", "")
+tmp <- stringr::str_replace(tmp, "- fall", "")
 tmp <- stringr::str_trim(tmp)
 rownames(coho) <- tmp
 rownames(pop.groups)<-tmp
@@ -151,7 +150,7 @@ colnames(U)<-"U Estimate for total ESU"
 print(U)
 ```
 Oregon Coast ESU sub-population U estimates from biased random walk with unequal U terms
-```{r, include=FALSE}
+```{r, echo=FALSE}
 #Unequal U biased random walk
 #Are sub-groups experiencing same trends over time?
 mod.list<-list(
@@ -171,9 +170,9 @@ maxtrend<-max(cohoU)
 ### Question 2
 The Oregon Coast Coho ESU is divided into five “major population groups” (MPGs), based on biological or geographical similarities. In this question, we test whether these groups reflect real ecological patterns—specifically, whether populations within the same MPG show more similar (i.e., correlated) abundance trends than populations in different groups.
 
-We evaluate this by fitting three MARSS models with different assumptions about grouping and comparing them using AICc. The model with the lowest AICc provides the best support for its grouping hypothesis. For this first analysis, we assumed unequal drift, which aligns with the varying population trends we calculated in question 1, and hidden states allowed to correlate (Q="equalvarcov"). We also fit these models with an assumption of equal drift, and zero drift. These both could also be reasonable assumptions because the population trends amongst the sub-populations in this ESU did not vary much, with a range in U values of -0.047 to 0.087. These are also close to zero, and so we could test the assumption that there is no underlying population trend.
+We evaluate this by fitting three MARSS models with different assumptions about grouping and comparing them using AICc. The model with the lowest AICc provides the best support for its grouping hypothesis. For this first analysis, we assumed unequal drift, which aligns with the varying population trends we calculated in question 1, and hidden states allowed to correlate (Q="equalvarcov"). We also fit these models with an assumption of equal drift, and zero drift. These both could also be reasonable assumptions because the population trends amongst the sub-populations in this ESU did not vary much, with a range in U values of -0.047 to 0.087. These are also close to zero, and so we could test the assumption that there is no underlying population trend. *Add matrix form for the three models, then the other two 5 group models with U=zero and U=equal*
 
-```{r}
+```{r, echo=FALSE}
 # Helper function: converts a grouping vector into a Z matrix
 make_Z <- function(group_vec) {
   model.matrix(~ 0 + factor(group_vec))
@@ -193,7 +192,7 @@ Z.site <- diag(1, nrow(coho))
 
 ```
 
-```{r}
+```{r, echo=FALSE}
 # Base model components (shared across all groupings)
 base.list <- list(
   B = "identity",            # random walk
@@ -214,7 +213,7 @@ fit.one <- MARSS(coho, c(base.list, list(Z = Z.one)), silent = TRUE)
 fit.site <- MARSS(coho, c(base.list, list(Z = Z.site)), silent = TRUE)
 ```
 AICc results when unequal drift is assumed:
-```{r}
+```{r, echo=FALSE}
 AICc.tab <- tibble(
   model = c("5-group MPG", "1-population", "Site-level"),
   num_states = c(ncol(Z.grp), ncol(Z.one), ncol(Z.site)),
@@ -226,7 +225,7 @@ AICc.tab
 
 ```
 
-```{r}
+```{r, include=FALSE}
 # Change assumption to zero U
 base.list.zero <- list(
   B = "identity",            # random walk
@@ -237,26 +236,26 @@ base.list.zero <- list(
 )
 
 # Fit model with 5 major population groups
-fit.grp <- MARSS(coho, c(base.list.zero, list(Z = Z.grp)), silent = TRUE)
+fit.grp.zero <- MARSS(coho, c(base.list.zero, list(Z = Z.grp)), silent = TRUE)
 # Fit model with one shared hidden state
-fit.one <- MARSS(coho, c(base.list.zero, list(Z = Z.one)), silent = TRUE)
+fit.one.zero <- MARSS(coho, c(base.list.zero, list(Z = Z.one)), silent = TRUE)
 
 # Fit model with one hidden state per site
-fit.site <- MARSS(coho, c(base.list.zero, list(Z = Z.site)), silent = TRUE)
+fit.site.zero <- MARSS(coho, c(base.list.zero, list(Z = Z.site)), silent = TRUE)
 ```
 AICc results when zero drift is assumed:
-```{r}
+```{r, echo=FALSE}
 AICc.tab.zero <- tibble(
   model = c("5-group MPG", "1-population", "Site-level"),
   num_states = c(ncol(Z.grp), ncol(Z.one), ncol(Z.site)),
-  AICc = c(fit.grp$AICc, fit.one$AICc, fit.site$AICc)
+  AICc = c(fit.grp.zero$AICc, fit.one.zero$AICc, fit.site.zero$AICc)
 ) %>%
   arrange(AICc)
 
 AICc.tab.zero
 ```
 
-```{r}
+```{r, include=FALSE}
 # Change assumption to equal U
 base.list.equal <- list(
   B = "identity",            # random walk
@@ -267,19 +266,19 @@ base.list.equal <- list(
 )
 
 # Fit model with 5 major population groups
-fit.grp <- MARSS(coho, c(base.list.equal, list(Z = Z.grp)), silent = TRUE)
+fit.grp.equal <- MARSS(coho, c(base.list.equal, list(Z = Z.grp)), silent = TRUE)
 # Fit model with one shared hidden state
-fit.one <- MARSS(coho, c(base.list.equal, list(Z = Z.one)), silent = TRUE)
+fit.one.equal <- MARSS(coho, c(base.list.equal, list(Z = Z.one)), silent = TRUE)
 
 # Fit model with one hidden state per site
-fit.site <- MARSS(coho, c(base.list.equal, list(Z = Z.site)), silent = TRUE)
+fit.site.equal <- MARSS(coho, c(base.list.equal, list(Z = Z.site)), silent = TRUE)
 ```
 AICc results when equal drift is assumed:
-```{r}
+```{r, echo=FALSE}
 AICc.tab.equal <- tibble(
   model = c("5-group MPG", "1-population", "Site-level"),
   num_states = c(ncol(Z.grp), ncol(Z.one), ncol(Z.site)),
-  AICc = c(fit.grp$AICc, fit.one$AICc, fit.site$AICc)
+  AICc = c(fit.grp.equal$AICc, fit.one.equal$AICc, fit.site.equal$AICc)
 ) %>%
   arrange(AICc)
 
@@ -317,8 +316,8 @@ Q.tab<-tibble(
 Q.tab
 ```
 
-The alternative groupings we considered were:
-```{r}
+First we fit alternative groupings that divided the ESU into 6 groups. One model separated Beaver Creek and Salmon River into a sixth group, since they geographically distant from the other sub-populations (more inland). The other 6-group model separated Floras Creek and Sixes River into a sixth group. These were the two populations experiencing declining population trends, and are further south than most of the other sites, which could mean they form a unique group. We also fit a model with 7 groupings, with groups 6 and 7 being the sub-groups described previously.
+```{r, include=FALSE}
 mod.list<-list(
   B = "identity",            # random walk
   U = "unequal",                # no drift
@@ -326,30 +325,149 @@ mod.list<-list(
   R = "diagonal and unequal",# each site has its own observation error
   A = "scaling"              # site-specific intercepts
 )
+### 6 groups separate beaver creek and salmon river 
+pop.groups.6.1<-pop.groups
+pop.groups.6.1[c("Beaver Creek", "Salmon River"),2]<-"Group 6"
+gvec <- pop.groups.6.1[rownames(coho), "majorpopgroup"]
+#Z matrix for the first 6-group model
+Z.grp.6.1 <- make_Z(gvec)
+#Fit model
+fit.grp.6.1 <- MARSS(coho, c(mod.list, list(Z = Z.grp.6.1)), silent = TRUE)
 
-# 4 groups- no lake, all lakes in mid-Coast
+# 6 groups separate floras creek and sixes river
+pop.groups.6.2<-pop.groups
+pop.groups.6.2[c("Floras Creek/New River", "Sixes River"),2]<-"Group 6"
+gvec <- pop.groups.6.2[rownames(coho), "majorpopgroup"]
+#Z matrix for the first 6-group model
+Z.grp.6.2 <- make_Z(gvec)
+#Fit model
+fit.grp.6.2 <- MARSS(coho, c(mod.list, list(Z = Z.grp.6.2)), silent = TRUE)
 
-# 4 groups- no umpqua- umpqua is in mid-south coast
+# 7 group model
+pop.groups.6.2[c("Beaver Creek", "Salmon River"),2]<-"Group 7"
+gvec <- pop.groups.6.2[rownames(coho), "majorpopgroup"]
+#Z matrix for the first 6-group model
+Z.grp.7 <- make_Z(gvec)
+#Fit model
+fit.grp.7 <- MARSS(coho, c(mod.list, list(Z = Z.grp.6.2)), silent = TRUE)
+```
+AICc results for splitting the groups into 6 and 7 groups:
+```{r, echo=FALSE}
+groups6.7<-tibble(
+  model = c("Beaver and Salmon group", "Flores and Sixes Group", "5-Group MPG", "7 Groups"),
+  num_states = c(ncol(Z.grp.6.1), ncol(Z.grp.6.2), ncol(Z.grp),ncol(Z.grp.7)),
+  AICc = c(fit.grp.6.1$AICc, fit.grp.6.2$AICc, fit.grp$AICc, fit.grp.7$AICc)
+) %>%
+  arrange(AICc)
 
-# 4 groups- no umpwua- umpqua is in mid-coast
+groups6.7
+```
+None of the 6- and 7-groups models were supported when comparing AICc values to the original 5-Group MPG model. Thus, we decided not to further divide the groupings and tried fitting models with the same number of groups but re-arranged.
 
-# 3 groups- lake, coast, umpqua
+The first alternative 5 group model divided the sub-populations up equally along a north-south gradient, and the second model set Beaver Creek and Salmon River, and Floras Creek and Sixes River into their own groups, and combined the coastal groups into one.
+```{r, include=FALSE}
+# 5 groups- divide evenly north to south so each group has 4 or 5 pops in it
+#does not treat lakes and umpqua as a unique group
+#"A" is furthest north, "E" is furthest south
+pop.groups.5<-pop.groups
+geolist<-c("C", "C", "D", "C", "B", "A", "B", "C", "B", "E", "E", "E", "E", "A", "A", "B",
+           "A", "D", "D", "D", "D")
+pop.groups.5[, "majorpopgroup"]<-geolist
 
+gvec <- pop.groups.5[rownames(coho), "majorpopgroup"]
+#Z matrix for the first 6-group model
+Z.grp.5.2 <- make_Z(gvec)
+#Fit model
+fit.grp.5.2 <- MARSS(coho, c(mod.list, list(Z = Z.grp.5.2)), silent = TRUE)
 
-# 3 groups- N, M, S coast (lake and umpqua divied up between them based on lat)
-
-# 2 groups- North and South (lake and umpqua divied up between them based on lat)
-
-# 2 groups- Coast+Lake, Umpqua
-
-# 2 groups- Coast+Umpqua, lakes
-
+# 5 groups
+#Beaver and salmon group, sixes and floras group, lakes, coast, umpqua
+pop.groups.6.2 <- as.data.frame(pop.groups.6.2)
+pop.groups.6.2[pop.groups.6.2$majorpopgroup %in% c("Mid-Coast", "Mid-South Coast", "North Coast"), "majorpopgroup"] <- "Coast"
+gvec <- pop.groups.6.2[rownames(coho), "majorpopgroup"]
+Z.grp.5.3 <- make_Z(gvec)
+#Fit model
+fit.grp.5.3 <- MARSS(coho, c(mod.list, list(Z = Z.grp.5.3)), silent = TRUE)
 ```
 
+None of these performed better than the original 5-group model.
+```{r, echo=FALSE}
+groups5<-tibble(
+  model = c("North-South groups", "Combined Coastal Group", "5-Group MPG"),
+  num_states = c(ncol(Z.grp), ncol(Z.grp), ncol(Z.grp)),
+  AICc = c(fit.grp.5.2$AICc, fit.grp.5.3$AICc, fit.grp$AICc)
+) %>%
+  arrange(AICc)
 
+groups5
+```
+Next we tried fitting models with fewer than 5 groups: one there is no lake group (merged with mid-Coast), two where there is no umpqua group (one merged with mid-south coast, in the other one it is merged with the mid-coast group), one in which there three groups- coastal, lake, and upmqua, and one in which there are only three coastal groups.
+
+```{r, include=FALSE}
+#4 groups- no lake, all lakes in mid-Coast
+pop.groups.4<-as.data.frame(pop.groups)
+pop.groups.4[pop.groups.4$majorpopgroup %in% c("Lakes"), "majorpopgroup"]<-"Mid-Coast"
+
+gvec <- pop.groups.4[rownames(coho), "majorpopgroup"]
+#Z matrix for the first 6-group model
+Z.grp.4.1 <- make_Z(gvec)
+#Fit model
+fit.grp.4.1 <- MARSS(coho, c(mod.list, list(Z = Z.grp.4.1)), silent = TRUE)
+
+# 4 groups- no umpqua- umpqua is in mid-south coast
+pop.groups.4.2<-as.data.frame(pop.groups)
+pop.groups.4.2[pop.groups.4.2$"majorpopgroup"%in%c("Umpqua"), "majorpopgroup"]<-"Mid-South Coast"
+
+gvec <- pop.groups.4.2[rownames(coho), "majorpopgroup"]
+#Z matrix for the first 6-group model
+Z.grp.4.2 <- make_Z(gvec)
+#Fit model
+fit.grp.4.2 <- MARSS(coho, c(mod.list, list(Z = Z.grp.4.2)), silent = TRUE)
+
+# 4 groups- no umpua- umpqua is in mid-coast
+pop.groups.4.3<-as.data.frame(pop.groups)
+pop.groups.4.3[pop.groups.4.3$"majorpopgroup"%in%c("Umpqua"), "majorpopgroup"]<-"Mid-Coast"
+
+gvec <- pop.groups.4.3[rownames(coho), "majorpopgroup"]
+#Z matrix for the first 6-group model
+Z.grp.4.3 <- make_Z(gvec)
+#Fit model
+fit.grp.4.3 <- MARSS(coho, c(mod.list, list(Z = Z.grp.4.3)), silent = TRUE)
+fit.grp.4.3$AICc
+fit.grp.4.2$AICc
+
+# 3 groups- lake, coast, umpqua
+pop.groups.3.1<-as.data.frame(pop.groups)
+pop.groups.3.1[pop.groups.3.1$"majorpopgroup"%in%c("Mid-Coast", "Mid-South Coast", "North Coast"), "majorpopgroup"]<-"Coast"
+
+gvec <- pop.groups.3.1[rownames(coho), "majorpopgroup"]
+#Z matrix for the first 6-group model
+Z.grp.3.1 <- make_Z(gvec)
+#Fit model
+fit.grp.3.1 <- MARSS(coho, c(mod.list, list(Z = Z.grp.3.1)), silent = TRUE)
+
+# 3 groups all coastal
+pop.groups.4.2[pop.groups.4.2$majorpopgroup %in% c("Lakes"), "majorpopgroup"]<-"Mid-Coast"
+gvec <- pop.groups.4.2[rownames(coho), "majorpopgroup"]
+#Z matrix for the first 6-group model
+Z.grp.3.2 <- make_Z(gvec)
+#Fit model
+fit.grp.3.2 <- MARSS(coho, c(mod.list, list(Z = Z.grp.3.2)), silent = TRUE)
+```
+Again none of these performed better than the original 5-group model. The only interesting things we can see in comparing these models is the Umpqua populations appear to be more similar to the Mid-South Coast than Mid-Coast populations, and the lake populations do appear to be distinct (much higher AICs values when they are grouped in with the coastal groups).
+```{r, echo=FALSE}
+groups4.3<-tibble(
+  model = c("No Lakes", "Umpqua in Mid-South Coast", "Umpqua in Mid-Coast",
+           "Lake, Coast, Umpqua", "3 Coastal", "5-Group MPG"),
+  num_states = c(ncol(Z.grp.4.1), ncol(Z.grp.4.2), ncol(Z.grp.4.3), ncol(Z.grp.3.1),
+                 ncol(Z.grp.3.2), ncol(Z.grp)),
+  AICc = c(fit.grp.4.1$AICc, fit.grp.4.2$AICc, fit.grp.4.3$AICc,
+           fit.grp.3.1$AICc, fit.grp.3.2$AICc,fit.grp$AICc)
+) %>%
+  arrange(AICc)
+groups4.3
+```
 ### Question 3
-
-
 
 
 
@@ -390,22 +508,20 @@ To better understand the relationships between major population groups, we visua
 In the heatmap below, stronger red indicates higher positive correlation (groups move together), while blue indicates negative correlation (groups move in opposite directions), and white indicates weak or no correlation.
 
 This visual allows us to assess whether some MPGs are tightly linked or behaving independently, even within the group structure.
+*Something happened here, I copied your code but the output does not look the same. I then tried copying the code from the Lab2-MARSS.rmd and am getting the same results, did I do something wrong while fitting the model?*
 
 ```{r}
-# Extract the process error covariance matrix from the 5-group model
-Q_matrix <- coef(fit.grp, type = "matrix")$Q
+Q <- coef(fit.site, type="matrix")$Q
+corrmat <- diag(1/sqrt(diag(Q))) %*% Q %*% diag(1/sqrt(diag(Q)))
+corrplot(corrmat, main="Site model")
 
-# Convert it to a correlation matrix
-Q_cor <- cov2cor(Q_matrix)
-
-# Print it to inspect the values
-Q_cor
+Q <- coef(fit.grp, type="matrix")$Q
+corrmat <- diag(1/sqrt(diag(Q))) %*% Q %*% diag(1/sqrt(diag(Q)))
+corrplot(corrmat, main="5 Group model")
 
 ```
 
-However, when unequal drift is assumed, the model that treats each sub-population as its own group performs the best. To account for the variation in population trends, we fit a few different models with alternative groupings to see if those performed better than the 5-group MPG model. The 5-group MPG model that assumes unequal drift also performs better than the same model fit with equal or zero drift, which further supports the idea that there might be differences among the populations in this ESU resulting in different population trends. To further investigate this, we changed our assumptions of the groupings and fit alternative models to the Oregon Coast ESU sub-populations.
-
-
+However, when unequal drift is assumed, the model that treats each sub-population as its own group performs the best. The 5-group MPG model that assumes unequal drift also performs better than the same model fit with equal or zero drift, which further supports the idea that there might be differences among the populations in this ESU resulting in different population trends. To further investigate this, we changed our assumptions of the groupings and fit alternative models to the Oregon Coast ESU sub-populations. However, none of the combinations of 6, 7, 5 (different from the original groups), 4, or 3 groupings that we fit to the data performed better. The original 5 groupings considered in the Oregon Coast ESU do seem to be the most appropriate. While larger groups or considering each population as its own group might produce better model results, the goal in creating population groups to explain the data is achieved with the original five. The model that treated each sub-population did not perform extremely better relative to the 5 groups, and so there is merit in that grouping assumption.
 
 ### Question 3
 To further explore variation in population trends over time for the Oregon Coast ESU, we... something.

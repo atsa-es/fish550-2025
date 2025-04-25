@@ -16,7 +16,7 @@ options(dplyr.summarise.inform = FALSE)
 
 # Data
 
-Describe what plankton groups and covariates you used and indicate any temporal subsetting you chose. 
+We chose to use the seven zooplankton taxa that had complete observations from 1985 to 1994. Thus, Leptodora and Neomysis were excluded. We chose to examine the last ten years of the data set (from 1985 to 1994) because we were interested in the zooplankton community following all of the changes to the lake throughout the 1970's and 1980's (Ben could explain this better probably). The covariates we looked at were temperature, total phosphorus, and pH.
 
 
 ## Load the data
@@ -86,21 +86,6 @@ Each group has the same general tasks, but you will adapt them as you work on th
 
 1) Find the most parsimonious model among a set that examines the effects of environmental covariates and/or an indicator of seasonality, varying numbers of trends, and different forms of variance-covariance matrices for the observation errors.
 ```{r}
-auto.arima(dat[1,])
-arima.1<-arima(dat[1,], c(2,0,0))
-auto.arima(dat[2,])
-arima.2<-arima(dat[2,], c(2,0,1))
-auto.arima(dat[3,])
-arima.3<-arima(dat[3,], c(0,0,2))
-auto.arima(dat[4,])
-arima.4<-arima(dat[4,], c(2,0,0))
-auto.arima(dat[5,])
-arima.5<-arima(dat[5,], c(2,0,2))
-auto.arima(dat[6,])
-arima.6<-arima(dat[6,], c(1,0,3))
-auto.arima(dat[7,])
-arima.7<-arima(dat[7,], c(2,0,0))
-
 
 ```
 
@@ -117,11 +102,7 @@ Please address the following in your methods:
 
 * Which plankton taxa did you choose and how did you choose them?
 
-We chose to use the seven zooplankton taxa that had complete observations from 1985 to 1994. Thus, Leptodora and Neomysis were excluded.
-   
-* What time period(s) did you examine and why?
 
-We chose to examine the last ten years of the data set (from 1985 to 1994) because we were interested in the zooplankton community following all of the changes to the lake throughout the 1970's and 1980's.
 
 * What environmental or dummy variables did you include and why?
 

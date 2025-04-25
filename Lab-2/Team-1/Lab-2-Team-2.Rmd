@@ -164,12 +164,14 @@ coho.unequal<-MARSS(coho, mod.list)
 cohoU<-coef(coho.unequal, type="matrix")$U
 colnames(cohoU)<-c("U Estimate")
 print(cohoU)
+mintrend<-min(cohoU)
+maxtrend<-max(cohoU)
 ```
 
 ### Question 2
 The Oregon Coast Coho ESU is divided into five “major population groups” (MPGs), based on biological or geographical similarities. In this question, we test whether these groups reflect real ecological patterns—specifically, whether populations within the same MPG show more similar (i.e., correlated) abundance trends than populations in different groups.
 
-We evaluate this by fitting three MARSS models with different assumptions about grouping and comparing them using AICc. The model with the lowest AICc provides the best support for its grouping hypothesis. 
+We evaluate this by fitting three MARSS models with different assumptions about grouping and comparing them using AICc. The model with the lowest AICc provides the best support for its grouping hypothesis. For this first analysis, we assumed unequal drift, which aligns with the varying population trends we calculated in question 1, and hidden states allowed to correlate (Q="equalvarcov"). We also fit these models with an assumption of equal drift, and zero drift. These both could also be reasonable assumptions because the population trends amongst the sub-populations in this ESU did not vary much, with a range in U values of -0.047 to 0.087. These are also close to zero, and so we could test the assumption that there is no underlying population trend.
 
 ```{r}
 # Helper function: converts a grouping vector into a Z matrix
@@ -195,7 +197,7 @@ Z.site <- diag(1, nrow(coho))
 # Base model components (shared across all groupings)
 base.list <- list(
   B = "identity",            # random walk
-  U = "zero",                # unequal drift
+  U = "unequal",                # unequal drift
   Q = "equalvarcov",         # hidden states allowed to correlate
   R = "diagonal and unequal",# each site has its own observation error
   A = "scaling"              # site-specific intercepts
@@ -210,37 +212,82 @@ fit.one <- MARSS(coho, c(base.list, list(Z = Z.one)), silent = TRUE)
 
 # Fit model with one hidden state per site
 fit.site <- MARSS(coho, c(base.list, list(Z = Z.site)), silent = TRUE)
+```
+AICc results when unequal drift is assumed:
+```{r}
+AICc.tab <- tibble(
+  model = c("5-group MPG", "1-population", "Site-level"),
+  num_states = c(ncol(Z.grp), ncol(Z.one), ncol(Z.site)),
+  AICc = c(fit.grp$AICc, fit.one$AICc, fit.site$AICc)
+) %>%
+  arrange(AICc)
 
-# Fit model with only 4 groups, no lake
-#Z.4.grp<-
-# Fit model with only 3 groups, no lake or umpqua
+AICc.tab
 
-#Fit model with 3 groups, coast, lake, umpqua
-
-#Fit model with 2 groups- north and south
 ```
 
-We also adjusted the assumptions of drift in the population trends (U is equal, unequal, and zero), and Q for the 5-group model to see which assumptions are supported by the data. We found models with unequal drift and hidden states that are allowed to correlate performed best.
-```{r, include=FALSE}
-# Changing assumptions
-#Set U="unequal"- drift
-drift.equal.list <- list(
+```{r}
+# Change assumption to zero U
+base.list.zero <- list(
   B = "identity",            # random walk
-  U = "equal",                # no drift
+  U = "zero",                # unequal drift
   Q = "equalvarcov",         # hidden states allowed to correlate
   R = "diagonal and unequal",# each site has its own observation error
   A = "scaling"              # site-specific intercepts
 )
-drift.unequal.list <- list(
-  B = "identity",            # random walk
-  U = "unequal",                # no drift
-  Q = "equalvarcov",         # hidden states allowed to correlate
-  R = "diagonal and unequal",# each site has its own observation error
-  A = "scaling"              # site-specific intercepts
-)
-fit.grp.drift.unequal <- MARSS(coho, c(drift.unequal.list, list(Z = Z.grp)), silent = TRUE)
-fit.grp.drift.equal<-MARSS(coho, c(drift.equal.list, list(Z = Z.grp)), silent = TRUE)
 
+# Fit model with 5 major population groups
+fit.grp <- MARSS(coho, c(base.list.zero, list(Z = Z.grp)), silent = TRUE)
+# Fit model with one shared hidden state
+fit.one <- MARSS(coho, c(base.list.zero, list(Z = Z.one)), silent = TRUE)
+
+# Fit model with one hidden state per site
+fit.site <- MARSS(coho, c(base.list.zero, list(Z = Z.site)), silent = TRUE)
+```
+AICc results when zero drift is assumed:
+```{r}
+AICc.tab.zero <- tibble(
+  model = c("5-group MPG", "1-population", "Site-level"),
+  num_states = c(ncol(Z.grp), ncol(Z.one), ncol(Z.site)),
+  AICc = c(fit.grp$AICc, fit.one$AICc, fit.site$AICc)
+) %>%
+  arrange(AICc)
+
+AICc.tab.zero
+```
+
+```{r}
+# Change assumption to equal U
+base.list.equal <- list(
+  B = "identity",            # random walk
+  U = "equal",                # unequal drift
+  Q = "equalvarcov",         # hidden states allowed to correlate
+  R = "diagonal and unequal",# each site has its own observation error
+  A = "scaling"              # site-specific intercepts
+)
+
+# Fit model with 5 major population groups
+fit.grp <- MARSS(coho, c(base.list.equal, list(Z = Z.grp)), silent = TRUE)
+# Fit model with one shared hidden state
+fit.one <- MARSS(coho, c(base.list.equal, list(Z = Z.one)), silent = TRUE)
+
+# Fit model with one hidden state per site
+fit.site <- MARSS(coho, c(base.list.equal, list(Z = Z.site)), silent = TRUE)
+```
+AICc results when equal drift is assumed:
+```{r}
+AICc.tab.equal <- tibble(
+  model = c("5-group MPG", "1-population", "Site-level"),
+  num_states = c(ncol(Z.grp), ncol(Z.one), ncol(Z.site)),
+  AICc = c(fit.grp$AICc, fit.one$AICc, fit.site$AICc)
+) %>%
+  arrange(AICc)
+
+AICc.tab.equal
+```
+The comparison of these models changes when the assumption of population trend is changed. When equal or zero drift is assumed, the 5-group MPG performs best. When unequal drift is assumed, the site-level model performs best. This could suggest there is an alternative grouping that could explain the variation in population trends observed in the Oregon Coast ESU. Also of note, when we compare the 5-group model AICc values to each other when the population trend assumptions are changed, the unequal drift model performs best. This supports the assumption of unequal population trends (U-term). One hypothesis is that these population trends can be explained by changing the assumptions of groupings for these ESU sub-populations. To test this hypothesis, we fit several alternative models with different grouping structures to the Oregon Coast ESU sub-populations. We maintain the assumption of hidden states that are allowed to correlate (models fit with this assumption performed better than other assumptions about Q; see AICc results below) 
+
+```{r, include=FALSE}
 unequal.drift.Q.equal <- list(
   B = "identity",            # random walk
   U = "unequal",                # no drift
@@ -261,15 +308,6 @@ fit.grp.Q.unequal <- MARSS(coho, c(unequal.drift.Q.unequal, list(Z = Z.grp)), si
 ```
 
 ```{r, echo=FALSE}
-Drift.tab <- tibble(
-  model = c("Zero drift", "Equal Drift", "Unequal Drift"),
-  num_states = c(ncol(Z.grp), ncol(Z.grp), ncol(Z.grp)),
-  AICc = c(fit.grp$AICc, fit.grp.drift.equal$AICc, fit.grp.drift.unequal$AICc)
-) %>%
-  arrange(AICc)
-
-Drift.tab
-
 Q.tab<-tibble(
   model = c("Q=equalvarcov", "Q=diagonal and equal", "Q= diagonal and unequal"),
   num_states = c(ncol(Z.grp), ncol(Z.grp), ncol(Z.grp)),
@@ -278,6 +316,26 @@ Q.tab<-tibble(
   arrange(AICc)
 Q.tab
 ```
+
+The alternative groupings we considered were:
+```{r}
+# 4 groups- no lake
+
+#4 groups- no umpqua
+
+#3 groups- lake, coast, umpqua
+
+
+# 3 groups- N, M, S coast (lake and umpqua divied up between them based on lat)
+
+#2 groups- North and South (lake and umpqua divied up between them based on lat)
+
+#2 groups- Coast+Lake, Umpqua
+
+
+
+```
+
 
 ### Question 3
 
@@ -303,21 +361,7 @@ Address the following in your methods
 
 * Do your estimates differ depending on the assumptions you make about the structure of the data, i.e. you assumptions about the x's, Q, and U.
 
-**Assumptions**
 
-You can assume that `R="diagonal and equal"` and `A="scaling"`. Assume that "historical" means the earliest years available for your group.
-
-**plotting**
-
-Estimate of the mean of the spawner counts based on your x model.
-```
-autoplot(fit, plot.type="fitted.ytT")
-```
-
-**diagnostics**
-```
-autoplot(fit, plot.type="residuals")
-```
 
 # Results
 ### Estimating Population Trends
@@ -328,21 +372,7 @@ hist(cohoU, main="Coho Population Trends", xlab="U coefficient")
 ```
 
 ### Fitting state-space models
-To evaluate whether the five major population groups (MPGs) are meaningful in explaining Coho population dynamics, we fit three MARSS models with different grouping assumptions: one with a hidden state for each MPG, one treating all populations as a single group, and one giving each site its own independent state.
-
-The model with the lowest AICc was the **5-group MPG model (AICc = 1457)**, with a substantial improvement over both the **site-level model (AICc = 1688)** and the **1-population model (AICc = 1706)**. These results strongly support the biological relevance of the MPG structure: populations within a group show similar dynamics, while those in different groups behave differently.
-
-This provides ecological justification for modeling these populations as grouped rather than treating all sites as independent or pooled together.
-```{r}
-AICc.tab <- tibble(
-  model = c("5-group MPG", "1-population", "Site-level"),
-  num_states = c(ncol(Z.grp), ncol(Z.one), ncol(Z.site)),
-  AICc = c(fit.grp$AICc, fit.one$AICc, fit.site$AICc)
-) %>%
-  arrange(AICc)
-
-AICc.tab
-```
+To evaluate whether the five major population groups (MPGs) are meaningful in explaining Coho population dynamics, we fit three MARSS models with different grouping assumptions: one with a hidden state for each MPG, one treating all populations as a single group, and one giving each site its own independent state. We also fit these three models with different assumptions on population trend- zero drift, equal drift, or unequal drift. When zero or equal drift is assumed, the model with the lowest AICc was the **5-group MPG model (AICc = 1457)**, with a substantial improvement over both the **site-level model (AICc = 1688)** and the **1-population model (AICc = 1706)**. These results support the biological relevance of the MPG structure: populations within a group show similar dynamics, while those in different groups behave differently.This provides ecological justification for modeling these populations as grouped rather than treating all sites as independent or pooled together.
 
 ### Visualization of the correlation results:
 To better understand the relationships between major population groups, we visualized the correlation matrix (Q) from the MARSS model that assigned one hidden state to each group. The Q matrix reflects how similarly the groups behave over time.
@@ -362,6 +392,13 @@ Q_cor <- cov2cor(Q_matrix)
 Q_cor
 
 ```
+
+However, when unequal drift is assumed, the model that treats each sub-population as its own group performs the best. To account for the variation in population trends, we fit a few different models with alternative groupings to see if those performed better than the 5-group MPG model. The 5-group MPG model that assumes unequal drift also performs better than the same model fit with equal or zero drift, which further supports the idea that there might be differences among the populations in this ESU resulting in different population trends. To further investigate this, we changed our assumptions of the groupings and fit alternative models to the Oregon Coast ESU sub-populations.
+
+
+
+### Question 3
+To further explore variation in population trends over time for the Oregon Coast ESU, we... something.
 
 # Discussion
 

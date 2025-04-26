@@ -18,7 +18,7 @@ options(dplyr.summarise.inform = FALSE)
 
 ## Climate Indices
 
-See also <https://psl.noaa.gov/data/atmoswrit/corr/timeseries/>
+See also <https://psl.noaa.gov/data/atmoswrit/corr/timeseries/> and <https://psl.noaa.gov/data/climateindices/list/>
 
 | Index                            | Region                            | Influences                                         | Notes                                                                 | Data Source |
 |----------------------------------|------------------------------------|----------------------------------------------------|-----------------------------------------------------------------------|-------------|

@@ -110,225 +110,172 @@ run_vec <- meta_info$run_timing[match(rownames(Stl_mat), meta_info$esapopname)]
 ```
 
 
-
-
-
-
-
 Models 
 
-2. Evaluate support for the major population groups. Are the populations in the groups more correlated than outside the groups?
+```{r, echo = FALSE, results = "hide"}
 
-```{r}
-# Hypotheses to test 
-#################
-### Hypotheses
-# H1: All populations act the same 
-# H2: Each "Region" Lower, Middle, "Upper" acts differently
-# H3: Each "Run" Summer, Winter acts differently
+# ==========================================
+# MODEL ASSUMPTIONS IN MATRIX FORM
+# ==========================================
+# General MARSS model:
+# Process equation: x_t = B x_{t-1} + u + w_t  where w_t ~ N(0,Q)
+# Observation equation: y_t = Z x_t + a + v_t  where v_t ~ N(0,R)
+#
+# Model 1: All Populations Same (H1)
+# - One hidden state for all populations
+# - Z = [1, 1, 1, ..., 1]^T (n_pops × 1 matrix of 1s)
+# - U = [u] (1 × 1 scalar)
+# - Q = [q] (1 × 1 scalar)
+# - B = [1] (1 × 1 scalar)
+# - R = diag(r, r, ..., r) (n_pops × n_pops diagonal matrix with equal values)
+#
+# Model 2: Region-based (H2)
+# - One hidden state per region (Lower, Middle, Upper)
+# - Z = [1 0 0]   (for each Lower region population)
+#       [0 1 0]   (for each Middle region population)
+#       [0 0 1]   (for each Upper region population)
+# - U = [u_1, u_2, u_3]^T (different trend for each region)
+# - Q = [q  0  0]
+#       [0  q  0]
+#       [0  0  q]
+# - B = [b  0  0]
+#       [0  b  0]
+#       [0  0  b]
+# - R = diag(r, r, ..., r) (diagonal matrix with equal values)
+#
+# Model 3: Run-based (H3)
+# - One hidden state per run timing (Summer, Winter, Unknown)
+# - Z = [1 0 0]   (for each Summer run population)
+#       [0 1 0]   (for each Winter run population)
+#       [0 0 1]   (for each Unknown run population)
+# - U = [u_1, u_2, u_3]^T (different trend for each run timing)
+# - Q = [q  0  0]
+#       [0  q  0]
+#       [0  0  q]
+# - B = [b  0  0]
+#       [0  b  0]
+#       [0  0  b]
+# - R = diag(r, r, ..., r) (diagonal matrix with equal values)
+#
+# Model 4: Region + Unequal Q
+# - Same as Model 2 except:
+# - Q = [q_1  0    0  ]
+#       [0    q_2  0  ]
+#       [0    0    q_3]
+#
+# Model 5: Run + Unequal Q
+# - Same as Model 3 except:
+# - Q = [q_1  0    0  ]
+#       [0    q_2  0  ]
+#       [0    0    q_3]
 
-# Load required packages
-library(MARSS)
-
-# First let's log-transform the data for analysis
-Stl_log <- log(Stl_mat)
-# Replace -Inf values (from log(0)) with NA
-Stl_log[is.infinite(Stl_log)] <- NA
-
-# Examine our data structure
-dim(Stl_log)
-n_pops <- nrow(Stl_log)
-n_years <- ncol(Stl_log)
-
-# Print the region and run timing vectors to verify
-print(table(region_vec))
-print(table(run_vec))
-
-#------------------------------------------------------------------------------
-# MODEL 1: Single trend (H1: All populations act the same)
-#------------------------------------------------------------------------------
-# In this model, all populations follow one shared trend with different loadings
+# ==========================================
+# 1. All populations same (H1)
+# ==========================================
 mod1 <- list(
-  Z = "unconstrained",     # Each population loads differently on a single shared trend
-  R = "diagonal and unequal", # Each population has its own observation variance
-  Q = "identity",          # Single process variance for the shared trend
-  U = "identity",          # Single mean growth rate
-  x0 = "identity"          # Single initial state
+  B = matrix(1),
+  U = matrix("u"),
+  Q = matrix("q"),
+  Z = matrix(1, n_pops, 1),
+  A = "scaling",
+  R = "diagonal and equal"
 )
-
-# Parameter choice explanations:
-# Z = "unconstrained":
-#   - There is only one underlying trend that all populations follow
-#   - Each population can have a different relationship (loading) with this trend
-#   - "unconstrained" means loadings can be any value (+ or -) and different for each population
-# 
-# R = "diagonal and unequal":
-#   - Diagonal: Observation errors are independent across populations
-#   - Unequal: Each population has its own observation error variance
-#   - This accounts for different monitoring methods/accuracy between populations
-# 
-# Q = "identity":
-#   - Single process variance as we have only one underlying trend
-# 
-# U = "identity":
-#   - Single mean growth rate for the shared trend
-# 
-# x0 = "identity":
-#   - Single initial state for the shared trend
 
 # Fit model 1
-fit1 <- MARSS(Stl_log, model = mod1, silent = TRUE, control = list(maxit = 1000))
+fit1 <- MARSS(Data, model = mod1, method = "BFGS", control = list(maxit = 1000))
 
-#------------------------------------------------------------------------------
-# MODEL 2: Region-based trends (H2: Each Region acts differently)
-#------------------------------------------------------------------------------
-# In this model, populations within the same region share a trend
-
-# Create region-based groups mapping matrix
-unique_regions <- unique(region_vec)
-n_regions <- length(unique_regions)
-
-# Create a region membership matrix for MARSS
-Z_regions <- matrix(0, nrow = n_pops, ncol = n_regions)
-colnames(Z_regions) <- unique_regions
-rownames(Z_regions) <- rownames(Stl_log)
-
-# Fill in the region membership matrix
-for (i in 1:n_pops) {
-  region_idx <- which(unique_regions == region_vec[i])
-  Z_regions[i, region_idx] <- 1
-}
-
+# ==========================================
+# 2. Region-based (H2)
+# ==========================================
 mod2 <- list(
-  Z = Z_regions,           # Populations map to their respective region trends
-  R = "diagonal and unequal", # Each population has its own observation variance
-  Q = "diagonal and equal",   # Each region has the same process variance
-  U = "unequal",            # Each region has its own mean growth rate
-  x0 = "unequal"            # Each region has its own initial state
+  B = "diagonal and equal",
+  U = "unequal",
+  Q = "diagonal and equal",
+  Z = Z2,
+  A = "scaling",
+  R = "diagonal and equal"
 )
-
-# Parameter choice explanations:
-# Z = Z_regions:
-#   - Custom matrix that maps populations to their geographical regions
-#   - Populations in the same region share the same underlying state (trend)
-# 
-# R = "diagonal and unequal":
-#   - Each population has its own observation error variance
-# 
-# Q = "diagonal and equal":
-#   - Process errors are independent between regions
-#   - Equal: All regions experience the same magnitude of environmental stochasticity
-# 
-# U = "unequal":
-#   - Each region has its own mean growth rate
-# 
-# x0 = "unequal":
-#   - Each region starts from a different initial state
 
 # Fit model 2
-fit2 <- MARSS(Stl_log, model = mod2, silent = TRUE, control = list(maxit = 1000))
+fit2 <- MARSS(Data, model = mod2, method = "BFGS", control = list(maxit = 1000))
 
-#------------------------------------------------------------------------------
-# MODEL 3: Run-timing based trends (H3: Each Run acts differently)
-#------------------------------------------------------------------------------
-# In this model, populations with the same run timing share a trend
-
-# Create run-timing based groups mapping matrix
-unique_runs <- unique(run_vec)
-n_runs <- length(unique_runs)
-
-# Create a run timing membership matrix for MARSS
-Z_runs <- matrix(0, nrow = n_pops, ncol = n_runs)
-colnames(Z_runs) <- unique_runs
-rownames(Z_runs) <- rownames(Stl_log)
-
-# Fill in the run timing membership matrix
-for (i in 1:n_pops) {
-  run_idx <- which(unique_runs == run_vec[i])
-  Z_runs[i, run_idx] <- 1
-}
-
+# ==========================================
+# 3. Run-based (H3)
+# ==========================================
 mod3 <- list(
-  Z = Z_runs,              # Populations map to their respective run timing trends
-  R = "diagonal and unequal", # Each population has its own observation variance
-  Q = "diagonal and equal",   # Each run timing has the same process variance
-  U = "unequal",            # Each run timing has its own mean growth rate
-  x0 = "unequal"            # Each run timing has its own initial state
+  B = "diagonal and equal",
+  U = "unequal",
+  Q = "diagonal and equal",
+  Z = Z3,
+  A = "scaling",
+  R = "diagonal and equal"
 )
-
-# Parameter choice explanations:
-# Z = Z_runs:
-#   - Custom matrix that maps populations to their run timing groups (Summer, Winter)
-#   - Populations with the same run timing share the same underlying state (trend)
-# 
-# R = "diagonal and unequal":
-#   - Each population has its own observation error variance
-# 
-# Q = "diagonal and equal":
-#   - Process errors are independent between run timing groups
-#   - All run timing groups have the same environmental stochasticity magnitude
-# 
-# U = "unequal":
-#   - Each run timing group has its own mean growth rate
-# 
-# x0 = "unequal":
-#   - Each run timing group starts from a different initial state
 
 # Fit model 3
-fit3 <- MARSS(Stl_log, model = mod3, silent = TRUE, control = list(maxit = 1000))
+fit3 <- MARSS(Data, model = mod3, method = "BFGS", control = list(maxit = 1000))
 
-#------------------------------------------------------------------------------
-# Compare all models using AIC
-#------------------------------------------------------------------------------
-# Calculate AIC for each model
-AIC1 <- fit1$AIC
-AIC2 <- fit2$AIC
-AIC3 <- fit3$AIC
-
-# Calculate AICc (corrected AIC) for each model
-AICc1 <- fit1$AICc
-AICc2 <- fit2$AICc
-AICc3 <- fit3$AICc
-
-# Create a comparison table
-model_table <- data.frame(
-  Model = c("H1: All populations act the same", 
-            "H2: Each Region acts differently", 
-            "H3: Each Run acts differently"),
-  AIC = c(AIC1, AIC2, AIC3),
-  AICc = c(AICc1, AICc2, AICc3),
-  num_params = c(fit1$num.params, fit2$num.params, fit3$num.params),
-  logLik = c(fit1$logLik, fit2$logLik, fit3$logLik)
+# ==========================================
+# 4. Region with unequal Q
+# ==========================================
+mod4 <- list(
+  B = "diagonal and equal",
+  U = "unequal",
+  Q = "diagonal and unequal",
+  Z = Z2,
+  A = "scaling",
+  R = "diagonal and equal"
 )
 
-# Calculate delta AICc and weights
-model_table$delta_AICc <- model_table$AICc - min(model_table$AICc)
-model_table$AICc_weight <- exp(-0.5 * model_table$delta_AICc) / sum(exp(-0.5 * model_table$delta_AICc))
+# Fit model 4
+fit4 <- MARSS(Data, model = mod4, method = "BFGS", control = list(maxit = 1000))
 
-# Sort by AICc
-model_table <- model_table[order(model_table$AICc), ]
+# ==========================================
+# 5. Run with unequal Q
+# ==========================================
+mod5 <- list(
+  B = "diagonal and equal",
+  U = "unequal",
+  Q = "diagonal and unequal",
+  Z = Z3,
+  A = "scaling",
+  R = "diagonal and equal"
+)
 
-# Print the table
-print(model_table)
-
-# Identify best model
-best_model_idx <- which.min(c(AICc1, AICc2, AICc3))
-best_model_name <- c("H1: All populations act the same", 
-                     "H2: Each Region acts differently", 
-                     "H3: Each Run acts differently")[best_model_idx]
-
-cat("\nThe best model according to AICc is:", best_model_name, "\n")
-
-# Calculate AICc differences for interpretation
-cat("\nInterpretation guideline for delta_AICc:\n")
-cat("delta_AICc < 2: Models have substantial support\n")
-cat("delta_AICc 4-7: Models have considerably less support\n")
-cat("delta_AICc > 10: Models have essentially no support\n")
-
+# Fit model 5
+fit5 <- MARSS(Data, model = mod5, method = "BFGS", control = list(maxit = 1000))
 
 ```
 
+```{r}
+# ==========================================
+# Compare via AIC and AICc
+# ==========================================
 
+# Collect all AICc values
+model_names <- c("1. All populations same (H1)",
+                "2. Region-based (H2)",
+                "3. Run-based (H3)",
+                "4. Region + Unequal Q",
+                "5. Run + Unequal Q")
+
+AICc_values <- c(fit1$AICc, fit2$AICc, fit3$AICc, fit4$AICc, fit5$AICc)
+min_AICc <- min(AICc_values)
+delta_AICc <- AICc_values - min_AICc
+
+# Create and print the simple comparison table
+comparison_table <- data.frame(
+  Model = model_names,
+  AICc = round(AICc_values, 2),
+  delta_AICc = round(delta_AICc, 2)
+)
+
+# Sort by AICc
+comparison_table <- comparison_table[order(comparison_table$AICc), ]
+
+# Print the simple comparison table
+cat("\n============ MODEL COMPARISON TABLE ============\n")
+print(comparison_table, row.names = FALSE)
+```
 
 
 

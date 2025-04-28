@@ -9,8 +9,8 @@ Data/Ruggerone_Irvine
 test-chatgpt.qmd
 Lab-1/Lab1-ARIMA.html
 Lab-2/Lab2-MARSS.html
-
 /.quarto/
 *.o
 *.so
 Lab-6/univariate_example.html
+%

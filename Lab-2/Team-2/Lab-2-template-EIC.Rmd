@@ -107,10 +107,65 @@ mod.list.3$Q <- "equalvarcov"
 fit.3 <- MARSS:: MARSS(data, model = mod.list.3)
 
 #H4: Run timing is the only distinguishing factor, meaning that there are only 3 correlated populations (and are temporally correlated)
-col1 <- c(rep(1, 16), rep(0, 12))         # 16 ones, 12 zeros
-col2 <- c(rep(0, 16), rep(1, 8), rep(0, 4))  # 16 zeros, 8 ones, 4 zeros
-col3 <- c(rep(0, 24), rep(1, 4))          # 24 zeros, 4 ones
-ZMatrix4 <- t(rbind(col1, col2, col3))
+#3x28 Z Matrix for H4
+Zmatrix4 <- matrix(c(
+  # Row 1
+  1,0,0,
+  # Row 2
+  1,0,0,
+  # Row 3
+  0,1,0,
+  #Row 4
+  0,1,0,
+  #Row 5
+  1,0,0,
+  # Row 6
+  1,0,0,
+  #Row 7
+  0,1,0,
+  #Row 8
+  0,0,1,
+  #Row 9
+  1,0,0,
+  #Row 10
+  0,1,0,
+  #Row 11
+  1,0,0,
+  #Row 12
+  0,1,0,
+  #Row 13
+  1,0,0,
+  #Row 14
+  0,1,0,
+  #Row 15
+  1,0,0,
+  #Row 16
+  1,0,0,
+  #Row 17
+  1,0,0,
+  #Row 18
+  0,0,1,
+  #Row 19
+  0,1,0,
+  #Row 20
+  1,0,0,
+  #Row 21
+  0,0,1,
+  #Row 22
+  0,0,1,
+  #Row 23
+  1,0,0,
+  #Row 24
+  1,0,0,
+  #Row 25
+  0,1,0,
+  #Row 26
+  1,0,0,
+  #Row 27
+  1,0,0,
+  #Row 28
+  1,0,0
+), nrow = 28, byrow = TRUE)
 
 mod.list.4 <- list(B = "identity",  
                    U = "equal",
@@ -124,7 +179,65 @@ mod.list.4 <- list(B = "identity",
 fit.4 <- MARSS::MARSS(data, model = mod.list.4)
 
 #H5 - Brian's code here -----
-
+#5x28 Z matrix for H5
+Zmatrix5 <- matrix(c(
+  # Row 1
+  0,1,0,0,0,
+  # Row 2
+  0,0,1,0,0,
+  # Row 3
+  0,0,1,0,0,
+  #Row 4
+  0,0,1,0,0,
+  #Row 5
+  1,0,0,0,0,
+  # Row 6
+  0,0,1,0,0,
+  #Row 7
+  0,0,0,0,1,
+  #Row 8
+  0,0,0,1,0,
+  #Row 9
+  1,0,0,0,0,
+  #Row 10
+  1,0,0,0,0,
+  #Row 11
+  0,0,0,0,1,
+  #Row 12
+  0,0,1,0,0,
+  #Row 13
+  0,0,1,0,0,
+  #Row 14
+  0,0,1,0,0,
+  #Row 15
+  0,0,1,0,0,
+  #Row 16
+  1,0,0,0,0,
+  #Row 17
+  0,0,0,0,1,
+  #Row 18
+  0,0,0,0,1,
+  #Row 19
+  0,0,0,0,1,
+  #Row 20
+  0,0,0,0,1,
+  #Row 21
+  0,0,0,1,0,
+  #Row 22
+  0,0,0,1,0,
+  #Row 23
+  0,0,1,0,0,
+  #Row 24
+  0,1,0,0,0,
+  #Row 25
+  0,0,0,0,1,
+  #Row 26
+  1,0,0,0,0,
+  #Row 27
+  1,0,0,0,0,
+  #Row 28
+  0,0,0,0,1
+), nrow = 28, byrow = TRUE)
 #H6: Major population group and run timing are the distinguishing factors, meaning that there are 9 correlated populations (and are temporally correlated)
 
 #9x28 Z matrix

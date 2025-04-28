@@ -155,24 +155,23 @@ mod.list.2$Q <- "equalvarcov"
 
 fit.2 <- MARSS:: MARSS(data, model = mod.list.2)
 
-#H4: Spring vs. Summer vs. Spring/Summer with temporal correlation 3X28 for B and Z
+#H4: Spring vs. Summer vs. Spring/Summer with temporal correlation 3X28 for Z matrix
 
 col1 <- c(rep(1, 16), rep(0, 12))         # 16 ones, 12 zeros
 col2 <- c(rep(0, 16), rep(1, 8), rep(0, 4))  # 16 zeros, 8 ones, 4 zeros
 col3 <- c(rep(0, 24), rep(1, 4))          # 24 zeros, 4 ones
-BMatrix3 <- t(rbind(col1, col2, col3))
-ZMatrix3 <- BMatrix3
+ZMatrix4 <- t(rbind(col1, col2, col3))
 
-mod.list.3 <- list(B = "identity", # Rather than BMatrix3, this is the autoregressive term, 
+mod.list.4 <- list(B = "identity",  
                    U = "equal",
                    Q = "equalvarcov",
-                   Z = ZMatrix3,
+                   Z = ZMatrix4,
                    A = "scaling",
                    R = "diagonal and equal", #Observation variance
                    x0 = "unequal",
                    tinitx = 0)
 
-fit.3 <- MARSS::MARSS(data, model = mod.list.3)
+fit.4 <- MARSS::MARSS(data, model = mod.list.4)
 
 #H5: Seasonal differences and major pop groups 9 x 28 for  Z with temporal correlation
 col1 <- c(rep(1, 5), rep(0, 23))         # 5 ones, 23 zeros
@@ -188,16 +187,16 @@ col9 <- c(rep(0, 27), rep(1, 1))
 BMatrix4 <- t(rbind(col1, col2, col3, col4, col5, col6, col7, col8, col9))
 ZMatrix4 <- BMatrix4
 
-mod.list.4 <- list(B = "identity", 
+mod.list.6 <- list(B = "identity", 
                    U = "equal",
                    Q = "equalvarcov",
-                   Z = my_matrix_Z,
+                   Z = Zmatrix6,
                    A = "scaling",
                    R = "diagonal and equal",
                    x0 = "unequal",
                    tinitx = 0)
 
-fit.4 <- MARSS::MARSS(data, model = mod.list.4)
+fit.6 <- MARSS::MARSS(data, model = mod.list.6)
 
 BMatrix3 <- t(rbind(col1, col2, col3))
 ZMatrix3 <- BMatrix3
@@ -227,62 +226,62 @@ esa.snake.names <- esa.snake.names %>% arrange(esapopname)
 esa.salmon <- esa.salmon %>% filter(value != "NaN")
 
 #9x28 Z matrix
-my_matrix_Z <- matrix(c(
+Zmatrix4 <- matrix(c(
   # Row 1
-  0,0,1,0,0,0,0,0,0,
+  1,0,0,
   # Row 2
-  0,0,0,1,0,0,0,0,0,
+  1,0,0,
   # Row 3
-  0,0,0,0,1,0,0,0,0,
+  0,1,0,
   #Row 4
-  0,0,0,0,1,0,0,0,0,
+  0,1,0,
   #Row 5
-  1,0,0,0,0,0,0,0,0,
+  1,0,0,
   # Row 6
-  0,0,0,1,0,0,0,0,0,
+  1,0,0,
   #Row 7
-  0,0,0,0,0,0,0,0,1,
+  0,1,0,
   #Row 8
-  0,0,0,0,0,1,0,0,0,
+  0,0,1,
   #Row 9
-  1,0,0,0,0,0,0,0,0,
+  1,0,0,
   #Row 10
-  0,1,0,0,0,0,0,0,0,
+  0,1,0,
   #Row 11
-  0,0,0,0,0,0,1,0,0,
+  1,0,0,
   #Row 12
-  0,0,0,0,1,0,0,0,0,
+  0,1,0,
   #Row 13
-  0,0,0,1,0,0,0,0,0,
+  1,0,0,
   #Row 14
-  0,0,0,0,1,0,0,0,0,
+  0,1,0,
   #Row 15
-  0,0,0,1,0,0,0,0,0,
+  1,0,0,
   #Row 16
-  1,0,0,0,0,0,0,0,0,
+  1,0,0,
   #Row 17
-  0,0,0,0,0,0,1,0,0,
+  1,0,0,
   #Row 18
-  0,0,0,0,0,0,0,1,0,
+  0,0,1,
   #Row 19
-  0,0,0,0,0,0,0,0,1,
+  0,1,0,
   #Row 20
-  0,0,0,0,0,0,1,0,0,
+  1,0,0,
   #Row 21
-  0,0,0,0,0,0,0,1,0,
+  0,0,1,
   #Row 22
-  0,0,0,0,0,0,0,1,0,
+  0,0,1,
   #Row 23
-  0,0,0,1,0,0,0,0,0,
+  1,0,0,
   #Row 24
-  0,0,1,0,0,0,0,0,0,
+  1,0,0,
   #Row 25
-  0,0,0,0,0,0,0,0,1,
+  0,1,0,
   #Row 26
-  1,0,0,0,0,0,0,0,0,
+  1,0,0,
   #Row 27
-  1,0,0,0,0,0,0,0,0,
+  1,0,0,
   #Row 28
-  0,0,0,0,0,0,1,0,0
+  1,0,0
 ), nrow = 28, byrow = TRUE)
 

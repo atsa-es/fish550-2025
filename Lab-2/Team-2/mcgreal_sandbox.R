@@ -76,14 +76,14 @@ model.list <- list(
 
 # modeling
 ptm <- proc.time()
-if(!file.exists("Lab-2/Team-2/ss1.all.rds")){
+if(!file.exists("Lab-2/Team-2/data/ss1.all.rds")){
   ss1.all <- MARSS(dat, model = model.list, method = "kem")
-  saveRDS(ss1.all, file="Lab-2/Team-2/ss1.all.rds")
+  saveRDS(ss1.all, file="Lab-2/Team-2/data/ss1.all.rds")
 }
 proc.time()[3] - ptm
 
 # load in ss1.all
-ss1.all <- readRDS(file="Lab-2/Team-2/ss1.all.rds")
+ss1.all <- readRDS(file="Lab-2/Team-2/data/ss1.all.rds")
 
 # grabbing data for figures
 states <- ss1.all$states
@@ -138,7 +138,7 @@ states_long$lb <- states_long$fitted - states_long$se
 states_long$ub <- states_long$fitted + states_long$se
 
 # save long state estimates
-save(states_long, file="Lab-2/Team-2/ss1.allstates_long.Rda")
+save(states_long, file="Lab-2/Team-2/data/ss1.allstates_long.Rda")
 
 plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
   geom_line() +
@@ -215,14 +215,14 @@ model.list <- list(
 
 # modeling
 ptm <- proc.time()
-if(!file.exists("Lab-2/Team-2/ss1.run.rds")){
+if(!file.exists("Lab-2/Team-2/data/ss1.run.rds")){
   ss1.run <- MARSS(dat, model = model.list, method = "kem")
-  saveRDS(ss1.run, file="Lab-2/Team-2/ss1.run.rds")
+  saveRDS(ss1.run, file="Lab-2/Team-2/data/ss1.run.rds")
 }
 proc.time()[3] - ptm
 
 # load in ss1
-ss1.run <- readRDS(file="Lab-2/Team-2/ss1.run.rds")
+ss1.run <- readRDS(file="Lab-2/Team-2/data/ss1.run.rds")
 
 # grabbing data for figures
 states <- ss1.run$states
@@ -252,7 +252,7 @@ states_long$lb <- states_long$fitted - states_long$se
 states_long$ub <- states_long$fitted + states_long$se
 
 # save long state estimates
-save(states_long, file="Lab-2/Team-2/ss1.runstates_long.Rda")
+save(states_long, file="Lab-2/Team-2/data/ss1.runstates_long.Rda")
 
 plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
   geom_line() +
@@ -289,14 +289,14 @@ model.list <- list(
 
 # modeling
 ptm <- proc.time()
-if(!file.exists("Lab-2/Team-2/ss1.pop.rds")){
+if(!file.exists("Lab-2/Team-2/data/ss1.pop.rds")){
   ss1.pop <- MARSS(dat, model = model.list, method = "kem")
-  saveRDS(ss1.pop, file="Lab-2/Team-2/ss1.pop.rds")
+  saveRDS(ss1.pop, file="Lab-2/Team-2/data/ss1.pop.rds")
 }
 proc.time()[3] - ptm
 
 # load in ss1
-ss1.pop <- readRDS(file="Lab-2/Team-2/ss1.pop.rds")
+ss1.pop <- readRDS(file="Lab-2/Team-2/data/ss1.pop.rds")
 
 # grabbing data for figures
 states <- ss1.pop$states
@@ -328,7 +328,7 @@ states_long$lb <- states_long$fitted - states_long$se
 states_long$ub <- states_long$fitted + states_long$se
 
 # save long state estimates
-save(states_long, file="Lab-2/Team-2/ss1.popstates_long.Rda")
+save(states_long, file="Lab-2/Team-2/data/ss1.popstates_long.Rda")
 
 plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
   geom_line() +
@@ -365,14 +365,14 @@ model.list <- list(
 
 # modeling
 ptm <- proc.time()
-if(!file.exists("Lab-2/Team-2/ss1.poprun.rds")){
+if(!file.exists("Lab-2/Team-2/data/ss1.poprun.rds")){
   ss1.poprun <- MARSS(dat, model = model.list, method = "kem")
-  saveRDS(ss1.poprun, file="Lab-2/Team-2/ss1.poprun.rds")
+  saveRDS(ss1.poprun, file="Lab-2/Team-2/data/ss1.poprun.rds")
 }
 proc.time()[3] - ptm
 
 # load in ss1
-ss1.poprun <- readRDS(file="Lab-2/Team-2/ss1.poprun.rds")
+ss1.poprun <- readRDS(file="Lab-2/Team-2/data/ss1.poprun.rds")
 
 # grabbing data for figures
 states <- ss1.poprun$states
@@ -408,7 +408,7 @@ states_long$lb <- states_long$fitted - states_long$se
 states_long$ub <- states_long$fitted + states_long$se
 
 # save long state estimates
-save(states_long, file="Lab-2/Team-2/ss1.poprunstates_long.Rda")
+save(states_long, file="Lab-2/Team-2/data/ss1.poprunstates_long.Rda")
 
 plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
   geom_line() +
@@ -447,14 +447,14 @@ model.list <- list(
 
 # modeling
 ptm <- proc.time()
-if(!file.exists("Lab-2/Team-2/ss2.run.rds")){
+if(!file.exists("Lab-2/Team-2/data/ss2.run.rds")){
   ss2.run <- MARSS(dat, model = model.list, method = "kem")
-  saveRDS(ss2.run, file="Lab-2/Team-2/ss2.run.rds")
+  saveRDS(ss2.run, file="Lab-2/Team-2/data/ss2.run.rds")
 }
 proc.time()[3] - ptm
 
 # load in ss2.run
-ss2.run <- readRDS(file="Lab-2/Team-2/ss2.run.rds")
+ss2.run <- readRDS(file="Lab-2/Team-2/data/ss2.run.rds")
 
 # grabbing data for figures
 states <- ss2.run$states
@@ -484,7 +484,7 @@ states_long$lb <- states_long$fitted - states_long$se
 states_long$ub <- states_long$fitted + states_long$se
 
 # save long state estimates
-save(states_long, file="Lab-2/Team-2/ss2.runstates_long.Rda")
+save(states_long, file="Lab-2/Team-2/data/ss2.runstates_long.Rda")
 
 plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
   geom_line() +
@@ -520,14 +520,14 @@ model.list <- list(
 
 # modeling
 ptm <- proc.time()
-if(!file.exists("Lab-2/Team-2/ss2.pop.rds")){
+if(!file.exists("Lab-2/Team-2/data/ss2.pop.rds")){
   ss2.pop <- MARSS(dat, model = model.list, method = "kem")
-  saveRDS(ss2.pop, file="Lab-2/Team-2/ss2.pop.rds")
+  saveRDS(ss2.pop, file="Lab-2/Team-2/data/ss2.pop.rds")
 }
 proc.time()[3] - ptm
 
 # load in ss2.pop
-ss2.pop <- readRDS(file="Lab-2/Team-2/ss2.pop.rds")
+ss2.pop <- readRDS(file="Lab-2/Team-2/data/ss2.pop.rds")
 
 # grabbing data for figures
 states <- ss2.pop$states
@@ -559,7 +559,7 @@ states_long$lb <- states_long$fitted - states_long$se
 states_long$ub <- states_long$fitted + states_long$se
 
 # save long state estimates
-save(states_long, file="Lab-2/Team-2/ss2.popstates_long.Rda")
+save(states_long, file="Lab-2/Team-2/data/ss2.popstates_long.Rda")
 
 plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
   geom_line() +
@@ -595,14 +595,14 @@ model.list <- list(
 
 # modeling
 ptm <- proc.time()
-if(!file.exists("Lab-2/Team-2/ss2.poprun.rds")){
+if(!file.exists("Lab-2/Team-2/data/ss2.poprun.rds")){
   ss2.poprun <- MARSS(dat, model = model.list, method = "kem")
-  saveRDS(ss2.poprun, file="Lab-2/Team-2/ss2.poprun.rds")
+  saveRDS(ss2.poprun, file="Lab-2/Team-2/data/ss2.poprun.rds")
 }
 proc.time()[3] - ptm
 
 # load in ss2.poprun
-ss2.poprun <- readRDS(file="Lab-2/Team-2/ss2.poprun.rds")
+ss2.poprun <- readRDS(file="Lab-2/Team-2/data/ss2.poprun.rds")
 
 # grabbing data for figures
 states <- ss2.poprun$states
@@ -638,7 +638,7 @@ states_long$lb <- states_long$fitted - states_long$se
 states_long$ub <- states_long$fitted + states_long$se
 
 # save long state estimates
-save(states_long, file="Lab-2/Team-2/ss2.poprunstates_long.Rda")
+save(states_long, file="Lab-2/Team-2/data/ss2.poprunstates_long.Rda")
 
 plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
   geom_line() +
@@ -660,16 +660,16 @@ ss2.poprun.cor
 # QUESTION 3 ----
 ## get pdo data ----
 # read in data from table
-if(!file.exists("Lab-2/Team-2/pdo_raw.Rda")){
+if(!file.exists("Lab-2/Team-2/data/pdo_raw.Rda")){
   pdo <- read.table("https://www.ncei.noaa.gov/pub/data/cmb/ersst/v5/index/ersst.v5.pdo.dat",
                     sep = "",
                     header = TRUE,
                     skip = 1)
-  save(pdo, file="Lab-2/Team-2/pdo_raw.Rda")
+  save(pdo, file="Lab-2/Team-2/data/pdo_raw.Rda")
 } 
 
-if(file.exists("Lab-2/Team-2/pdo_raw.Rda")) {
-  load("Lab-2/Team-2/pdo_raw.Rda")
+if(file.exists("Lab-2/Team-2/data/pdo_raw.Rda")) {
+  load("Lab-2/Team-2/data/pdo_raw.Rda")
 }
 
 #annual average
@@ -720,14 +720,14 @@ model.list <- list(
 
 # modeling
 ptm <- proc.time()
-if(!file.exists("Lab-2/Team-2/ss3.run.rds")){
+if(!file.exists("Lab-2/Team-2/data/ss3.run.rds")){
   ss3.run <- MARSS(dat, model = model.list, method = "kem")
-  saveRDS(ss3.run, file="Lab-2/Team-2/ss3.run.rds")
+  saveRDS(ss3.run, file="Lab-2/Team-2/data/ss3.run.rds")
 }
 proc.time()[3] - ptm
 
 # load in ss3.run
-ss3.run <- readRDS(file="Lab-2/Team-2/ss3.run.rds")
+ss3.run <- readRDS(file="Lab-2/Team-2/data/ss3.run.rds")
 
 # grabbing data for figures
 states <- ss3.run$states
@@ -757,7 +757,7 @@ states_long$lb <- states_long$fitted - states_long$se
 states_long$ub <- states_long$fitted + states_long$se
 
 # save long state estimates
-save(states_long, file="Lab-2/Team-2/ss3.runstates_long.Rda")
+save(states_long, file="Lab-2/Team-2/data/ss3.runstates_long.Rda")
 
 plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
   geom_line() +
@@ -796,14 +796,14 @@ model.list <- list(
 
 # modeling
 ptm <- proc.time()
-if(!file.exists("Lab-2/Team-2/ss3.pop.rds")){
+if(!file.exists("Lab-2/Team-2/data/ss3.pop.rds")){
   ss3.pop <- MARSS(dat, model = model.list, method = "kem")
-  saveRDS(ss3.pop, file="Lab-2/Team-2/ss3.pop.rds")
+  saveRDS(ss3.pop, file="Lab-2/Team-2/data/ss3.pop.rds")
 }
 proc.time()[3] - ptm
 
 # load in ss3.pop
-ss3.pop <- readRDS(file="Lab-2/Team-2/ss3.pop.rds")
+ss3.pop <- readRDS(file="Lab-2/Team-2/data/ss3.pop.rds")
 
 # grabbing data for figures
 states <- ss3.pop$states
@@ -835,7 +835,7 @@ states_long$lb <- states_long$fitted - states_long$se
 states_long$ub <- states_long$fitted + states_long$se
 
 # save long state estimates
-save(states_long, file="Lab-2/Team-2/ss3.popstates_long.Rda")
+save(states_long, file="Lab-2/Team-2/data/ss3.popstates_long.Rda")
 
 plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
   geom_line() +
@@ -874,14 +874,14 @@ model.list <- list(
 
 # modeling
 ptm <- proc.time()
-if(!file.exists("Lab-2/Team-2/ss3.poprun.rds")){
+if(!file.exists("Lab-2/Team-2/data/ss3.poprun.rds")){
   ss3.poprun <- MARSS(dat, model = model.list, method = "kem")
-  saveRDS(ss3.poprun, file="Lab-2/Team-2/ss3.poprun.rds")
+  saveRDS(ss3.poprun, file="Lab-2/Team-2/data/ss3.poprun.rds")
 }
 proc.time()[3] - ptm
 
 # load in ss3.poprun
-ss3.poprun <- readRDS(file="Lab-2/Team-2/ss3.poprun.rds")
+ss3.poprun <- readRDS(file="Lab-2/Team-2/data/ss3.poprun.rds")
 
 # grabbing data for figures
 states <- ss3.poprun$states
@@ -917,7 +917,7 @@ states_long$lb <- states_long$fitted - states_long$se
 states_long$ub <- states_long$fitted + states_long$se
 
 # save long state estimates
-save(states_long, file="Lab-2/Team-2/ss3.poprunstates_long.Rda")
+save(states_long, file="Lab-2/Team-2/data/ss3.poprunstates_long.Rda")
 
 plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
   geom_line() +

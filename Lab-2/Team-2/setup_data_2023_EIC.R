@@ -191,7 +191,7 @@ ZMatrix4 <- BMatrix4
 mod.list.4 <- list(B = "identity", 
                    U = "equal",
                    Q = "equalvarcov",
-                   Z = ZMatrix4,
+                   Z = my_matrix_Z,
                    A = "scaling",
                    R = "diagonal and equal",
                    x0 = "unequal",
@@ -285,3 +285,4 @@ my_matrix_Z <- matrix(c(
   #Row 28
   0,0,0,0,0,0,1,0,0
 ), nrow = 28, byrow = TRUE)
+

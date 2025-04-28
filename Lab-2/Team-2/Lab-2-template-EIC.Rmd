@@ -45,11 +45,13 @@ data_matrix[is.na(data_matrix)] <- NA
 Each group has the same general tasks, but you will adapt them as you work on the data.
 
 As a group, we've decided to dig into the estimates during the missing years, as outlined in the first question, as well as investigate the relationship between the different populations to see how they are/are not correlated. This comes from the second question, to which we are investigating not only the role of major population group, but run timing, and esa population name. This is allowing us to test several hypotheses:
+
 H1: There is no difference between any of the groups (observing the same population different rivers and times)
 H2: There is a difference between all of the separate esa populations, major populations, and run timing, meaning 28 different populations
 H3: The same as H2, however there is temporal correlation 
 H4: Run timing is the only distinguishing factor, meaning that there are only 3 correlated populations (and are temporally correlated)
-H5: Major population group and run timing are the distinguising factors, meaning that there are 9 correlated populations (and are temporally correlated).
+H5: Major population groups is the only distinguishing factor, meaning that there are only 5 correlated populations 
+H6: Major population group and run timing are the distinguishing factors, meaning that there are 9 correlated populations (and are temporally correlated).
 
 1. Create estimates of spawner abundance for all missing years and provide estimates of the decline from the historical abundance.
 
@@ -58,7 +60,7 @@ H5: Major population group and run timing are the distinguising factors, meaning
 3. Evaluate the evidence of cycling in the data. *We will talk about how to do this on the Tuesday after lab.*
 
 
-# Methods
+# Methods and Code
 
 Address the following in your methods
 
@@ -72,6 +74,133 @@ Address the following in your methods
 
 * Do your estimates differ depending on the assumptions you make about the structure of the data, i.e. you assumptions about the x's, Q, and U.
 
+
+#Code for Question One
+
+#Code for Question Two
+```{r}
+#H1: There is no correlation between the populations
+mod.list.1 <- list(B = "identity", 
+                   U = matric ("u"),
+                   Q = matrix("q"),
+                   Z = matrix(1,28,1),
+                   A = "scaling",
+                   R = "diagonal and equal",
+                   x0 = matrix("mu"),
+                   tinitx = 0)
+fit.1 <- MARSS(data, model = mod.list.1)
+
+#H2: There is a correlation within the populations (28 different populations)
+mod.list.2 <- list(B = "identity", 
+                   U = "equal",
+                   Q = "diagonal and equal",
+                   Z = "identity",
+                   A = "scaling",
+                   R = "diagonal and equal",
+                   x0 = matrix("mu"),
+                   tinitx = 0)
+fit.2 <- MARSS::MARSS(data, model = mod.list.2)
+
+#H3: Same as H2 but the errors are temporally correlated
+mod.list.3 <- mod.list.2
+mod.list.3$Q <- "equalvarcov"
+fit.3 <- MARSS:: MARSS(data, model = mod.list.3)
+
+#H4: Run timing is the only distinguishing factor, meaning that there are only 3 correlated populations (and are temporally correlated)
+col1 <- c(rep(1, 16), rep(0, 12))         # 16 ones, 12 zeros
+col2 <- c(rep(0, 16), rep(1, 8), rep(0, 4))  # 16 zeros, 8 ones, 4 zeros
+col3 <- c(rep(0, 24), rep(1, 4))          # 24 zeros, 4 ones
+ZMatrix4 <- t(rbind(col1, col2, col3))
+
+mod.list.4 <- list(B = "identity",  
+                   U = "equal",
+                   Q = "equalvarcov",
+                   Z = ZMatrix4,
+                   A = "scaling",
+                   R = "diagonal and equal", #Observation variance
+                   x0 = "unequal",
+                   tinitx = 0)
+
+fit.4 <- MARSS::MARSS(data, model = mod.list.4)
+
+#H5 - Brian's code here -----
+
+#H6: Major population group and run timing are the distinguishing factors, meaning that there are 9 correlated populations (and are temporally correlated)
+
+#9x28 Z matrix
+Zmatrix6 <- matrix(c(
+  # Row 1
+  0,0,1,0,0,0,0,0,0,
+  # Row 2
+  0,0,0,1,0,0,0,0,0,
+  # Row 3
+  0,0,0,0,1,0,0,0,0,
+  #Row 4
+  0,0,0,0,1,0,0,0,0,
+  #Row 5
+  1,0,0,0,0,0,0,0,0,
+  # Row 6
+  0,0,0,1,0,0,0,0,0,
+  #Row 7
+  0,0,0,0,0,0,0,0,1,
+  #Row 8
+  0,0,0,0,0,1,0,0,0,
+  #Row 9
+  1,0,0,0,0,0,0,0,0,
+  #Row 10
+  0,1,0,0,0,0,0,0,0,
+  #Row 11
+  0,0,0,0,0,0,1,0,0,
+  #Row 12
+  0,0,0,0,1,0,0,0,0,
+  #Row 13
+  0,0,0,1,0,0,0,0,0,
+  #Row 14
+  0,0,0,0,1,0,0,0,0,
+  #Row 15
+  0,0,0,1,0,0,0,0,0,
+  #Row 16
+  1,0,0,0,0,0,0,0,0,
+  #Row 17
+  0,0,0,0,0,0,1,0,0,
+  #Row 18
+  0,0,0,0,0,0,0,1,0,
+  #Row 19
+  0,0,0,0,0,0,0,0,1,
+  #Row 20
+  0,0,0,0,0,0,1,0,0,
+  #Row 21
+  0,0,0,0,0,0,0,1,0,
+  #Row 22
+  0,0,0,0,0,0,0,1,0,
+  #Row 23
+  0,0,0,1,0,0,0,0,0,
+  #Row 24
+  0,0,1,0,0,0,0,0,0,
+  #Row 25
+  0,0,0,0,0,0,0,0,1,
+  #Row 26
+  1,0,0,0,0,0,0,0,0,
+  #Row 27
+  1,0,0,0,0,0,0,0,0,
+  #Row 28
+  0,0,0,0,0,0,1,0,0
+), nrow = 28, byrow = TRUE)
+
+mod.list.6 <- list(B = "identity", 
+                   U = "equal",
+                   Q = "equalvarcov",
+                   Z = Zmatrix6,
+                   A = "scaling",
+                   R = "diagonal and equal",
+                   x0 = "unequal",
+                   tinitx = 0)
+
+fit.6 <- MARSS::MARSS(data, model = mod.list.6)
+
+#Code for Question Three
+
+```
 ### Tips
 
 **Simplify**

@@ -268,6 +268,7 @@ plot
 
 cov <- matrix(c(states_long$fitted), 76, ncol = ncol(z_run))
 ss1.run.cor <- cor(cov)
+unique(states_long$state)
 ss1.run.cor
 
 ## pop ----
@@ -343,6 +344,7 @@ plot
 
 cov <- matrix(c(states_long$fitted), 76, ncol = ncol(z_mpop))
 ss1.pop.cor <- cor(cov)
+unique(states_long$state)
 ss1.pop.cor
 
 ## run/pop  ----
@@ -422,6 +424,7 @@ plot
 
 cov <- matrix(c(states_long$fitted), 76, ncol = ncol(z_mpoprun))
 ss1.poprun.cor <- cor(cov)
+unique(states_long$state)
 ss1.poprun.cor
 
 # QUESTION 2  ----
@@ -497,6 +500,7 @@ plot
 
 cov <- matrix(c(states_long$fitted), 76, ncol = ncol(z_run))
 ss2.run.cor <- cor(cov)
+unique(states_long$state)
 ss2.run.cor
 
 ## pop ----
@@ -571,6 +575,7 @@ plot
 
 cov <- matrix(c(states_long$fitted), 76, ncol = ncol(z_mpop))
 ss2.pop.cor <- cor(cov)
+unique(states_long$state)
 ss2.pop.cor
 
 ## run/pop ----
@@ -649,6 +654,7 @@ plot
 
 cov <- matrix(c(states_long$fitted), 76, ncol = ncol(z_mpoprun))
 ss2.poprun.cor <- cor(cov)
+unique(states_long$state)
 ss2.poprun.cor
 
 # QUESTION 3 ----
@@ -767,6 +773,7 @@ plot
 
 cov <- matrix(c(states_long$fitted), 76, ncol = ncol(z_run))
 ss3.run.cor <- cor(cov)
+unique(states_long$state)
 ss3.run.cor
 
 ## pop ----
@@ -844,6 +851,7 @@ plot
 
 cov <- matrix(c(states_long$fitted), 76, ncol = ncol(z_mpop))
 ss3.pop.cor <- cor(cov)
+unique(states_long$state)
 ss3.pop.cor
 
 ## run/pop ----
@@ -925,4 +933,5 @@ plot
 
 cov <- matrix(c(states_long$fitted), 76, ncol = ncol(z_mpoprun))
 ss3.poprun.cor <- cor(cov)
+unique(states_long$state)
 ss3.poprun.cor

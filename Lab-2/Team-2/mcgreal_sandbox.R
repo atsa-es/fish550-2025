@@ -3,6 +3,7 @@ library(MARSS)
 library(panelr)
 library(readr)
 library(tidyverse)
+library(vcvComp)
 library(zoo)
 
 # DATA ----
@@ -265,6 +266,10 @@ plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
   scale_x_discrete(breaks = c(1950, 1964, 1978, 1992, 2006, 2020))
 plot
 
+cov <- matrix(c(states_long$fitted), 76, ncol = ncol(z_run))
+ss1.run.cor <- cor(cov)
+ss1.run.cor
+
 ## pop ----
 # specify matrices for MARSS models
 b.model <- "identity"
@@ -335,6 +340,10 @@ plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
   theme(legend.position="bottom") +
   scale_x_discrete(breaks = c(1950, 1964, 1978, 1992, 2006, 2020))
 plot
+
+cov <- matrix(c(states_long$fitted), 76, ncol = ncol(z_mpop))
+ss1.pop.cor <- cor(cov)
+ss1.pop.cor
 
 ## run/pop  ----
 # specify matrices for MARSS models
@@ -411,6 +420,9 @@ plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
   scale_x_discrete(breaks = c(1950, 1964, 1978, 1992, 2006, 2020))
 plot
 
+cov <- matrix(c(states_long$fitted), 76, ncol = ncol(z_mpoprun))
+ss1.poprun.cor <- cor(cov)
+ss1.poprun.cor
 
 # QUESTION 2  ----
 
@@ -483,6 +495,10 @@ plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
   scale_x_discrete(breaks = c(1950, 1964, 1978, 1992, 2006, 2020))
 plot
 
+cov <- matrix(c(states_long$fitted), 76, ncol = ncol(z_run))
+ss2.run.cor <- cor(cov)
+ss2.run.cor
+
 ## pop ----
 b.model <- "identity"
 u.model <- matrix(paste0("u", seq(ncol(z_mpop))))
@@ -552,6 +568,10 @@ plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
   theme(legend.position="bottom") +
   scale_x_discrete(breaks = c(1950, 1964, 1978, 1992, 2006, 2020))
 plot
+
+cov <- matrix(c(states_long$fitted), 76, ncol = ncol(z_mpop))
+ss2.pop.cor <- cor(cov)
+ss2.pop.cor
 
 ## run/pop ----
 b.model <- "identity"
@@ -626,6 +646,10 @@ plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
   theme(legend.position="bottom") +
   scale_x_discrete(breaks = c(1950, 1964, 1978, 1992, 2006, 2020))
 plot
+
+cov <- matrix(c(states_long$fitted), 76, ncol = ncol(z_mpoprun))
+ss2.poprun.cor <- cor(cov)
+ss2.poprun.cor
 
 # QUESTION 3 ----
 ## get pdo data ----
@@ -741,6 +765,10 @@ plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
   scale_x_discrete(breaks = c(1950, 1964, 1978, 1992, 2006, 2020))
 plot
 
+cov <- matrix(c(states_long$fitted), 76, ncol = ncol(z_run))
+ss3.run.cor <- cor(cov)
+ss3.run.cor
+
 ## pop ----
 # model build
 b.model <- "identity"
@@ -813,6 +841,10 @@ plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
   theme(legend.position="bottom") +
   scale_x_discrete(breaks = c(1950, 1964, 1978, 1992, 2006, 2020))
 plot
+
+cov <- matrix(c(states_long$fitted), 76, ncol = ncol(z_mpop))
+ss3.pop.cor <- cor(cov)
+ss3.pop.cor
 
 ## run/pop ----
 # model build
@@ -890,3 +922,7 @@ plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
   theme(legend.position="bottom") +
   scale_x_discrete(breaks = c(1950, 1964, 1978, 1992, 2006, 2020))
 plot
+
+cov <- matrix(c(states_long$fitted), 76, ncol = ncol(z_mpoprun))
+ss3.poprun.cor <- cor(cov)
+ss3.poprun.cor

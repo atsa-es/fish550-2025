@@ -10,11 +10,7 @@ output:
     toc_float: true
 ---
 
-# Data
-As team 2, we were assigned the Snake River Spring and Summer Run Chinook Data. This data has three seasons of runs: spring, spring/summer, and summer, divided among 5 major populations and when separated by run timing, major population and smaller tributary, 28 different populations.
-
-Load the data.
-```{r}
+```{r message=FALSE, warning=FALSE, echo=FALSE}
 library(atsalibrary)
 library(here)
 library(MARSS)
@@ -23,13 +19,18 @@ library(readr)
 library(tidyverse)
 library(vcvComp)
 library(zoo)
+```
 
+# Data
+As team 2, we were assigned the Snake River Spring and Summer Run Chinook Data. This data has three seasons of runs: spring, spring/summer, and summer, divided among 5 major populations and when separated by run timing, major population and smaller tributary, 28 different populations.
+
+Load the data.
+```{r}
 load(here::here("Lab-2", "Data_Images", "esa-salmon.rda"))
 ```
 
 Wrangle the data.
 
-**Add your wrangling code here**
 ```{r data, echo=FALSE}
 # check out the data
 esu <- unique(esa.salmon$esu_dps)
@@ -111,7 +112,11 @@ Wpdo <- data.matrix(Wpdo)
 
 # General Questions
 
-Each group has the same general tasks, but you will adapt them as you work on the data.
+1. Create estimates of spawner abundance for all missing years and provide estimates of the decline from the historical abundance.
+
+2. Evaluate support for the major population groups. Are the populations in the groups more correlated than outside the groups?
+
+3. Evaluate the evidence of cycling in the data. 
 
 As a group, we've decided to dig into the estimates during the missing years, as outlined in the first question, as well as investigate the relationship between the different populations to see how they are/are not correlated. This comes from the second question, to which we are investigating not only the role of major population group, but run timing, and esa population name. This is allowing us to test several hypotheses:
 
@@ -122,29 +127,271 @@ H4: Run timing is the only distinguishing factor, meaning that there are only 3 
 H5: Major population groups is the only distinguishing factor, meaning that there are only 5 correlated populations 
 H6: Major population group and run timing are the distinguishing factors, meaning that there are 9 correlated populations (and are temporally correlated).
 
-1. Create estimates of spawner abundance for all missing years and provide estimates of the decline from the historical abundance.
 
-2. Evaluate support for the major population groups. Are the populations in the groups more correlated than outside the groups?
+# Methods
 
-3. Evaluate the evidence of cycling in the data. *We will talk about how to do this on the Tuesday after lab.*
+Assumptions about x and how the data time series are related to x:
 
+We assumed different model structures in terms of x and y relationship:
 
-# Methods and Code
-
-Address the following in your methods
-
-* Describe your assumptions about the x and how the data time series are related to x.
-
-   - How are the x and y (data) related? 1 x for 1 y or will you assume 1 x for all y or 1 x for each major population group? How will you choose? 
-   - What will you assume about the U for the x's?
-   - What will you assume about the Q matrix?
-   
-* Write out your assumptions as different models **in matrix form**, fit each and then compare these with AIC or AICc.
-
-* Do your estimates differ depending on the assumptions you make about the structure of the data, i.e. you assumptions about the x's, Q, and U.
+- One x for all populations (A single hidden state shared across all populations) (H1).
+- One x per population (each population has its own hidden state) (H2, H3).
+- One x per run group (spring, spring/summer, summer) (H4).
+- One x per major population group (e.g., Lower Snake, Middle Fork Salmon, etc.) (H5).
+- One x per major population group + run combo (e.g., "Lower Snake, Spring") (H6).
 
 
-#Code
+Specifically, write out the assumptions in matrix form:
+
+## Hypothesis 1
+
+$$
+\begin{bmatrix}
+y_1 \\
+y_2 \\
+\vdots \\
+y_{28}
+\end{bmatrix}_t
+=
+\begin{bmatrix}
+1 \\
+1 \\
+\vdots \\
+1
+\end{bmatrix}
+x_t
++
+\begin{bmatrix}
+0 \\
+0 \\
+\vdots \\
+0
+\end{bmatrix}
++
+\begin{bmatrix}
+v_1 \\
+v_2 \\
+\vdots \\
+v_{28}
+\end{bmatrix}_t \text{where} \textbf{v}_t \sim \mathcal{N}(0,\textbf{R}) \\
+$$
+
+$$
+x_t = Bx_{t-1} + u + w_t \text{where} w_t \sim \mathcal{N}(0,q)
+$$
+
+where $\textbf{R}$ is `"diagonal and equal"`, i.e.
+
+$$
+\textbf{R} = 
+\begin{bmatrix}
+r & 0 & \cdots & 0 \\
+0 & r & \cdots & 0 \\
+\vdots & \vdots & \ddots & \vdots \\
+0 & 0 & \cdots & r
+\end{bmatrix}
+$$
+
+## Hypothesis 2 & 3
+
+$$
+\begin{bmatrix}
+y_1 \\
+y_2 \\
+\vdots \\
+y_{28}
+\end{bmatrix}_t
+=
+\begin{bmatrix}
+1 & 0 & \cdots & 0 \\
+0 & 1 & \cdots & 0 \\
+\vdots & \vdots & \ddots & \vdots \\
+0 & 0 & \cdots & 1
+\end{bmatrix}
+\begin{bmatrix}
+x_1 \\
+x_2 \\
+\vdots \\
+x_{28}
+\end{bmatrix}_t
++
+\begin{bmatrix}
+0 \\
+0 \\
+\vdots \\
+0
+\end{bmatrix}
++
+\begin{bmatrix}
+v_1 \\
+v_2 \\
+\vdots \\
+v_{28}
+\end{bmatrix}_t \; \text{where} \: \textbf{v}_t \sim \mathcal{N}(0,\textbf{R}) \\
+$$ 
+
+$$
+\begin{bmatrix}
+x_1 \\
+x_2 \\
+\vdots \\
+x_{28}
+\end{bmatrix}_t
+=
+\begin{bmatrix}
+1 & 0 & \cdots & 0 \\
+0 & 1 & \cdots & 0 \\
+\vdots & \vdots & \ddots & \vdots \\
+0 & 0 & \cdots & 1
+\end{bmatrix}
+\begin{bmatrix}
+x_1 \\
+x_2 \\
+\vdots \\
+x_{28}
+\end{bmatrix}_{t-1}
++
+\begin{bmatrix}
+u \\
+u \\
+\vdots \\
+u
+\end{bmatrix}
++
+\begin{bmatrix}
+w_1 \\
+w_2 \\
+\vdots \\
+w_{28}
+\end{bmatrix}_t \; \text{where} \: \textbf{w}_t \sim \mathcal{N}(0,\textbf{Q})
+$$
+
+where $\textbf{R}$ is `"diagonal and equal"` and $\textbf{Q}$ is `"diagonal and equal"` in H2:
+
+$$
+\textbf{Q} = 
+\begin{bmatrix}
+q & 0 & \cdots & 0 \\
+0 & q & \cdots & 0 \\
+\vdots & \vdots & \ddots & \vdots \\
+0 & 0 & \cdots & q
+\end{bmatrix}
+$$
+
+Or, $\textbf{Q}$ is `"equalvarcov"` in H3:
+
+$$
+\textbf{Q} = 
+\begin{bmatrix}
+q & c & \cdots & c \\
+c & q & \cdots & c \\
+\vdots & \vdots & \ddots & \vdots \\
+c & c & \cdots & q
+\end{bmatrix}
+$$
+
+## Hypothesis 4
+
+Three hidden states based on run group (Spring, Spring/Summer, Summer).
+
+$$
+\begin{bmatrix}
+y_1 \\
+y_2 \\
+y_3 \\
+\vdots \\
+y_{28}
+\end{bmatrix}_t
+=
+\begin{bmatrix}
+1 & 0 & 0 \\
+1 & 0 & 0 \\
+\vdots & \vdots & \vdots \\
+0 & 1 & 0 \\
+0 & 0 & 1
+\end{bmatrix}
+\begin{bmatrix}
+x_1 \\
+x_2 \\
+x_3
+\end{bmatrix}_t
++
+\begin{bmatrix}
+0 \\
+0 \\
+0 \\
+\vdots \\
+0
+\end{bmatrix}
++
+\begin{bmatrix}
+v_1 \\
+v_2 \\
+v_3 \\
+\vdots \\
+v_{28}
+\end{bmatrix}_t \; \text{where} \: \textbf{v}_t \sim \mathcal{N}(0,\textbf{R}) \\
+$$
+
+$$
+\begin{bmatrix}
+x_1 \\
+x_2 \\
+x_3
+\end{bmatrix}_t
+=
+\begin{bmatrix}
+1 & 0 & 0 \\
+0 & 1 & 0 \\
+0 & 0 & 1
+\end{bmatrix}
+\begin{bmatrix}
+x_1 \\
+x_2 \\
+x_3
+\end{bmatrix}_{t-1}
++
+\begin{bmatrix}
+u \\
+u \\
+u
+\end{bmatrix}
++
+\begin{bmatrix}
+w_1 \\
+w_2 \\
+w_3
+\end{bmatrix}_t \; \text{where} \: \textbf{w}_t \sim \mathcal{N}(0,\textbf{Q})
+$$
+
+where $\textbf{R}$ is `"diagonal and equal"` and $\textbf{Q}$ is `"equalvarcov"` in H4a and `"diagonal and equal"` in H4b.
+
+## Hypothesis 5 & 6
+H5 examines five hidden states based on major population groups ("Grande Ronde/Imnaha", "Lower Snake", "Middle Fork Salmon", "South Fork Salmon", "Upper Salmon" ).
+
+The model retains the same general structure as before, with the dimension of $\textbf{x}_t$ varying depending on the number of hidden states assumed. We also assume that $\textbf{R}$ is `"diagonal and equal"` and $\textbf{Q}$ is `"equalvarcov"` in scenario a`"diagonal and equal"` in scenario b.
+
+## Summary
+In summary, the general form of multivariate state-space models in the MARSS package is:
+
+$$
+\textbf{x}_t = \textbf{Bx}_{t-1} + \textbf{u} + \textbf{w}_t \; \text{where} \: \textbf{w}_t \sim \mathcal{N}(0,\textbf{Q})\\
+\textbf{y}_t = \textbf{Zx}_t + \textbf{a} + \textbf{v}_t \; \text{where} \: \textbf{v}_t \sim \mathcal{N}(0,\textbf{R}) \\
+\textbf{x}_0 = \boldsymbol{\mu} 
+$$
+
+We made the following assumptions on parameters for all models:
+
+- $\textbf{B}$: `"identity"`
+- $\textbf{u}$: `"equal"`. We care about estimates of the decline.
+- $\textbf{Q}$: `"diagonal and equal"` in the most cases, `"equalvarcov"` in H3, H4a, H5a, H5b.
+- $\textbf{Z}$: modified according to the different model scenarios.
+- $\textbf{a}$: `"zero"`.
+- $\textbf{R}$: `"diagonal and equal"`.
+
+After fitting the different models, we compare them with AICc.
+
+# Code
 ## Hypothesis 1
 ```{r H1, echo=FALSE}
 #H1: There is no correlation between the populations
@@ -996,41 +1243,31 @@ fit6b.cor
 # C = c.model, c = Wpdo,
 #   # add to modlist
 ```
-### Tips
-
-**Simplify**
-
-If your ESU has many populations, start with a smaller set of 4-7 populations.
-
-**Assumptions**
-
-You can assume that `R="diagonal and equal"` and `A="scaling"`. Assume that "historical" means the earliest years available for your group.
-
-**States**
-
-Your abundance estimate is the "x" or "state" estimates. You can get this from
-```
-fit$states
-```
-or 
-```
-tsSmooth(fit)
-```
-where `fit` is from `fit <- MARSS()`
-
-**plotting**
-
-Estimate of the mean of the spawner counts based on your x model.
-```
-autoplot(fit, plot.type="fitted.ytT")
-```
-
-**diagnostics**
-```
-autoplot(fit, plot.type="residuals")
-```
 
 # Results
+## Model Comparison
+```{r}
+# an empty list to collect outputs
+out_list <- list()
+
+# Add each model's name and AICc 
+out_list[[1]] <- data.frame(Model = "fit.1", AICc = fit.1$AICc)
+out_list[[2]] <- data.frame(Model = "fit.2", AICc = fit.2$AICc)
+out_list[[3]] <- data.frame(Model = "fit.3", AICc = fit.3$AICc)
+out_list[[4]] <- data.frame(Model = "fit.4a", AICc = fit.4a$AICc)
+out_list[[5]] <- data.frame(Model = "fit.4b", AICc = fit.4b$AICc)  
+out_list[[6]] <- data.frame(Model = "fit.5a", AICc = fit.5a$AICc)
+out_list[[7]] <- data.frame(Model = "fit.5b", AICc = fit.5b$AICc)  
+out_list[[8]] <- data.frame(Model = "fit.6a", AICc = fit.6a$AICc)
+out_list[[9]] <- data.frame(Model = "fit.6b", AICc = fit.6b$AICc) 
+
+# Combine all into one dataframe
+out <- do.call(rbind, out_list)
+
+out
+```
+
+Our results suggest a preference for model 3, although model 4a shows comparable performance based on a slightly higher AICc score.
 
 # Discussion
 

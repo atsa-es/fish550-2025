@@ -118,15 +118,22 @@ Wpdo <- data.matrix(Wpdo)
 
 3. Evaluate the evidence of cycling in the data. 
 
+
 As a group, we've decided to dig into the estimates during the missing years, as outlined in the first question, as well as investigate the relationship between the different populations to see how they are/are not correlated. This comes from the second question, to which we are investigating not only the role of major population group, but run timing, and esa population name. This is allowing us to test several hypotheses:
 
 H1: There is no difference between any of the groups (observing the same population different rivers and times)
-H2: There is a difference between all of the separate esa populations, major populations, and run timing, meaning 28 different populations
-H3: The same as H2, however there is temporal correlation 
-H4: Run timing is the only distinguishing factor, meaning that there are only 3 correlated populations (and are temporally correlated)
-H5: Major population groups is the only distinguishing factor, meaning that there are only 5 correlated populations 
-H6: Major population group and run timing are the distinguishing factors, meaning that there are 9 correlated populations (and are temporally correlated).
 
+H2: There is a difference between all of the separate esa populations, major populations, and run timing, meaning 28 different populations
+
+H3: The same as H2, however there is temporal correlation 
+
+H4a and b: Run timing is the only distinguishing factor, meaning that there are only 3 correlated populations (and are temporally correlated or not correlated, 2 models)
+
+H5a and b: Major population groups is the only distinguishing factor, meaning that there are only 5 correlated populations (and are temporally correlated or not correlated, 2 models)
+
+H6a and b: Major population group and run timing are the distinguishing factors, meaning that there are 9 correlated populations (and are temporally correlated or not correlated, 2 models).
+
+After working through these hypotheses, we will use the best fit model to look for cycling, and include a covariate of yearly PDO, lagged 3 years to ideally cover the Chinook's first year at sea, where they do the majority of their growth.
 
 # Methods
 
@@ -1270,6 +1277,11 @@ out
 Our results suggest a preference for model 3, although model 4a shows comparable performance based on a slightly higher AICc score.
 
 # Discussion
+
+The AICc values reported in the Results section suggests that the best model for the data is the fully separated one identified in H3, where all 28 populations are separated, however temporally correlated. This is followed closely by H4a, where the populations are separated only by run timing and are temporally correlated. These two findings are consistent with what we would expect ecologically, as the 28 separate populations have likely developed similarities in behavior at sea and during migration homewards. Similarly, it is not surprising to see that run timing is the next best model. This also makes sense ecologically because the timing of the run determines the migration pattern, route, and schooling tendencies of the particular group, which would likely mean they are surviving and returning in similar ways to that of their cohort. 
+
+
+An interesting comparison can be drawn between H4a and H4b when considering the influence of covariance on the model behavior in this case. In H4a, with covariance, we see a strong similarity between the state estimates of the Spring/Summer run and the Summer run, however when we look at the same model without covariance in H4b, we see a far different trend in the Summer run state estimates. The Summer run model in H4b acts a lot differently, showing a 'smoother' state estimate that is not tied to the other groups to the same degree, allowing for greater independence between the three groups. The same can be observed for H5a and H5b, where the effect of covariance on the data in H5a is incredibly strong and visible in the shape of the state estimates over time, compared to the more smooth and loose appearance in 5b.
 
 # Description of each team member's contributions
 

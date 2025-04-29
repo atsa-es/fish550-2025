@@ -1,7 +1,7 @@
 ---
 title: "Team 1 - Lab 2"
 subtitle: "MARSS models"
-author: "Mary Orrand, Nicole, Tina"
+author: "Mary Orrand, Nicole Doran, Tina"
 date: "April 22, 2025"
 output: 
   html_document:
@@ -150,6 +150,7 @@ decliningpop<-subset(cohoU, cohoU<0)
 #Salmon, coho (Oregon Coast ESU) Floras Creek/New River - fall
 #And Sixes River- fall are the only groups that are declining
 ```
+The data shows that Floras Creek/New River - fall and Sixes River- fall are the only groups that are declining.
 
 ```{r}
 meantrend<-mean(cohoU)
@@ -157,6 +158,19 @@ print(meantrend)
 #So on average, this ESU group is experiencing slight increases from historical
 #abundances (average U=0.0359 when fitting biased random walk models to ts data
 ```
+On average, this ESU group is experiencing slight increases from historical
+abundances (average U=0.0359 when fitting biased random walk models to ts data.
+
+###Interpretation of Results (Question 1)
+
+To estimate missing spawner abundance values and assess historical trends for the Oregon Coast Coho ESU, we fit a series of MARSS models using different assumptions about the hidden state dynamics.
+
+The unbiased random walk model (`U = zero`) served as a neutral baseline. We then compared models allowing a common trend across all populations (`U = equal`) and models allowing individual trends for each population (`U = unequal`).
+
+The model with `U = unequal` estimated a distinct growth parameter for each population. Examination of the estimated `U` values showed that most populations exhibited stable or slightly positive growth trends from historical levels. Only two populations (Floras Creek/New River and Sixes River) showed evidence of decline, with negative `U` coefficients.
+
+These results suggest that overall, the Oregon Coast Coho ESU has been relatively stable or slightly increasing over the study period, but localized declines are present in some sub-populations.
+
 
 Question 2: Evaluate support for the major population groups. Are the populations in the groups more correlated than outside the groups?
 
@@ -270,62 +284,111 @@ This indicates that while each group has its own underlying trend, all groups ar
 Overall, this visual reinforces the AICc results: the MPG grouping is supported, but also shows that no group is acting entirely independently.
 
 
-3. Evaluate the evidence of cycling in the data. *We will talk about how to do this on the Tuesday after lab.*
+Question 3: Evaluate the evidence of cycling in the data. 
 
+We now investigate whether there is evidence of cyclic or periodic behavior in the Coho salmon abundance trends. 
+
+To test this, we fit a MARSS model that allows the hidden states to follow autoregressive (AR(1)) processes, rather than pure random walks. If the estimated autoregressive coefficient (phi) is negative or oscillatory, this would suggest cyclic dynamics.
+
+
+```{r}
+# Create a MARSS model allowing cycling (AR1 structure)
+mod.cycle <- list(
+  B = "unconstrained",     # allow B (phi) to be estimated freely
+  U = "zero",
+  Q = "equalvarcov",
+  R = "diagonal and unequal",
+  A = "scaling",
+  Z = Z.grp                # use the 5-group MPG structure (best from Q2)
+)
+
+fit.cycle <- MARSS(coho, model = mod.cycle)
+```
+
+```{r}
+# Compare AICc of 5-group MPG model vs. cycling model
+tibble(
+  model = c("5-group MPG (random walk)", "5-group MPG (cycling)"),
+  AICc = c(fit.grp$AICc, fit.cycle$AICc)
+) %>%
+  arrange(AICc)
+
+```
+
+```{r}
+# Look at the estimated B matrix (phi)
+coef(fit.cycle, type = "matrix")$B
+
+```
+
+### Interpretation of Results (Question 3)
+
+To test for evidence of cyclic behavior in the Oregon Coast Coho populations, we fit a MARSS model allowing autoregressive (AR1) dynamics in the hidden states. The model fitting encountered some numerical instability, but returned estimates sufficient for comparison.
+
+The AICc of the cycling model (1457) was identical to the random walk model (1457), indicating no improvement in model fit when allowing for cyclic behavior. Inspection of the estimated B matrix revealed diagonal values of approximately 1.0, consistent with random walk dynamics rather than oscillations.
+
+Based on these results, there is no strong evidence of cyclic behavior in the Coho salmon population dynamics in this dataset.
 
 # Methods
 
-Address the following in your methods
+We modeled Coho salmon spawner abundance using multivariate autoregressive state-space (MARSS) models. Our hidden states (x) represented the true underlying log-abundance at each site or group. The observed data (y) were log-transformed spawner counts from 26 populations within the Oregon Coast ESU. We specified alternative assumptions about the structure of hidden states using the Z matrix: a five-group MPG model (one hidden state per major group), a one-population model (one hidden state for all sites), and a site-level model (one hidden state per site). 
 
-* Describe your assumptions about the x and how the data time series are related to x.
+We fit each model separately and compared AICc values to evaluate which grouping assumption was best supported by the data.
 
-   - How are the x and y (data) related? 1 x for 1 y or will you assume 1 x for all y or 1 x for each major population group? How will you choose? 
-   - What will you assume about the U for the x's?
-   - What will you assume about the Q matrix?
-   
-* Write out your assumptions as different models **in matrix form**, fit each and then compare these with AIC or AICc.
+### Assumptions:
 
-* Do your estimates differ depending on the assumptions you make about the structure of the data, i.e. you assumptions about the x's, Q, and U.
+- **Relationship between x and y**:  
+  We assumed 1 x per 1 y when fitting site-level models, and 1 x per major population group (MPG) when fitting group-level models. The choice was based on testing whether grouping improved model fit (AICc).
 
-### Tips
+- **U matrix assumptions**:  
+  We assumed `U = "zero"` for most models, meaning no additional drift in hidden states. We also tested `U = "equal"` and `U = "unequal"` structures during missing data estimation.
 
-**Simplify**
+- **Q matrix assumptions**:  
+  We assumed `Q = "equalvarcov"`, allowing hidden states to have correlated errors but shared variance, reflecting potential regional environmental drivers.
 
-If your ESU has many populations, start with a smaller set of 4-7 populations.
+- **Other assumptions**:  
+  We assumed `R = "diagonal and unequal"` for observation error (different error variances by site), and `A = "scaling"` to allow site-specific intercepts.
+### Model Structure Summary
 
-**Assumptions**
+The following assumptions were made for all MARSS models:
 
-You can assume that `R="diagonal and equal"` and `A="scaling"`. Assume that "historical" means the earliest years available for your group.
+| Matrix | Specification | Meaning |
+|:-------|:--------------|:--------|
+| **Z** |  Three versions: one hidden state per MPG (`Z.grp`), one shared state (`Z.one`), one per site (`Z.site`) | Defines how hidden states relate to observations |
+| **B** | `"identity"` for random walk; `"unconstrained"` for cycling models | Governs the transition of hidden states |
+| **U** | `"zero"` | No drift term; hidden states have no added directional trend |
+| **Q** | `"equalvarcov"` | Hidden states share the same process variance, but can be correlated |
+| **R** | `"diagonal and unequal"` | Each site has its own observation error variance |
+| **A** | `"scaling"` | Each site can have its own intercept (mean scaling) |
 
-**States**
+We compared the different Z matrix structures by fitting models separately and comparing their AICc values.
 
-Your abundance estimate is the "x" or "state" estimates. You can get this from
-```
-fit$states
-```
-or 
-```
-tsSmooth(fit)
-```
-where `fit` is from `fit <- MARSS()`
 
-**plotting**
+### Models fitted:
 
-Estimate of the mean of the spawner counts based on your x model.
-```
-autoplot(fit, plot.type="fitted.ytT")
-```
+We compared models with different Z matrices:
 
-**diagnostics**
-```
-autoplot(fit, plot.type="residuals")
-```
+- **Five-group MPG model**: One x per major population group.
+- **One-population model**: One shared x for all sites.
+- **Site-level model**: One x per site (no grouping).
+
+We fit additional models allowing AR(1) dynamics (cycling) but found no improvement in fit.
+
+Model comparisons were made using AICc.
 
 # Results
 
+The MARSS models estimated missing values in the spawner abundance time series and suggested that most populations were stable or slightly increasing from historical levels, with two populations (Floras Creek/New River and Sixes River) declining.
+
+When testing grouping structures, the model assigning one hidden state to each major population group (5-group MPG model) had the lowest AICc, providing strong support for the MPG structure.
+
+Allowing cyclic behavior in the hidden states did not improve model fit, and estimated phi values indicated random walk dynamics rather than oscillations.
+
 # Discussion
 
-# Description of each team member's contributions
+Our results show that the way the major population groups (MPGs) are currently set up for the Oregon Coast Coho makes sense. Populations within each group tend to behave similarly, which suggests they are influenced by some of the same environmental or biological factors.
 
-Example: "All team members helped decide on the goal and ran the analyses for the individual regions. Team members 2 & 3 wrote most of the code for the analysis of the regions. Team member 4 researched approaches for measuring accuracy of forecasts in [Hyndman & Athanasopoulos[OTexts.com/fpp2] and team member 2 added code for that to the methods. Team member 4 also researched tests for stationarity and worked with team member 2 to code that up. Team member 1 worked on the plotting section of the report using and adapting code that team member 3 wrote. All team members helped edit the report and wrote the discussion together."
+When we tested for cycling, we didn’t find strong evidence that the populations go through regular ups and downs over time. Instead, the populations mostly followed random patterns, which suggests that changes are probably due to unpredictable environmental factors rather than built-in cycles.
+
+Overall, using MARSS models helped us fill in missing data and better understand how different populations are connected. It was a useful tool for studying patterns in noisy, real-world data like this.
 

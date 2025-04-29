@@ -517,7 +517,7 @@ print(aicc.tab)
 
 It seems that still the null model performs the best, but we want to systematically test different cycle periods that might be biologically plausible for coho salmon (2-10 years).
 
-```{r, echo=FALSE}
+```{r, include=FALSE}
 test_cycles <- function(data, periods = 2:10) {
   years <- as.numeric(colnames(data))
   t <- years - min(years) + 1

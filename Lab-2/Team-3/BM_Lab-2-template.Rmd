@@ -18,6 +18,7 @@ Load the data.
 ```{r}
 load(here::here("Lab-2", "Data_Images", "esa-salmon.rda"))
 library(tidyr)
+library(MARSS)
 ```
 
 Wrangle the data.
@@ -46,14 +47,10 @@ print(Stl_plot)
 ```
 
 ```{r}
-
 # Step 1: Start with your full dataset
 Stl <- SteelheadAll
 
-# Step 2: Filter for Summer if you want
-# Stl <- Stl %>% filter(run == "Summer") # optional
-
-# Step 3: Create region and run labels BEFORE pivoting
+# Step 2: Create region and run labels BEFORE pivoting
 Stl <- Stl %>%
   mutate(
     region = case_when(
@@ -69,42 +66,65 @@ Stl <- Stl %>%
     )
   )
 
-# Step 4: Clean up the names (simplify for pivoting)
+# Filter out Unknown categories 
+Stl <- Stl %>%
+  filter(region != "Unknown" & run_timing != "Unknown")
+
+# Clean up the names (simplify for pivoting)
 Stl$esapopname <- gsub("Steelhead", "", Stl$esapopname)
 Stl$esapopname <- gsub("- summer", "", Stl$esapopname)
 Stl$esapopname <- gsub(" - winter", "", Stl$esapopname)
 
 
-# Step 5: Store lookup table for region/run AFTER cleaning names
+# Store lookup table for region/run AFTER cleaning names
 meta_info <- Stl %>%
   select(esapopname, region, run_timing) %>%
   distinct()
 
-# Step 6: Pivot wider to population x year
+# Pivot wider to population x year
 Stl_wide <- Stl %>%
   select(spawningyear, esapopname, value) %>%
   pivot_wider(names_from = esapopname, values_from = value)
 
-# Step 7: Save years and transpose
+# Save years and transpose
 Years <- Stl_wide$spawningyear
 Stl_mat <- Stl_wide %>%
   select(-spawningyear) %>%
   as.matrix() %>%
   t()
 
-# Step 8: Assign years as column names and reorder by year
+# Assign years as column names and reorder by year
 colnames(Stl_mat) <- Years
 Stl_mat <- Stl_mat[, order(as.numeric(colnames(Stl_mat)))]
 #Make sure all NaN are NA 
 Stl_mat[is.nan(Stl_mat)] <- NA
 
-# Step 9: Create vectors for regions and run timings
+Data<- Stl_mat
+
+#Create vectors for regions and run timings
 region_vec <- meta_info$region[match(rownames(Stl_mat), meta_info$esapopname)]
 run_vec <- meta_info$run_timing[match(rownames(Stl_mat), meta_info$esapopname)]
 
-# Now you can subset like:
-# Stl_mat[region_vec == "Lower", ]
-# Stl_mat[run_vec == "Summer", ]
+n_pops <- nrow(Stl_mat)
+
+
+# For Region-based model
+regions <- unique(region_vec)
+n_regions <- length(regions)
+Z2 <- matrix(0, n_pops, n_regions)
+for (i in 1:n_pops) {
+  region_index <- which(regions == region_vec[i])
+  Z2[i, region_index] <- 1
+}
+
+# For Run-based model
+runs <- unique(run_vec)
+n_runs <- length(runs)
+Z3 <- matrix(0, n_pops, n_runs)
+for (i in 1:n_pops) {
+  run_index <- which(runs == run_vec[i])
+  Z3[i, run_index] <- 1
+}
 
 
 ```
@@ -113,7 +133,6 @@ run_vec <- meta_info$run_timing[match(rownames(Stl_mat), meta_info$esapopname)]
 Models 
 
 ```{r, echo = FALSE, results = "hide"}
-
 # ==========================================
 # MODEL ASSUMPTIONS IN MATRIX FORM
 # ==========================================
@@ -246,6 +265,8 @@ fit5 <- MARSS(Data, model = mod5, method = "BFGS", control = list(maxit = 1000))
 
 ```
 
+
+
 ```{r}
 # ==========================================
 # Compare via AIC and AICc
@@ -279,87 +300,12 @@ print(comparison_table, row.names = FALSE)
 
 
 
+# DISCUSSION 
+
+I employed several MARSS models to analyze population dynamics of Steelhead salmon across different regions and run timings. Five candidate models were developed to test competing hypotheses about the underlying structure of population dynamics. Our results provide strong support for run timing as the primary factor structuring Steelhead populations, with the run-based model that incorporated heterogeneous process variance (Model 5) outperforming all other models. The substantial difference in AICc values (ΔAICc > 21) between this model and the next best alternative provides compelling evidence that Summer and Winter run populations experience different environmental influences and respond differently to ecosystem changes.
+The models differed in their assumptions about population structure (Z matrix) and process error variance (Q matrix). Model 1 represented the simplest case, treating all populations as reflecting a single underlying state with uniform process variance. Models 2 and 3 introduced structure based on either geographic regions or run timing, respectively, while maintaining equal process variance across groups. Models 4 and 5 expanded upon the previous models by allowing for heterogeneous process variance between groups. The superior performance of Model 5 indicates that not only do Summer and Winter steelhead populations follow distinct trends, but they also experience different levels of environmental stochasticity. 
 
 
-esa.salmon
-
-### Get the steelhead data 
 
 
-### Fill in the missing years
-
-
-### Look to see if there appears to be trends. 
-# could be grouped by Season 
-# could be grouped by Region 
-##### Upper , lower 
-##### Distance Based 
-
-
-# General Questions
-
-Each group has the same general tasks, but you will adapt them as you work on the data.
-
-1. Create estimates of spawner abundance for all missing years and provide estimates of the decline from the historical abundance.
-
-2. Evaluate support for the major population groups. Are the populations in the groups more correlated than outside the groups?
-
-3. Evaluate the evidence of cycling in the data. *We will talk about how to do this on the Tuesday after lab.*
-
-
-# Methods
-
-Address the following in your methods
-
-* Describe your assumptions about the x and how the data time series are related to x.
-
-   - How are the x and y (data) related? 1 x for 1 y or will you assume 1 x for all y or 1 x for each major population group? How will you choose? 
-   - What will you assume about the U for the x's?
-   - What will you assume about the Q matrix?
-   
-* Write out your assumptions as different models **in matrix form**, fit each and then compare these with AIC or AICc.
-
-* Do your estimates differ depending on the assumptions you make about the structure of the data, i.e. you assumptions about the x's, Q, and U.
-
-### Tips
-
-**Simplify**
-
-If your ESU has many populations, start with a smaller set of 4-7 populations.
-
-**Assumptions**
-
-You can assume that `R="diagonal and equal"` and `A="scaling"`. Assume that "historical" means the earliest years available for your group.
-
-**States**
-
-Your abundance estimate is the "x" or "state" estimates. You can get this from
-```
-fit$states
-```
-or 
-```
-tsSmooth(fit)
-```
-where `fit` is from `fit <- MARSS()`
-
-**plotting**
-
-Estimate of the mean of the spawner counts based on your x model.
-```
-autoplot(fit, plot.type="fitted.ytT")
-```
-
-**diagnostics**
-```
-autoplot(fit, plot.type="residuals")
-```
-
-# Results
-
-# Discussion
-
-# Description of each team member's contributions
-
-Example: "All team members helped decide on the goal and ran the analyses for the individual regions. Team members 2 & 3 wrote most of the code for the analysis of the regions. Team member 4 researched approaches for measuring accuracy of forecasts in [Hyndman & Athanasopoulos[OTexts.com/fpp2] and team member 2 added code for that to the methods. Team member 4 also researched tests for stationarity and worked with team member 2 to code that up. Team member 1 worked on the plotting section of the report using and adapting code that team member 3 wrote. All team members helped edit the report and wrote the discussion together."
 

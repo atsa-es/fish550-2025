@@ -1,5 +1,5 @@
 ---
-title: "Team X - Lab 2"
+title: "Team 1 - Lab 2"
 author: "Nicole, Mary, Tina"
 date: "April 22, 2025"
 output:

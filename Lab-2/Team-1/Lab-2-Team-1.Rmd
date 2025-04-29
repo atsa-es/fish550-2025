@@ -588,7 +588,7 @@ However, when unequal drift is assumed, the model that treats each sub-populatio
 
 To further investigate this, we changed our assumptions of the groupings and fit alternative models to the Oregon Coast ESU sub-populations. However, none of the combinations of 7, 6, 5 (different from the original groups), 4, or 3 groupings that we fit to the data performed better. The original 5 groupings considered in the Oregon Coast ESU did seem to be the most appropriate for the data. While larger groups or considering each population as its own group might produce better model results, the goal of creating population groups to explain the data is achieved with the original five. The model that treated each sub-population did not perform extremely better relative to the 5 group model, and so there is merit in that grouping assumption. 
 
-### Question 3
+### Cyclic dynamics
 All tested cycle periods (2–10 years) yielded higher AICc values than the null model (ΔAICc > 0), indicating no statistical evidence for cyclic dynamics in Oregon Coast coho spawner abundance (see AICc comparisons below). 
 ```{r, echo=FASLSE}
 print(aicc.tab)

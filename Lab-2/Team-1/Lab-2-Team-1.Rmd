@@ -105,7 +105,7 @@ cohocolnames<-colnames(coho)
 
 2. Evaluate support for the major population groups. Are the populations in the groups more correlated than outside the groups?
 
-3. Evaluate the evidence of cycling in the data. *We will talk about how to do this on the Tuesday after lab.*
+3. Evaluate the evidence of cycling in the data. 
 
 # Methods
 ### Question 1
@@ -132,6 +132,8 @@ autoplot(obj, plot.type="residuals")
 ```
 To estimate the population trends over time, we fit biased random walk models to each subpopulation's data. In one model, we assumed the U term is equal across all sub-populations. This model estimated U to be 0.0349, which indicates that the Oregon Coast coho ESU is generally stable and experiencing a slight increase from historical abundances. When we change this assumption of U being equal to U being unequal, the model estimated a population trend for each of the 21 sub-populations in the ESU. 
 
+*add matrix equation here*
+
 ``` {r, include=FALSE}
 ## Part 2: Estimates of decrease from historical abundance
 #Fit with biased random walk
@@ -149,7 +151,7 @@ rownames(U)<-c("U=")
 colnames(U)<-"U Estimate for total ESU"
 print(U)
 ```
-Oregon Coast ESU sub-population U estimates from biased random walk with unequal U terms
+Oregon Coast ESU sub-population U estimates from biased random walk with unequal U terms *add matrix equation*
 ```{r, echo=FALSE}
 #Unequal U biased random walk
 #Are sub-groups experiencing same trends over time?
@@ -170,7 +172,7 @@ maxtrend<-max(cohoU)
 ### Question 2
 The Oregon Coast Coho ESU is divided into five “major population groups” (MPGs), based on biological or geographical similarities. In this question, we test whether these groups reflect real ecological patterns—specifically, whether populations within the same MPG show more similar (i.e., correlated) abundance trends than populations in different groups.
 
-We evaluate this by fitting three MARSS models with different assumptions about grouping and comparing them using AICc. The model with the lowest AICc provides the best support for its grouping hypothesis. For this first analysis, we assumed unequal drift, which aligns with the varying population trends we calculated in question 1, and hidden states allowed to correlate (Q="equalvarcov"). We also fit these models with an assumption of equal drift, and zero drift. These both could also be reasonable assumptions because the population trends amongst the sub-populations in this ESU did not vary much, with a range in U values of -0.047 to 0.087. These are also close to zero, and so we could test the assumption that there is no underlying population trend. *Add matrix form for the three models, then the other two 5 group models with U=zero and U=equal*
+We evaluate this by fitting three MARSS models with different assumptions about grouping and comparing them using AICc. The model with the lowest AICc provides the best support for its grouping hypothesis. For this first analysis, we assumed unequal drift, which aligns with the varying population trends we calculated in question 1, and hidden states allowed to correlate (Q="equalvarcov"). We also fit these models with an assumption of equal drift, and zero drift. These both could also be reasonable assumptions because the population trends amongst the sub-populations in this ESU did not vary much, with a range in U values of -0.047 to 0.087. These are also close to zero, and so we could test the assumption that there is no underlying population trend. *Add matrix form for the first three models with different Z matrices*
 
 ```{r, echo=FALSE}
 # Helper function: converts a grouping vector into a Z matrix
@@ -468,7 +470,7 @@ groups4.3<-tibble(
 groups4.3
 ```
 ### Question 3
-To further explore variation in population trends over time for the Oregon Coast ESU, we evaluate the evidence of cycling in Oregon Coast coho spawner abundance. We compared three structural approaches using MARSS models: a polynomial trend, a Fourier series (cyclic component), and a null model (the best performed from above analysis). We hypothesized that coho populations might exhibit 4-year cycles due to biological factors.
+To further explore variation in population trends over time for the Oregon Coast ESU, we evaluate the evidence of cycling in Oregon Coast coho spawner abundance. We compared three structural approaches using MARSS models: a polynomial trend, a Fourier series (cyclic component), and a null model (the best performed from above analysis). We hypothesized that coho populations might exhibit 4-year cycles due to biological factors. *add matrix equation*
 
 ```{r, echo=FALSE}
 # Create time covariates
@@ -600,7 +602,7 @@ In this lab, we explored population structure, trends, and cyclic dynamics of th
 
 There is variation in the population trends experienced by the 21 sub-populations; on average, the sub-populations in this ESU have experienced slightly positive trends from their historical abundances in the early 1990's. Two populations- the Floras Creek and Sixed River- have experienced slight declines. 
 
-We then tested several hypotheses about the ESU population groups to explore the variation amongst these twenty-one sub-populations. We did this by changing the assumptions of population groupings in the Z-matrix of our model equations based on possible underlying population structures (all sub-populations are one homogenous group, or each is their own individual group, population groupings based on latitude, etc.). Comparing the models we fit to the data strongly supported the original five sub-groups included in the original data set. When we change the model assumption to allow unequal drift (population trends) the best-performing model was the one that considered each sub-population as its own group. When the drift was assumed to be equal or zero, the original 5-group model performed best. This is a reasonable assumption since the population trends observed for each sub-population are centered around zero and very small. And so this grouping assumption is reasonable, and is supported by the data. 
+We then tested several hypotheses about the ESU population groups to explore the variation amongst these twenty-one sub-populations. We did this by changing the assumptions of population groupings in the Z-matrix of our model equations based on possible underlying population structures (all sub-populations are one homogenous group, or each is their own individual group, population groupings based on latitude, etc.). Comparing the models we fit to the data strongly supported the original five sub-groups included in the original data set. When we change the model assumption to allow unequal drift (population trends) the best-performing model was the one that considered each sub-population as its own group. When the drift was assumed to be equal or zero, the original 5-group model performed best. This is a reasonable assumption since the population trends observed for each sub-population are centered around zero and very small. And so this grouping assumption is reasonable, and is supported by the data. *add matrix form for original 5 group matrix, same as above in the methdods*
 
 An alternative hypothesis to population structure driving variation within this ESU is the hypothesis of cyclic dynamics within the time series data. To investigate this, we fit several models with varying cycle periods to the data.
 

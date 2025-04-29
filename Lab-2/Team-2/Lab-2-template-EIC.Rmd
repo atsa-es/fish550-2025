@@ -22,10 +22,10 @@ library(zoo)
 ```
 
 # Data
-As team 2, we were assigned the Snake River Spring and Summer Run Chinook Data. This data has three seasons of runs: spring, spring/summer, and summer, divided among 5 major populations and when separated by run timing, major population and smaller tributary, 28 different populations.
+As team 2, we were assigned the Snake River Spring and Summer Run Chinook Data. This data contains infromation on 28 different populations of Chinkook. Each population falls into one of three runs, (spring, spring/summer, and summer) and into one of five major populations. When separated by run timing and major population, nine distinct grouping emerge.
 
 Load the data.
-```{r}
+```{r, include=FALSE}
 load(here::here("Lab-2", "Data_Images", "esa-salmon.rda"))
 ```
 
@@ -35,7 +35,6 @@ Wrangle the data.
 # check out the data
 esu <- unique(esa.salmon$esu_dps)
 head(esa.salmon)
-esu
 
 # subset esu data
 esu2 <- subset(esa.salmon, esu_dps == "Salmon, Chinook (Snake River spring/summer-run ESU)")
@@ -65,7 +64,6 @@ pops <- w_esu2$popname
 
 # convert counts to matrix
 data <- data.matrix(w_esu2[2:ncol(w_esu2)])
-data
 
 ## get pdo data
 # read in data from table
@@ -84,7 +82,6 @@ if(file.exists(here::here("Lab-2", "Team-2", "data", "pdo_raw.rda"))) {
 #annual average
 # annual average - is this smart?
 annual <- rowMeans(pdo[ ,2:13])
-annual
 pdo$annual <- annual
 
 # drop month vars and years before 1960
@@ -398,8 +395,12 @@ We made the following assumptions on parameters for all models:
 
 After fitting the different models, we compare them with AICc.
 
-# Code
-## Hypothesis 1
+# Results
+## Hypothesis Testing
+### Hypothesis 1
+
+Hypothesis 1 considers all 28 populations as samples drawn from one all encompassing state process.
+
 ```{r H1, echo=FALSE}
 #H1: There is no correlation between the populations
 mod.list.1 <- list(B = "identity", 
@@ -449,12 +450,15 @@ plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group=1)) +
        title='Spring Summer Chinook Abundance, Upper Columbia/Snake River') +
   geom_ribbon(aes(ymin=lb, ymax=ub), alpha=0.35, linetype=0) +
   theme_classic() +
-  theme(legend.position="bottom") + 
+  theme(legend.position="none") + 
   scale_x_discrete(breaks = c(1950, 1964, 1978, 1992, 2006, 2020))
 plot
 ```
 
-## Hypothesis 2
+### Hypothesis 2
+
+Hypothesis 2 considers all 28 populations as each sampled from a distinct underlying state process, each with the same variance.
+
 ```{r H2, echo=FALSE}
 #H2: There is a correlation within the populations (28 different populations)
 mod.list.2 <- list(B = "identity", 
@@ -536,7 +540,7 @@ plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
        subtitle="28 individual populations, equal process variance") +
   geom_ribbon(aes(ymin=lb, ymax=ub, fill=state), alpha=0.35, linetype=0) +
   theme_classic() +
-  theme(legend.position="bottom") + 
+  theme(legend.position="none") + 
   scale_x_discrete(breaks = c(1950, 1964, 1978, 1992, 2006, 2020))
 plot
 
@@ -546,7 +550,10 @@ plot
 # fit2.cor
 ```
 
-## Hypothesis 3
+### Hypothesis 3
+
+Hypothesis 3 considers all 28 populations as each sampled from a distinct underlying state process, each with the same variance and equal covariance between all underlying states (allowing for temporal correlation).
+
 ```{r H3, echo=FALSE}
 #H3: Same as H2 but the errors are temporally correlated
 mod.list.3 <- mod.list.2
@@ -622,7 +629,7 @@ plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
        subtitle="28 individual populations, equal process variance and covariance") +
   geom_ribbon(aes(ymin=lb, ymax=ub, fill=state), alpha=0.35, linetype=0) +
   theme_classic() +
-  theme(legend.position="bottom") + 
+  theme(legend.position="none") + 
   scale_x_discrete(breaks = c(1950, 1964, 1978, 1992, 2006, 2020))
 plot
 
@@ -632,7 +639,12 @@ plot
 # fit3.cor
 ```
 
-## Hypothesis 4a
+### Hypothesis 4a
+
+Hypothesis 4a considers all 28 populations as samples from three distinct underlying state process representing different run timing. Each of these runs is modeled with the same variance and equal covariance, allowing for temporal correlation.
+
+Variance-covariance matrix of fitted state estimates included below.
+
 ```{r H4a, echo=FALSE}
 #H4: Run timing is the only distinguishing factor, meaning that there are only 3 correlated populations (and are temporally correlated)
 
@@ -751,7 +763,7 @@ plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
        subtitle="3 runs, equal process variance and covariance") +
   geom_ribbon(aes(ymin=lb, ymax=ub, fill=state), alpha=0.35, linetype=0) +
   theme_classic() +
-  theme(legend.position="bottom") + 
+  theme(legend.position="right") + 
   scale_x_discrete(breaks = c(1950, 1964, 1978, 1992, 2006, 2020))
 plot
 
@@ -761,7 +773,12 @@ unique(states_long$state)
 fit4a.cor
 ```
 
-## Hypothesis 4b
+### Hypothesis 4b
+
+Hypothesis 4b considers all 28 populations as samples from three distinct underlying state process representing different run timing. Each of these runs is modeled with the same variance and no covariance.
+
+Variance-covariance matrix of fitted state estimates included below.
+
 ```{r H4b, echo=FALSE}
 #H4b: Run timing is the only distinguishing factor, meaning that there are only 3 correlated populations (and are NOT temporally correlated)
 
@@ -820,7 +837,7 @@ plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
        subtitle="3 runs, equal process variance") +
   geom_ribbon(aes(ymin=lb, ymax=ub, fill=state), alpha=0.35, linetype=0) +
   theme_classic() +
-  theme(legend.position="bottom") + 
+  theme(legend.position="right") + 
   scale_x_discrete(breaks = c(1950, 1964, 1978, 1992, 2006, 2020))
 plot
 
@@ -830,7 +847,12 @@ unique(states_long$state)
 fit4b.cor
 ```
 
-## Hypothesis 5a
+### Hypothesis 5a
+
+Hypothesis 5a considers all 28 populations as samples from five distinct underlying state process representing different major population groups. Each of these runs is modeled with the same variance and equal covariance, allowing for temporal correlation.
+
+Variance-covariance matrix of fitted state estimates included below.
+
 ```{r H5a, echo=FALSE}
 #H5a: Major population group is distinguishing factors, meaning that there are 5 correlated populations (and are temporally correlated)
 
@@ -951,7 +973,7 @@ plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
        subtitle="5 major populations, equal process variance and covariance") +
   geom_ribbon(aes(ymin=lb, ymax=ub, fill=state), alpha=0.35, linetype=0) +
   theme_classic() +
-  theme(legend.position="bottom") + 
+  theme(legend.position="right") + 
   scale_x_discrete(breaks = c(1950, 1964, 1978, 1992, 2006, 2020))
 plot
 
@@ -961,7 +983,12 @@ unique(states_long$state)
 fit5a.cor
 ```
 
-## Hypothesis 5b
+### Hypothesis 5b
+
+Hypothesis 5b considers all 28 populations as samples from five distinct underlying state process representing different major population groups. Each of these major populations is modeled with the same variance and no covariance.
+
+Variance-covariance matrix of fitted state estimates included below.
+
 ```{r H5b, echo= FALSE}
 #H5b: Major population group is distinguishing factors, meaning that there are 5 correlated populations (and are NOT temporally correlated)
 
@@ -1022,7 +1049,7 @@ plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
        subtitle="5 major populations, equal process variance") +
   geom_ribbon(aes(ymin=lb, ymax=ub, fill=state), alpha=0.35, linetype=0) +
   theme_classic() +
-  theme(legend.position="bottom") + 
+  theme(legend.position="right") + 
   scale_x_discrete(breaks = c(1950, 1964, 1978, 1992, 2006, 2020))
 plot
 
@@ -1032,7 +1059,12 @@ unique(states_long$state)
 fit5b.cor
 ```
 
-## Hypothesis 6a
+### Hypothesis 6a
+
+Hypothesis 6a considers all 28 populations as samples from one of nine distinct underlying state process representing different run timing within different majopr population groups. Each of these runs is modeled with the same variance and equal covariance, allowing for temporal correlation.
+
+Variance-covariance matrix of fitted state estimates included below.
+
 ```{r H6a, echo=FALSE}
 #H6a: Major population group and run timing are the distinguishing factors, meaning that there are 9 correlated populations (and are temporally correlated)
 
@@ -1157,7 +1189,7 @@ plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
        subtitle="9 groups - 3 runs and 5 major populations, equal process variance and covariance") +
   geom_ribbon(aes(ymin=lb, ymax=ub, fill=state), alpha=0.35, linetype=0) +
   theme_classic() +
-  theme(legend.position="bottom") + 
+  theme(legend.position="right") + 
   scale_x_discrete(breaks = c(1950, 1964, 1978, 1992, 2006, 2020))
 plot
 
@@ -1167,7 +1199,12 @@ unique(states_long$state)
 fit6a.cor
 ```
 
-## Hypothesis 6b
+### Hypothesis 6b
+
+Hypothesis 6b considers all 28 populations as samples from one of nine distinct underlying state process representing different run timing within different majopr population groups. Each of these runs is modeled with the same variance and no covariance.
+
+Variance-covariance matrix of fitted state estimates included below.
+
 ```{r H6b, echo = FALSE}
 #H6b: Major population group and run timing are the distinguishing factors, meaning that there are 9 correlated populations (and are NOT temporally correlated)
 
@@ -1232,7 +1269,7 @@ plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
        subtitle="9 groups - 3 runs and 5 major populations, equal process variance") +
   geom_ribbon(aes(ymin=lb, ymax=ub, fill=state), alpha=0.35, linetype=0) +
   theme_classic() +
-  theme(legend.position="bottom") + 
+  theme(legend.position="right") + 
   scale_x_discrete(breaks = c(1950, 1964, 1978, 1992, 2006, 2020))
 plot
 
@@ -1242,18 +1279,8 @@ unique(states_long$state)
 fit6b.cor
 ```
 
-## PDO
-```{r pdo, echo = FALSE}
-# # to add PDO to whichever models we want...
-# c.model <- matrix("pdo", ncol(ZMATRIX), 1)
-#   # add to model build  
-# C = c.model, c = Wpdo,
-#   # add to modlist
-```
-
-# Results
-## Model Comparison
-```{r}
+### Model Comparison
+```{r, echo=FALSE}
 # an empty list to collect outputs
 out_list <- list()
 
@@ -1270,16 +1297,195 @@ out_list[[9]] <- data.frame(Model = "fit.6b", AICc = fit.6b$AICc)
 
 # Combine all into one dataframe
 out <- do.call(rbind, out_list)
-
 out
 ```
 
 Our results suggest a preference for model 3, although model 4a shows comparable performance based on a slightly higher AICc score.
 
+## Covariates 
+
+### PDO
+
+We introduced pacficic decadal oscilation (PDO) data as a measure of ocean climate to the two most parsimonious models as selected by AICc (models 3 and 4a). We used the average PDO across the three years prior to the spawning year recorded in each observation as representation of the ocean climate during the period in which these Chinook would have been adults at sea.
+
+### Model 3 with PDO
+
+Model 3 treats all 28 populations as each sampled from a distinct underlying state process, each with the same variance and equal covariance between all underlying states (allowing for temporal correlation), with PDO covariates included.
+
+```{r pdo3, echo = FALSE}
+mod.list.3 <- mod.list.2
+mod.list.3$C <- matrix("pdo", nrow(data), 1)
+mod.list.3$c <- Wpdo
+
+if(!file.exists(here::here("Lab-2", "Team-2", "data", "PDOfit3.rds"))){
+PDOfit.3 <- MARSS:: MARSS(data, model = mod.list.3)
+  saveRDS(PDOfit.3, file=here::here("Lab-2", "Team-2", "data", "PDOfit3.rds"))
+}
+# load in PDOfit.3
+PDOfit.3 <- readRDS(file=here::here("Lab-2", "Team-2", "data", "PDOfit3.rds"))
+
+# grabbing data for figures
+states <- PDOfit.3$states
+statesSE <- PDOfit.3$states.se
+
+states <- as.data.frame(states)
+statesSE <- as.data.frame(statesSE)
+
+states_long <- states %>% 
+  pivot_longer("V1":"V76", names_to="Year", values_to="fitted")
+states_long <- states_long %>% 
+  mutate(Year = rep(years, nrow(data)))
+
+states_long <- states_long %>% 
+  mutate(state = c(rep(pops[1], 76),
+                   rep(pops[2], 76),
+                   rep(pops[3], 76),
+                   rep(pops[4], 76),
+                   rep(pops[5], 76),
+                   rep(pops[6], 76),
+                   rep(pops[7], 76),
+                   rep(pops[8], 76),
+                   rep(pops[9], 76),
+                   rep(pops[10], 76),
+                   rep(pops[11], 76),
+                   rep(pops[12], 76),
+                   rep(pops[13], 76),
+                   rep(pops[14], 76),
+                   rep(pops[15], 76),
+                   rep(pops[16], 76),
+                   rep(pops[17], 76),
+                   rep(pops[18], 76),
+                   rep(pops[19], 76),
+                   rep(pops[20], 76),
+                   rep(pops[21], 76),
+                   rep(pops[22], 76),
+                   rep(pops[23], 76),
+                   rep(pops[24], 76),
+                   rep(pops[25], 76),
+                   rep(pops[26], 76),
+                   rep(pops[27], 76),
+                   rep(pops[28], 76)
+                   ))
+
+statesSE_long <- statesSE %>% 
+  pivot_longer("V1":"V76", names_to="Year", values_to="se")
+
+states_long <- states_long %>% 
+  mutate(se = statesSE_long$se)
+
+states_long$lb <- states_long$fitted - states_long$se
+states_long$ub <- states_long$fitted + states_long$se
+
+# save long state estimates\
+save(states_long, file=here::here("Lab-2", "Team-2", "data", "PDOfit3_long.Rda"))
+
+plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
+  geom_line() +
+  labs(x = "", 
+       y="State Estimate",
+       title='Spring Summer Chinook Abundance, Upper Columbia/Snake River',
+       subtitle="28 individual populations, equal process variance and covariance") +
+  geom_ribbon(aes(ymin=lb, ymax=ub, fill=state), alpha=0.35, linetype=0) +
+  theme_classic() +
+  theme(legend.position="none") + 
+  scale_x_discrete(breaks = c(1950, 1964, 1978, 1992, 2006, 2020))
+plot
+```
+
+### Model 4a with PDO
+
+Hypothesis 4a considers all 28 populations as samples from three distinct underlying state process representing different run timing. Each of these runs is modeled with the same variance and equal covariance, and with PDO covariates included.
+
+```{r pdo4a, echo=FALSE}
+# equal process variance and covariance
+mod.list.4a <- list(B = "identity",  
+                   U = matrix(paste0("u", seq(ncol(Zmatrix4)))),
+                   Q = "equalvarcov",
+                   Z = Zmatrix4,
+                   A = "zero",
+                   R = "diagonal and equal", #Observation variance
+                   C = matrix("pdo", ncol(Zmatrix4), 1),
+                   c = Wpdo,
+                   x0 = "unequal",
+                   tinitx = 0)
+
+if(!file.exists(here::here("Lab-2", "Team-2", "data", "PDOfit4a.rds"))){
+PDOfit.4a <- MARSS::MARSS(data, model = mod.list.4a)
+  saveRDS(PDOfit.4a, file=here::here("Lab-2", "Team-2", "data", "PDOfit4a.rds"))
+}
+# load in PDOfit.4a
+PDOfit.4a <- readRDS(file=here::here("Lab-2", "Team-2", "data", "PDOfit4a.rds"))
+
+# grabbing data for figures
+states <- PDOfit.4a$states
+statesSE <- PDOfit.4a$states.se
+
+states <- as.data.frame(states)
+statesSE <- as.data.frame(statesSE)
+
+states_long <- states %>% 
+  pivot_longer("V1":"V76", names_to="Year", values_to="fitted")
+states_long <- states_long %>% 
+  mutate(Year = rep(years, ncol(Zmatrix4)))
+
+states_long <- states_long %>% 
+  mutate(state = c(rep("Spring", 76),
+                   rep("Spring/summer", 76),
+                   rep("Summer", 76)
+  ))
+
+statesSE_long <- statesSE %>% 
+  pivot_longer("V1":"V76", names_to="Year", values_to="se")
+
+states_long <- states_long %>% 
+  mutate(se = statesSE_long$se)
+
+states_long$lb <- states_long$fitted - states_long$se
+states_long$ub <- states_long$fitted + states_long$se
+
+# save long state estimates\
+save(states_long, file=here::here("Lab-2", "Team-2", "data", "PDOfit4a_long.Rda"))
+
+plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
+  geom_line() +
+  labs(x = "", 
+       y="State Estimate",
+       title='Spring Summer Chinook Abundance, Upper Columbia/Snake River',
+       subtitle="3 runs, equal process variance and covariance") +
+  geom_ribbon(aes(ymin=lb, ymax=ub, fill=state), alpha=0.35, linetype=0) +
+  theme_classic() +
+  theme(legend.position="right") + 
+  scale_x_discrete(breaks = c(1950, 1964, 1978, 1992, 2006, 2020))
+plot
+```
+
+### Model Comparison
+
+```{r, echo=FALSE}
+# an empty list to collect outputs
+out_list3 <- list()
+out_list4a <- list()
+
+# Add each model's name and AICc 
+out_list3[[1]] <- data.frame(Model = "fit.3", AICc = fit.3$AICc)
+out_list3[[2]] <- data.frame(Model = "PDOfit.3", AICc = PDOfit.3$AICc)
+
+out_list4a[[1]] <- data.frame(Model = "fit.4a", AICc = fit.4a$AICc)
+out_list4a[[2]] <- data.frame(Model = "PDOfit.4a", AICc = PDOfit.4a$AICc)
+
+# Combine all into one dataframe
+out3 <- do.call(rbind, out_list3)
+out4a <- do.call(rbind, out_list4a)
+
+out3
+out4a
+```
+
+In both cases including PDO covariates does not improve model fit. This is a somewhat surprising finding, but is likely due to the benefit of the new information the covariates provide not outweighing the cost introducing additional parameters.
+
 # Discussion
 
-The AICc values reported in the Results section suggests that the best model for the data is the fully separated one identified in H3, where all 28 populations are separated, however temporally correlated. This is followed closely by H4a, where the populations are separated only by run timing and are temporally correlated. These two findings are consistent with what we would expect ecologically, as the 28 separate populations have likely developed similarities in behavior at sea and during migration homewards. Similarly, it is not surprising to see that run timing is the next best model. This also makes sense ecologically because the timing of the run determines the migration pattern, route, and schooling tendencies of the particular group, which would likely mean they are surviving and returning in similar ways to that of their cohort. 
-
+The AICc values reported in the Results section suggests that the best model for the data is the fully separated one identified in H3, where all 28 populations are separated, however temporally correlated. This is followed closely by H4a, where the populations are separated only by run timing and are temporally correlated. These two findings are consistent with what we would expect ecologically, as the 28 separate populations have likely developed similarities in behavior at sea and during migration homewards. Similarly, it is not surprising to see that run timing is the next best model. This also makes sense ecologically because the timing of the run determines the migration pattern, route, and schooling tendencies of the particular group, which would likely mean they are surviving and returning in similar ways to that of their cohort. Somewhat surprisingly, the inclusion of pacific decadal oscilation data as covariates does not improve the fit of either model.
 
 An interesting comparison can be drawn between H4a and H4b when considering the influence of covariance on the model behavior in this case. In H4a, with covariance, we see a strong similarity between the state estimates of the Spring/Summer run and the Summer run, however when we look at the same model without covariance in H4b, we see a far different trend in the Summer run state estimates. The Summer run model in H4b acts a lot differently, showing a 'smoother' state estimate that is not tied to the other groups to the same degree, allowing for greater independence between the three groups. The same can be observed for H5a and H5b, where the effect of covariance on the data in H5a is incredibly strong and visible in the shape of the state estimates over time, compared to the more smooth and loose appearance in 5b.
 

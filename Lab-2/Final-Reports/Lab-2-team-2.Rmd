@@ -67,16 +67,16 @@ data <- data.matrix(w_esu2[2:ncol(w_esu2)])
 
 ## get pdo data
 # read in data from table
-if(!file.exists(here::here("Lab-2", "Team-2", "data", "pdo_raw.rda"))){
+if(!file.exists(here::here("Lab-2", "Final-Reports", "data", "pdo_raw.rda"))){
   pdo <- read.table("https://www.ncei.noaa.gov/pub/data/cmb/ersst/v5/index/ersst.v5.pdo.dat",
                     sep = "",
                     header = TRUE,
                     skip = 1)
-  save(pdo, file=here::here("Lab-2", "Team-2", "data", "pdo_raw.rda"))
+  save(pdo, file=here::here("Lab-2", "Final-Reports", "data", "pdo_raw.rda"))
 } 
 
-if(file.exists(here::here("Lab-2", "Team-2", "data", "pdo_raw.rda"))) {
-  load(here::here("Lab-2", "Team-2", "data", "pdo_raw.rda"))
+if(file.exists(here::here("Lab-2", "Final-Reports", "data", "pdo_raw.rda"))) {
+  load(here::here("Lab-2", "Final-Reports", "data", "pdo_raw.rda"))
 }
 
 #annual average
@@ -412,12 +412,12 @@ mod.list.1 <- list(B = "identity",
                    x0 = matrix("mu"),
                    tinitx = 0)
 
-if(!file.exists(here::here("Lab-2", "Team-2", "data", "fit1.rds"))){
+if(!file.exists(here::here("Lab-2", "Final-Reports", "data", "fit1.rds"))){
 fit.1 <- MARSS(data, model = mod.list.1)
-  saveRDS(fit.1, file=here::here("Lab-2", "Team-2", "data", "fit1.rds"))
+  saveRDS(fit.1, file=here::here("Lab-2", "Final-Reports", "data", "fit1.rds"))
 }
 # load in fit.1
-fit.1 <- readRDS(file=here::here("Lab-2", "Team-2", "data", "fit1.rds"))
+fit.1 <- readRDS(file=here::here("Lab-2", "Final-Reports", "data", "fit1.rds"))
 
 # grabbing data for figures
 states <- fit.1$states
@@ -470,12 +470,12 @@ mod.list.2 <- list(B = "identity",
                    x0 = "unequal",
                    tinitx = 0)
 
-if(!file.exists(here::here("Lab-2", "Team-2", "data", "fit2.rds"))){
+if(!file.exists(here::here("Lab-2", "Final-Reports", "data", "fit2.rds"))){
 fit.2 <- MARSS::MARSS(data, model = mod.list.2)
-  saveRDS(fit.2, file=here::here("Lab-2", "Team-2", "data", "fit2.rds"))
+  saveRDS(fit.2, file=here::here("Lab-2", "Final-Reports", "data", "fit2.rds"))
 }
 # load in fit.2
-fit.2 <- readRDS(file=here::here("Lab-2", "Team-2", "data", "fit2.rds"))
+fit.2 <- readRDS(file=here::here("Lab-2", "TFinal-Reports", "data", "fit2.rds"))
 
 # grabbing data for figures
 states <- fit.2$states
@@ -530,7 +530,7 @@ states_long$lb <- states_long$fitted - states_long$se
 states_long$ub <- states_long$fitted + states_long$se
 
 # save long state estimates\
-save(states_long, file=here::here("Lab-2", "Team-2", "data", "fit2_long.Rda"))
+save(states_long, file=here::here("Lab-2", "Final-Reports", "data", "fit2_long.Rda"))
 
 plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
   geom_line() +
@@ -559,12 +559,12 @@ Hypothesis 3 considers all 28 populations as each sampled from a distinct underl
 mod.list.3 <- mod.list.2
 mod.list.3$Q <- "equalvarcov"
 
-if(!file.exists(here::here("Lab-2", "Team-2", "data", "fit3.rds"))){
+if(!file.exists(here::here("Lab-2", "Final-Reports", "data", "fit3.rds"))){
 fit.3 <- MARSS:: MARSS(data, model = mod.list.3)
-  saveRDS(fit.3, file=here::here("Lab-2", "Team-2", "data", "fit3.rds"))
+  saveRDS(fit.3, file=here::here("Lab-2", "Final-Reports", "data", "fit3.rds"))
 }
 # load in fit.3
-fit.3 <- readRDS(file=here::here("Lab-2", "Team-2", "data", "fit3.rds"))
+fit.3 <- readRDS(file=here::here("Lab-2", "Final-Reports", "data", "fit3.rds"))
 
 # grabbing data for figures
 states <- fit.3$states
@@ -619,7 +619,7 @@ states_long$lb <- states_long$fitted - states_long$se
 states_long$ub <- states_long$fitted + states_long$se
 
 # save long state estimates\
-save(states_long, file=here::here("Lab-2", "Team-2", "data", "fit3_long.Rda"))
+save(states_long, file=here::here("Lab-2", "Final-Reports", "data", "fit3_long.Rda"))
 
 plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
   geom_line() +
@@ -718,12 +718,12 @@ mod.list.4a <- list(B = "identity",
                    x0 = "unequal",
                    tinitx = 0)
 
-if(!file.exists(here::here("Lab-2", "Team-2", "data", "fit4a.rds"))){
+if(!file.exists(here::here("Lab-2", "Final-Reports", "data", "fit4a.rds"))){
 fit.4a <- MARSS::MARSS(data, model = mod.list.4a)
-  saveRDS(fit.4a, file=here::here("Lab-2", "Team-2", "data", "fit4a.rds"))
+  saveRDS(fit.4a, file=here::here("Lab-2", "Final-Reports", "data", "fit4a.rds"))
 }
 # load in fit.4a
-fit.4a <- readRDS(file=here::here("Lab-2", "Team-2", "data", "fit4a.rds"))
+fit.4a <- readRDS(file=here::here("Lab-2", "Final-Reports", "data", "fit4a.rds"))
 
 # grabbing data for figures
 states <- fit.4a$states
@@ -753,7 +753,7 @@ states_long$lb <- states_long$fitted - states_long$se
 states_long$ub <- states_long$fitted + states_long$se
 
 # save long state estimates\
-save(states_long, file=here::here("Lab-2", "Team-2", "data", "fit4a_long.Rda"))
+save(states_long, file=here::here("Lab-2", "Final-Reports", "data", "fit4a_long.Rda"))
 
 plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
   geom_line() +
@@ -792,12 +792,12 @@ mod.list.4b <- list(B = "identity",
                    x0 = "unequal",
                    tinitx = 0)
 
-if(!file.exists(here::here("Lab-2", "Team-2", "data", "fit4b.rds"))){
+if(!file.exists(here::here("Lab-2", "Final-Reports", "data", "fit4b.rds"))){
 fit.4b <- MARSS::MARSS(data, model = mod.list.4b)
-  saveRDS(fit.4b, file=here::here("Lab-2", "Team-2", "data", "fit4b.rds"))
+  saveRDS(fit.4b, file=here::here("Lab-2", "Final-Reports", "data", "fit4b.rds"))
 }
 # load in fit.4b
-fit.4b <- readRDS(file=here::here("Lab-2", "Team-2", "data", "fit4b.rds"))
+fit.4b <- readRDS(file=here::here("Lab-2", "Final-Reports", "data", "fit4b.rds"))
 
 # grabbing data for figures
 states <- fit.4b$states
@@ -827,7 +827,7 @@ states_long$lb <- states_long$fitted - states_long$se
 states_long$ub <- states_long$fitted + states_long$se
 
 # save long state estimates\
-save(states_long, file=here::here("Lab-2", "Team-2", "data", "fit4b_long.Rda"))
+save(states_long, file=here::here("Lab-2", "Final-Reports", "data", "fit4b_long.Rda"))
 
 plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
   geom_line() +
@@ -926,12 +926,12 @@ mod.list.5a <- list(B = "identity",
                    x0 = "unequal",
                    tinitx = 0)
 
-if(!file.exists(here::here("Lab-2", "Team-2", "data", "fit5a.rds"))){
+if(!file.exists(here::here("Lab-2", "Final-Reports", "data", "fit5a.rds"))){
 fit.5a <- MARSS::MARSS(data, model = mod.list.5a)
-  saveRDS(fit.5a, file=here::here("Lab-2", "Team-2", "data", "fit5a.rds"))
+  saveRDS(fit.5a, file=here::here("Lab-2", "Final-Reports", "data", "fit5a.rds"))
 }
 # load in fit.5a
-fit.5a <- readRDS(file=here::here("Lab-2", "Team-2", "data", "fit5a.rds"))
+fit.5a <- readRDS(file=here::here("Lab-2", "Final-Reports", "data", "fit5a.rds"))
 
 # grabbing data for figures
 states <- fit.5a$states
@@ -963,7 +963,7 @@ states_long$lb <- states_long$fitted - states_long$se
 states_long$ub <- states_long$fitted + states_long$se
 
 # save long state estimates\
-save(states_long, file=here::here("Lab-2", "Team-2", "data", "fit5a_long.Rda"))
+save(states_long, file=here::here("Lab-2", "Final-Reports", "data", "fit5a_long.Rda"))
 
 plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
   geom_line() +
@@ -1002,12 +1002,12 @@ mod.list.5b <- list(B = "identity",
                    x0 = "unequal",
                    tinitx = 0)
 
-if(!file.exists(here::here("Lab-2", "Team-2", "data", "fit5b.rds"))){
+if(!file.exists(here::here("Lab-2", "Final-Reports", "data", "fit5b.rds"))){
 fit.5b <- MARSS::MARSS(data, model = mod.list.5b)
-  saveRDS(fit.5b, file=here::here("Lab-2", "Team-2", "data", "fit5b.rds"))
+  saveRDS(fit.5b, file=here::here("Lab-2", "Final-Reports", "data", "fit5b.rds"))
 }
 # load in fit.5b
-fit.5b <- readRDS(file=here::here("Lab-2", "Team-2", "data", "fit5b.rds"))
+fit.5b <- readRDS(file=here::here("Lab-2", "Final-Reports", "data", "fit5b.rds"))
 
 # grabbing data for figures
 states <- fit.5b$states
@@ -1039,7 +1039,7 @@ states_long$lb <- states_long$fitted - states_long$se
 states_long$ub <- states_long$fitted + states_long$se
 
 # save long state estimates\
-save(states_long, file=here::here("Lab-2", "Team-2", "data", "fit5b_long.Rda"))
+save(states_long, file=here::here("Lab-2", "Final-Reports", "data", "fit5b_long.Rda"))
 
 plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
   geom_line() +
@@ -1138,12 +1138,12 @@ mod.list.6a <- list(B = "identity",
                    x0 = "unequal",
                    tinitx = 0)
 
-if(!file.exists(here::here("Lab-2", "Team-2", "data", "fit6a.rds"))){
+if(!file.exists(here::here("Lab-2", "Final-Reports", "data", "fit6a.rds"))){
 fit.6a <- MARSS::MARSS(data, model = mod.list.6a)
-  saveRDS(fit.6a, file=here::here("Lab-2", "Team-2", "data", "fit6a.rds"))
+  saveRDS(fit.6a, file=here::here("Lab-2", "Final-Reports", "data", "fit6a.rds"))
 }
 # load in fit.6a
-fit.6a <- readRDS(file=here::here("Lab-2", "Team-2", "data", "fit6a.rds"))
+fit.6a <- readRDS(file=here::here("Lab-2", "Final-Reports", "data", "fit6a.rds"))
 
 # grabbing data for figures
 states <- fit.6a$states
@@ -1179,7 +1179,7 @@ states_long$lb <- states_long$fitted - states_long$se
 states_long$ub <- states_long$fitted + states_long$se
 
 # save long state estimates\
-save(states_long, file=here::here("Lab-2", "Team-2", "data", "fit6a_long.Rda"))
+save(states_long, file=here::here("Lab-2", "Final-Reports", "data", "fit6a_long.Rda"))
 
 plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
   geom_line() +
@@ -1218,12 +1218,12 @@ mod.list.6b <- list(B = "identity",
                    x0 = "unequal",
                    tinitx = 0)
 
-if(!file.exists(here::here("Lab-2", "Team-2", "data", "fit6b.rds"))){
+if(!file.exists(here::here("Lab-2", "Final-Reports", "data", "fit6b.rds"))){
 fit.6b <- MARSS::MARSS(data, model = mod.list.6b)
-  saveRDS(fit.6b, file=here::here("Lab-2", "Team-2", "data", "fit6b.rds"))
+  saveRDS(fit.6b, file=here::here("Lab-2", "Final-Reports", "data", "fit6b.rds"))
 }
 # load in fit.6b
-fit.6b <- readRDS(file=here::here("Lab-2", "Team-2", "data", "fit6b.rds"))
+fit.6b <- readRDS(file=here::here("Lab-2", "Final-Reports", "data", "fit6b.rds"))
 
 # grabbing data for figures
 states <- fit.6b$states
@@ -1259,7 +1259,7 @@ states_long$lb <- states_long$fitted - states_long$se
 states_long$ub <- states_long$fitted + states_long$se
 
 # save long state estimates\
-save(states_long, file=here::here("Lab-2", "Team-2", "data", "fit6b_long.Rda"))
+save(states_long, file=here::here("Lab-2", "Final-Reports", "data", "fit6b_long.Rda"))
 
 plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
   geom_line() +
@@ -1317,12 +1317,12 @@ mod.list.3 <- mod.list.2
 mod.list.3$C <- matrix("pdo", nrow(data), 1)
 mod.list.3$c <- Wpdo
 
-if(!file.exists(here::here("Lab-2", "Team-2", "data", "PDOfit3.rds"))){
+if(!file.exists(here::here("Lab-2", "Final-Reports", "data", "PDOfit3.rds"))){
 PDOfit.3 <- MARSS:: MARSS(data, model = mod.list.3)
-  saveRDS(PDOfit.3, file=here::here("Lab-2", "Team-2", "data", "PDOfit3.rds"))
+  saveRDS(PDOfit.3, file=here::here("Lab-2", "Final-Reports", "data", "PDOfit3.rds"))
 }
 # load in PDOfit.3
-PDOfit.3 <- readRDS(file=here::here("Lab-2", "Team-2", "data", "PDOfit3.rds"))
+PDOfit.3 <- readRDS(file=here::here("Lab-2", "Final-Reports", "data", "PDOfit3.rds"))
 
 # grabbing data for figures
 states <- PDOfit.3$states
@@ -1377,7 +1377,7 @@ states_long$lb <- states_long$fitted - states_long$se
 states_long$ub <- states_long$fitted + states_long$se
 
 # save long state estimates\
-save(states_long, file=here::here("Lab-2", "Team-2", "data", "PDOfit3_long.Rda"))
+save(states_long, file=here::here("Lab-2", "Final-Reports", "data", "PDOfit3_long.Rda"))
 
 plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
   geom_line() +
@@ -1409,12 +1409,12 @@ mod.list.4a <- list(B = "identity",
                    x0 = "unequal",
                    tinitx = 0)
 
-if(!file.exists(here::here("Lab-2", "Team-2", "data", "PDOfit4a.rds"))){
+if(!file.exists(here::here("Lab-2", "Final-Reports", "data", "PDOfit4a.rds"))){
 PDOfit.4a <- MARSS::MARSS(data, model = mod.list.4a)
-  saveRDS(PDOfit.4a, file=here::here("Lab-2", "Team-2", "data", "PDOfit4a.rds"))
+  saveRDS(PDOfit.4a, file=here::here("Lab-2", "Final-Reports", "data", "PDOfit4a.rds"))
 }
 # load in PDOfit.4a
-PDOfit.4a <- readRDS(file=here::here("Lab-2", "Team-2", "data", "PDOfit4a.rds"))
+PDOfit.4a <- readRDS(file=here::here("Lab-2", "Final-Reports", "data", "PDOfit4a.rds"))
 
 # grabbing data for figures
 states <- PDOfit.4a$states
@@ -1444,7 +1444,7 @@ states_long$lb <- states_long$fitted - states_long$se
 states_long$ub <- states_long$fitted + states_long$se
 
 # save long state estimates\
-save(states_long, file=here::here("Lab-2", "Team-2", "data", "PDOfit4a_long.Rda"))
+save(states_long, file=here::here("Lab-2", "Final-Reports", "data", "PDOfit4a_long.Rda"))
 
 plot <- ggplot(data = states_long, aes(x = Year, y = fitted, group = state)) +
   geom_line() +
@@ -1481,13 +1481,15 @@ out3
 out4a
 ```
 
-In both cases including PDO covariates does not improve model fit. This is a somewhat surprising finding, but is likely due to the benefit of the new information the covariates provide not outweighing the cost introducing additional parameters.
+In both cases including PDO as a covariate does not improve model fit. This is a somewhat surprising finding, but is likely due to the benefit of the new information the covariates provide not outweigh the cost introducing additional parameters.
 
 # Discussion
 
 The AICc values reported in the Results section suggests that the best model for the data is the fully separated one identified in H3, where all 28 populations are separated, however temporally correlated. This is followed closely by H4a, where the populations are separated only by run timing and are temporally correlated. These two findings are consistent with what we would expect ecologically, as the 28 separate populations have likely developed similarities in behavior at sea and during migration homewards. Similarly, it is not surprising to see that run timing is the next best model. This also makes sense ecologically because the timing of the run determines the migration pattern, route, and schooling tendencies of the particular group, which would likely mean they are surviving and returning in similar ways to that of their cohort. Somewhat surprisingly, the inclusion of pacific decadal oscilation data as covariates does not improve the fit of either model.
 
 An interesting comparison can be drawn between H4a and H4b when considering the influence of covariance on the model behavior in this case. In H4a, with covariance, we see a strong similarity between the state estimates of the Spring/Summer run and the Summer run, however when we look at the same model without covariance in H4b, we see a far different trend in the Summer run state estimates. The Summer run model in H4b acts a lot differently, showing a 'smoother' state estimate that is not tied to the other groups to the same degree, allowing for greater independence between the three groups. The same can be observed for H5a and H5b, where the effect of covariance on the data in H5a is incredibly strong and visible in the shape of the state estimates over time, compared to the more smooth and loose appearance in 5b.
+
+In the PDO section, as a part of question 3, we decided to include PDO as a covariate  in the two best fit models. Interestingly, including PDO did not improve model fit. This is a somewhat surprising finding, but is likely due to the benefit of the new information the covariate provides does not outweigh the cost of introducing additional parameters. This also must mean that there is another hidden covariate that may be complicating the story here but is not accurately described in our model.
 
 # Description of each team member's contributions
 

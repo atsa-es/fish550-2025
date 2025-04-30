@@ -306,3 +306,10 @@ dat_zoop <- dat_zoop - y_bar
 ## dfa_task_3 <- MARSS(dat_zoop, model = mod_list, form = "dfa", z.score = FALSE,
 ##                     control = con_list, covariates = dd)
 
+#Candidate Models
+#Grazers and Edible Phytopplanktn
+#Grazers and Edible Phyto with Phosphorus
+#grazers and Edible Phyto with Phosp and Temp
+#Grazers and Predators 
+
+

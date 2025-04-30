@@ -1,5 +1,5 @@
 ---
-title: "Team X - Lab 2"
+title: "Team 1 - Lab 2"
 author: "Nicole, Mary, Tina"
 date: "April 22, 2025"
 output:
@@ -105,7 +105,7 @@ cohocolnames<-colnames(coho)
 
 2. Evaluate support for the major population groups. Are the populations in the groups more correlated than outside the groups?
 
-3. Evaluate the evidence of cycling in the data. *We will talk about how to do this on the Tuesday after lab.*
+3. Evaluate the evidence of cycling in the data. 
 
 # Methods
 ### Question 1
@@ -132,6 +132,8 @@ autoplot(obj, plot.type="residuals")
 ```
 To estimate the population trends over time, we fit biased random walk models to each subpopulation's data. In one model, we assumed the U term is equal across all sub-populations. This model estimated U to be 0.0349, which indicates that the Oregon Coast coho ESU is generally stable and experiencing a slight increase from historical abundances. When we change this assumption of U being equal to U being unequal, the model estimated a population trend for each of the 21 sub-populations in the ESU. 
 
+*add matrix equation here*
+
 ``` {r, include=FALSE}
 ## Part 2: Estimates of decrease from historical abundance
 #Fit with biased random walk
@@ -149,7 +151,7 @@ rownames(U)<-c("U=")
 colnames(U)<-"U Estimate for total ESU"
 print(U)
 ```
-Oregon Coast ESU sub-population U estimates from biased random walk with unequal U terms
+Oregon Coast ESU sub-population U estimates from biased random walk with unequal U terms *add matrix equation*
 ```{r, echo=FALSE}
 #Unequal U biased random walk
 #Are sub-groups experiencing same trends over time?
@@ -170,7 +172,7 @@ maxtrend<-max(cohoU)
 ### Question 2
 The Oregon Coast Coho ESU is divided into five “major population groups” (MPGs), based on biological or geographical similarities. In this question, we test whether these groups reflect real ecological patterns—specifically, whether populations within the same MPG show more similar (i.e., correlated) abundance trends than populations in different groups.
 
-We evaluate this by fitting three MARSS models with different assumptions about grouping and comparing them using AICc. The model with the lowest AICc provides the best support for its grouping hypothesis. For this first analysis, we assumed unequal drift, which aligns with the varying population trends we calculated in question 1, and hidden states allowed to correlate (Q="equalvarcov"). We also fit these models with an assumption of equal drift, and zero drift. These both could also be reasonable assumptions because the population trends amongst the sub-populations in this ESU did not vary much, with a range in U values of -0.047 to 0.087. These are also close to zero, and so we could test the assumption that there is no underlying population trend. *Add matrix form for the three models, then the other two 5 group models with U=zero and U=equal*
+We evaluate this by fitting three MARSS models with different assumptions about grouping and comparing them using AICc. The model with the lowest AICc provides the best support for its grouping hypothesis. For this first analysis, we assumed unequal drift, which aligns with the varying population trends we calculated in question 1, and hidden states allowed to correlate (Q="equalvarcov"). We also fit these models with an assumption of equal drift, and zero drift. These both could also be reasonable assumptions because the population trends amongst the sub-populations in this ESU did not vary much, with a range in U values of -0.047 to 0.087. These are also close to zero, and so we could test the assumption that there is no underlying population trend. *Add matrix form for the first three models with different Z matrices*
 
 ```{r, echo=FALSE}
 # Helper function: converts a grouping vector into a Z matrix
@@ -454,7 +456,7 @@ Z.grp.3.2 <- make_Z(gvec)
 #Fit model
 fit.grp.3.2 <- MARSS(coho, c(mod.list, list(Z = Z.grp.3.2)), silent = TRUE)
 ```
-Again none of these performed better than the original 5-group model. The only interesting things we can see in comparing these models is the Umpqua populations appear to be more similar to the Mid-South Coast than Mid-Coast populations, and the lake populations do appear to be distinct (much higher AICs values when they are grouped in with the coastal groups).
+Again none of these performed better than the original 5-group model. We can see some interesting results in comparing these models is the Umpqua populations appear to be more similar to the Mid-South Coast than Mid-Coast populations, and the lake populations do appear to be distinct (much higher AICs values when they are grouped in with the coastal groups). Because no other patterns for more effective groupings were found in our hypothesis testing, we have determined the best grouping assumption is the one laid out in the original data set.
 ```{r, echo=FALSE}
 groups4.3<-tibble(
   model = c("No Lakes", "Umpqua in Mid-South Coast", "Umpqua in Mid-Coast",
@@ -468,27 +470,90 @@ groups4.3<-tibble(
 groups4.3
 ```
 ### Question 3
+To further explore variation in population trends over time for the Oregon Coast ESU, we evaluate the evidence of cycling in Oregon Coast coho spawner abundance. We compared three structural approaches using MARSS models: a polynomial trend, a Fourier series (cyclic component), and a null model (the best performed from above analysis). We hypothesized that coho populations might exhibit 4-year cycles due to biological factors. *add matrix equation*
 
+```{r, echo=FALSE}
+# Create time covariates
+years <- as.numeric(colnames(coho))
+t <- years - min(years) + 1  # Time index starting at 1
 
+# Polynomial trend model (linear + quadratic)
+time <- t
+time_sq <- t^2
+cov_poly <- rbind(time, time_sq)
 
+mod.poly <- list(
+  B = "identity", U = "zero", C = "unconstrained",
+  c = cov_poly, Q = "diagonal and equal",
+  Z = "identity", R = "diagonal and equal", A = "scaling"
+)
 
+# Fourier model (4-year cycle)
+sin4 <- sin(2 * pi * t / 4)
+cos4 <- cos(2 * pi * t / 4)
+cov_fourier <- rbind(sin4, cos4)
 
+mod.fourier <- list(
+  B = "identity", U = "zero", C = "unconstrained",
+  c = cov_fourier, Q = "diagonal and equal",
+  Z = "identity", R = "diagonal and equal", A = "scaling"
+)
 
+# Fit all models
+fit.null <- MARSS(coho, c(base.list, list(Z = Z.site)), silent = TRUE)
+fit.poly <- MARSS(coho, model = mod.poly, silent = TRUE)
+fit.fourier <- MARSS(coho, model = mod.fourier, silent = TRUE)
 
+# Compare AICc
+aicc.tab <- tibble(
+  Model = c("Null", "Polynomial", "Fourier (4-year)"),
+  AICc = c(fit.null$AICc, fit.poly$AICc, fit.fourier$AICc),
+  Delta_AICc = c(0, fit.poly$AICc - fit.null$AICc, 
+                fit.fourier$AICc - fit.null$AICc)
+) %>% arrange(AICc)
 
+print(aicc.tab)
+```
 
-Address the following in your methods
+It seems that still the null model performs the best, but we want to systematically test different cycle periods that might be biologically plausible for coho salmon (2-10 years).
 
-* Describe your assumptions about the x and how the data time series are related to x.
+```{r, include=FALSE}
+test_cycles <- function(data, periods = 2:10) {
+  years <- as.numeric(colnames(data))
+  t <- years - min(years) + 1
+  
+  # Null model for comparison
+  fit.null <- MARSS(coho, c(base.list, list(Z = Z.site)), silent = TRUE)
+  
+  # Test each period
+  results <- map_df(periods, function(p) {
+    # Create Fourier terms
+    sin_term <- sin(2 * pi * t / p)
+    cos_term <- cos(2 * pi * t / p)
+    covariates <- rbind(sin_term, cos_term)
+    
+    # Fourier model
+    mod.fourier <- list(
+      B = "identity", U = "zero", C = "unconstrained",
+      c = covariates, Q = "diagonal and equal",
+      Z = "identity", R = "diagonal and equal", A = "scaling"
+    )
+    
+    fit <- MARSS(data, model = mod.fourier, silent = TRUE)
+    
+    tibble(
+      Period = p,
+      AICc = fit$AICc,
+      Delta_AICc = fit$AICc - fit.null$AICc,
+      Converged = fit$convergence == 0
+    )
+  })
+  
+  arrange(results, AICc)
+}
 
-   - How are the x and y (data) related? 1 x for 1 y or will you assume 1 x for all y or 1 x for each major population group? How will you choose? 
-   - What will you assume about the U for the x's?
-   - What will you assume about the Q matrix?
-   
-* Write out your assumptions as different models **in matrix form**, fit each and then compare these with AIC or AICc.
-
-* Do your estimates differ depending on the assumptions you make about the structure of the data, i.e. you assumptions about the x's, Q, and U.
-
+cycle_results <- test_cycles(coho, periods = 2:10)
+```
 
 
 # Results
@@ -521,12 +586,29 @@ corrplot(corrmat, main="5 Group model")
 
 ```
 
-However, when unequal drift is assumed, the model that treats each sub-population as its own group performs the best. The 5-group MPG model that assumes unequal drift also performs better than the same model fit with equal or zero drift, which further supports the idea that there might be differences among the populations in this ESU resulting in different population trends. To further investigate this, we changed our assumptions of the groupings and fit alternative models to the Oregon Coast ESU sub-populations. However, none of the combinations of 6, 7, 5 (different from the original groups), 4, or 3 groupings that we fit to the data performed better. The original 5 groupings considered in the Oregon Coast ESU do seem to be the most appropriate. While larger groups or considering each population as its own group might produce better model results, the goal in creating population groups to explain the data is achieved with the original five. The model that treated each sub-population did not perform extremely better relative to the 5 groups, and so there is merit in that grouping assumption.
+However, when unequal drift is assumed, the model that treats each sub-population as its own group performs the best. The 5-group MPG model that assumes unequal drift also performs better than the same model fit with equal or zero drift, which further supports the idea that there might be differences among the populations in this ESU resulting in different population trends. 
 
-### Question 3
-To further explore variation in population trends over time for the Oregon Coast ESU, we... something.
+To further investigate this, we changed our assumptions of the groupings and fit alternative models to the Oregon Coast ESU sub-populations. However, none of the combinations of 7, 6, 5 (different from the original groups), 4, or 3 groupings that we fit to the data performed better. The original 5 groupings considered in the Oregon Coast ESU did seem to be the most appropriate for the data. While larger groups or considering each population as its own group might produce better model results, the goal of creating population groups to explain the data is achieved with the original five. The model that treated each sub-population did not perform extremely better relative to the 5 group model, and so there is merit in that grouping assumption. 
+
+### Cyclic dynamics
+All tested cycle periods (2–10 years) yielded higher AICc values than the null model (ΔAICc > 0), indicating no statistical evidence for cyclic dynamics in Oregon Coast coho spawner abundance (see AICc comparisons below). 
+```{r, echo=FASLSE}
+print(aicc.tab)
+print(cycle_results)
+```
 
 # Discussion
+In this lab, we explored population structure, trends, and cyclic dynamics of the Oregon Coast coho salmon ESU. This ESU consists of 21 sub-populations of coho, for which there is time series data of adult returns from 1990 to 2023. We fit MARSS models to the data to investigate the underlying population dynamics of this ESU and found the following:
+
+There is variation in the population trends experienced by the 21 sub-populations; on average, the sub-populations in this ESU have experienced slightly positive trends from their historical abundances in the early 1990's. Two populations- the Floras Creek and Sixed River- have experienced slight declines. 
+
+We then tested several hypotheses about the ESU population groups to explore the variation amongst these twenty-one sub-populations. We did this by changing the assumptions of population groupings in the Z-matrix of our model equations based on possible underlying population structures (all sub-populations are one homogenous group, or each is their own individual group, population groupings based on latitude, etc.). Comparing the models we fit to the data strongly supported the original five sub-groups included in the original data set. When we change the model assumption to allow unequal drift (population trends) the best-performing model was the one that considered each sub-population as its own group. When the drift was assumed to be equal or zero, the original 5-group model performed best. This is a reasonable assumption since the population trends observed for each sub-population are centered around zero and very small. And so this grouping assumption is reasonable, and is supported by the data. *add matrix form for original 5 group matrix, same as above in the methdods*
+
+An alternative hypothesis to population structure driving variation within this ESU is the hypothesis of cyclic dynamics within the time series data. To investigate this, we fit several models with varying cycle periods to the data.
+
+While cyclic dynamics are theoretically plausible for salmonids, this analysis found no empirical support for cyclic trends in Oregon Coast coho spawner abundance at any tested period (2–10 years). The null model’s superiority suggests that population trends are likely driven by non-cyclic factors, and management should prioritize addressing persistent stressors rather than anticipating cyclic rebounds.
+
+The lack of cyclicity suggests that no dominant environmental driver synchronizes populations at these timescales. Populations may be buffered against cyclic pressures by life-history diversity and local adaptation to heterogeneous habitats. 
 
 # Description of each team member's contributions
-
+Nicole addressed question 1 and fit alternative grouping-assumption models in question 2. Mary provided the code for all data visualization and for fitting MARSS models in question 2. Tina addressed question 3. All group members contributed to the write-up and discussion sections of this report.

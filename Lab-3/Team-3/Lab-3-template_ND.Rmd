@@ -1,0 +1,123 @@
+---
+title: Team 1 - Lab 1
+subtitle: Dynamic Factor Analysis (DFA) - Common trends in plankton data
+author: "Name 1, Name 2, Name 3"
+date: April XX, 2025
+output: 
+  html_document:
+    code-folding: true
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include = FALSE}
+options(dplyr.summarise.inform = FALSE)
+```
+
+# Data
+
+We chose to use the seven zooplankton taxa that had complete observations from 1985 to 1994. Thus, Leptodora and Neomysis were excluded. We chose to examine the last ten years of the data set (from 1985 to 1994) because we were interested in the zooplankton community following all of the changes to the lake throughout the 1970's and 1980's (Ben could explain this better probably). The covariates we looked at were temperature, total phosphorus, and pH.
+
+
+## Load the data
+
+```{r load_data, echo=FALSE}
+#Packages
+library(MARSS)
+library(forecast)
+library(zoo)
+library(RColorBrewer)
+
+## Wrangle the data
+# Subset zooplankton data we will use
+## load the raw data (there are 3 datasets contained here)
+data(lakeWAplankton, package = "MARSS")
+all_dat <- lakeWAplanktonTrans
+yr_frst <- 1985
+yr_last <- 1994
+plank_dat <- all_dat[all_dat[, "Year"] >= yr_frst & 
+                       all_dat[, "Year"] <= yr_last,]
+
+## create vector of phytoplankton group names
+zooplankton<- c("Conochilus", "Cyclops","Daphnia", "Diaptomus", "Epischura","Non.daphnid.cladocerans", "Non.colonial.rotifers")
+## get only the phytoplankton
+dat_zoo<-plank_dat[,zooplankton]
+dat_zoo<-t(dat_zoo)
+
+## get number of time series
+N_ts <- dim(dat_zoo)[1]
+
+## get length of time series
+TT <- dim(dat_zoo)[2] 
+y_bar <- apply(dat_zoo, 1, mean, na.rm = TRUE)
+
+## subtract the means
+dat <- dat_zoo - y_bar
+
+## assign new column names
+spp <- rownames(dat_zoo)
+rownames(dat) <- spp
+dat<-t(apply(dat, 1, function(x) na.approx(x, na.rm = FALSE)))
+palette<-brewer.pal(6, "Blues")
+palette2<-brewer.pal(6, "Greens")
+
+plot(dat[1,], type="l", main=zooplankton[1], ylab="Abundance Index", col=palette[3])
+plot(dat[2,], type="l", main=zooplankton[2],ylab="Abundance Index", col=palette[4])
+plot(dat[3,], type="l", main=zooplankton[3],ylab="Abundance Index", col=palette[5])
+plot(dat[4,], type="l", main=zooplankton[4],ylab="Abundance Index", col=palette[6])
+plot(dat[5,], type="l", main=zooplankton[5],ylab="Abundance Index", col=palette2[4])
+plot(dat[6,], type="l", main=zooplankton[6],ylab="Abundance Index", col=palette2[5])
+plot(dat[7,], type="l", main=zooplankton[7],ylab="Abundance Index", col=palette2[6])
+
+#ACF Plots
+acf(dat[1,], main=zooplankton[1])
+acf(dat[2,], main=zooplankton[2])
+acf(dat[3,], main=zooplankton[3])
+acf(dat[4,], main=zooplankton[4])
+acf(dat[5,], main=zooplankton[5])
+acf(dat[6,], main=zooplankton[6])
+acf(dat[7,], main=zooplankton[7])
+```
+
+
+# General tasks
+
+Each group has the same general tasks, but you will adapt them as you work on the data.
+
+1) Find the most parsimonious model among a set that examines the effects of environmental covariates and/or an indicator of seasonality, varying numbers of trends, and different forms of variance-covariance matrices for the observation errors.
+```{r}
+
+```
+
+2) Plot trends and individual loadings for the model identified in task (1) above.
+
+3) Plot model fits and uncertainty intervals for the model identified in task (1) above.
+
+4) Describe the effects of environmental or dummy variables on (possibly seasonal) patterns in the data.
+
+
+# Methods
+
+Please address the following in your methods:
+
+* Which plankton taxa did you choose and how did you choose them?
+
+
+
+* What environmental or dummy variables did you include and why?
+
+* What forms of models did you fit (ie, write them out in matrix form)?
+
+* What sort of model diagnostics did you use to examine model assumptions?
+
+
+# Results
+
+
+# Discussion
+
+
+# Team contributions
+
+Example: "All team members helped decide on the goal and ran the analyses for the individual regions. Team members 2 & 3 wrote most of the code for the analysis. Team member 1 worked on the plotting section of the report using and adapting code that team member 3 wrote. All team members helped edit the report and wrote the discussion together."
+

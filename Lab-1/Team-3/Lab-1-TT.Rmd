@@ -1,0 +1,336 @@
+---
+title: Team 3 - Lab 1
+subtitle: Forecasting with ARIMA and ETS models
+author: "Name 1, Name 2, Name 3"
+date: April XX, 2025
+output: 
+  html_document:
+    code-folding: true
+    toc: true
+    toc_float: true
+---
+
+# Data
+
+Discuss what parts of the data sets you will work with.
+
+# Question your team will address
+
+What will your team do with the data? You can do many things with the data. The only constraints are that you
+
+* fit ARIMA and ETS models. You can fit other models in addition to these if you want (lm, glm, gam, etc)
+* do diagnostics for ARIMA and ETS models
+* make forecasts
+* test how good your forecasts or compare forecasts (many options here)
+
+Example, "Our team decided to compare the accuracy of forecasts using best fit ARIMA models for WA, OR and CA commercial yearly landings. Our question is whether forecast accuracy is different for simple (1st order) versus 2nd to 4th order ARIMA models."
+
+# Method you will use
+
+## Initial plan
+
+Describe what you plan to do to address your question.
+
+Example, "We will fit ARIMA models to 1960-1980 data and make 1981-1985  forecasts (5 year). We will compare the accuracy of the forecasts to the actual values. We will measure accuracy with mean squared error. We will use the forecast package to fit the ARIMA models with different AR orders (1st up to 4th order)."
+
+## What you actually did
+
+Example, "We were able to do our plan fairly quickly, so after writing the basic code. We compared the accuracy of forecasts for different time periods using 20-years for training and 5-year forecasts each time. We compared the RMSE, MAE, and MAPE accuracy measures."
+
+# Diagnostics and preliminary exploration
+
+## Plot the data
+
+Plot the data and discuss any obvious problems with stationarity from your visual test.
+
+
+## Use ACF and PACF
+
+Use the ACF and PACF plots to explore the time series. What did you learn? Also try decomposition.
+
+## Test for stationarity
+
+Run tests using `forecast::ndiffs` and discuss any stationarity issues that are revealed.
+
+# Results
+
+# Discussion
+
+# Description of each team member's contributions
+
+Example: "All team members helped decide on the goal and ran the analyses for the individual regions. Team members 2 & 3 wrote most of the code for the analysis of the regions. Team member 4 researched approaches for measuring accuracy of forecasts in [Hyndman & Athanasopoulos[OTexts.com/fpp2] and team member 2 added code for that to the methods. Team member 4 also researched tests for stationarity and worked with team member 2 to code that up. Team member 1 worked on the plotting section of the report using and adapting code that team member 3 wrote. All team members helped edit the report and wrote the discussion together."
+
+### Tina's Main Codes
+# Load Data
+```{r}
+library(atsalibrary)
+
+# Monthly data
+library(dplyr)
+library(lubridate)
+chinook.month.wc <- chinook.month %>%
+  group_by(Year, Month) %>%
+  summarise(
+    metric.tons = sum(metric.tons, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    Date = as.Date(paste(Year, Month, "01", sep = "-"), format = "%Y-%b-%d"),
+    log.metric.tons = log(metric.tons)
+  ) %>%
+  arrange(Date)
+# Check range of monthly data
+range(chinook.month.wc$Date)
+# Change the column name from "log.metric.tons' to "log_landings"
+colnames(chinook.month.wc)[5] <- "log_landings"
+# Change the column name from "metric.tons" to "total_landings"
+colnames(chinook.month.wc)[3] <- "total_landings"
+
+# Yearly data
+library(dplyr)
+library(ggplot2)
+chinook.year.filtered <- chinook.year %>%
+  filter(!State %in% c("Michigan", "Pennsylvania"))
+ggplot(chinook.year.filtered, aes(x = Year, y = log.metric.tons)) +
+  geom_line() +
+  facet_wrap(~ State, ncol = 2, scales = "free_y") +
+  labs(
+    title = "Chinook Landings by State",
+    x = "Year",
+    y = "Log(Metric Tons)"
+  ) +
+  theme_minimal()
+# Check range of yearly data
+range(chinook.year.filtered$Year)
+# Change the column name from "log.metric.tons' to "log_landings"
+colnames(chinook.year.filtered)[4] <- "log_landings"
+# Change the column name from "metric.tons" to "total_landings"
+colnames(chinook.year.filtered)[5] <- "total_landings"
+```
+# Data Processing
+```{r}
+# Process monthly and yearly datasets for log landings and total landings
+month_log <- chinook.month.wc %>%
+  select(Date, log_landings)
+month_total <- chinook.month.wc %>%
+  select(Date, total_landings)
+year_log <- chinook.year.filtered %>%
+  select(Year, log_landings)
+year_total <- chinook.year.filtered %>%
+  select(Year, total_landings)
+# Covert into a time series object
+month_log_ts <- ts(month_log$log_landings, start = c(1990, 1), frequency = 12)
+month_total_ts <- ts(month_total$total_landings, start = c(1990, 1), frequency = 12)
+year_log_ts <- ts(year_log$log_landings, start = 1950, end = 2016, frequency = 1)
+year_total_ts <- ts(year_total$total_landings, start = 1950, end = 2016, frequency = 1)
+# Check ts datasets
+head(month_log_ts)
+head(month_total_ts)
+head(year_log_ts)
+head(year_total_ts)
+```
+# Stationarity Test
+```{r}
+month_log_ts[month_log_ts == -Inf] <- NA
+adf.test(na.omit(as.numeric(month_log_ts))) # stationary
+adf.test(month_total_ts) # stationary
+adf.test(year_log_ts) # non-stationary
+adf.test(year_total_ts) # non-stationary
+ndiffs(month_log_ts, test = "adf") #0
+ndiffs(month_total_ts, test = "adf") #0
+ndiffs(year_log_ts, test = "adf") #1
+ndiffs(year_total_ts, test = "adf") #1
+```
+# Plot ACF and PACF
+```{r}
+acf(month_log_ts, na.action = na.pass, lag.max = 36)
+acf(month_total_ts, na.action = na.pass, lag.max = 36)
+acf(year_log_ts, na.action = na.pass, lag.max = 36)
+acf(year_total_ts, na.action = na.pass, lag.max = 36)
+pacf(month_log_ts, na.action = na.pass, lag.max = 36)
+pacf(month_total_ts, na.action = na.pass, lag.max = 36)
+pacf(year_log_ts, na.action = na.pass, lag.max = 36)
+pacf(year_total_ts, na.action = na.pass, lag.max = 36)
+```
+
+
+# Split Data (80% Training Set + 20% Test Set)
+```{r}
+# For monthly data (from 1990-01-01 to 2022-12-01)
+month_training_log <- chinook.month.wc %>%
+  filter(Date < "2015-01-01") %>%
+  select(Date, log_landings)
+month_test_log <- chinook.month.wc %>%
+  filter(Date >= "2015-01-01") %>%
+  select(Date, log_landings)
+# Make the monthly log landing training and test data into a time series object
+month_training_log_ts <- ts(month_training_log$log_landings, start = c(1990, 1), frequency = 12)
+month_test_log_ts <- ts(month_test_log$log_landings, start = c(2015, 1), frequency = 12)
+# Check the monthly log landing training and test data
+head(month_training_log_ts)
+head(month_test_log_ts)
+month_training_total <- chinook.month.wc %>%
+  filter(Date < "2015-01-01") %>%
+  select(Date, total_landings)
+month_test_total <- chinook.month.wc %>%
+  filter(Date >= "2015-01-01") %>%
+  select(Date, total_landings)
+# Make the monthly total landing training and test data into a time series object
+month_training_total_ts <- ts(month_training_total$total_landings, start = c(1990, 1), frequency = 12)
+month_test_total_ts <- ts(month_test_total$total_landings, start = c(2015, 1), frequency = 12)
+# Check the monthly total landing training and test data
+head(month_training_total_ts)
+head(month_test_total_ts)
+
+# For yearly data (1950-2016)
+year_training_log <- chinook.year.filtered %>%
+  filter(Year < 2003) %>%
+  select(Year, log_landings)
+year_test_log <- chinook.year.filtered %>%
+  filter(Year >= 2003) %>%
+  select(Year, log_landings)
+year_training_total <- chinook.year.filtered %>%
+  filter(Year < 2003) %>%
+  select(Year, total_landings)
+year_test_total <- chinook.year.filtered %>%
+  filter(Year >= 2003) %>%
+  select(Year, total_landings)
+# Make the yearly log landing training and test data into a time series object
+year_training_log_ts <- ts(year_training_log$log_landings, start = 1950, end = 2002, frequency = 1)
+year_test_log_ts <- ts(year_test_log$log_landings, start = 2003, end = 2016, frequency = 1)
+# Check the yearly log landing training and test data
+head(year_training_log_ts)
+head(year_test_log_ts)
+# Make the yearly total landing training and test data into a time series object
+year_training_total_ts <- ts(year_training_total$total_landings, start = 1950, end = 2002, frequency = 1)
+year_test_total_ts <- ts(year_test_total$total_landings, start = 2003, end = 2016, frequency = 1)
+# Check the yearly total landing training and test data
+head(year_training_total_ts)
+head(year_test_total_ts)
+```
+
+# Model Fitting
+```{r}
+# ARIMA models
+library(forecast)
+arima_month_log <- auto.arima(month_training_log_ts)
+summary(arima_month_log)
+arima_month_total <- auto.arima(month_training_total_ts)
+summary(arima_month_total)
+arima_year_log <- auto.arima(year_training_log_ts)
+summary(arima_year_log)
+arima_year_total <- auto.arima(year_training_total_ts)
+summary(arima_year_total)
+# ETS models
+ets_month_log <- ets(month_training_log_ts)
+summary(ets_month_log)
+ets_month_total <- ets(month_training_total_ts)
+summary(ets_month_total)
+ets_year_log <- ets(year_training_log_ts)
+summary(ets_year_log)
+ets_year_total <- ets(year_training_total_ts)
+summary(ets_year_total)
+```
+
+# Forecast Plots
+```{r}
+# Compare the forecast of ARIMA and ETS models for monthly log and total landings
+arima_month_log_forecast <- forecast(arima_month_log, h = 8*12)
+autoplot(arima_month_log_forecast) +
+  autolayer(month_test_log_ts, series = "Test Data") +
+  labs(title = "ARIMA(1,0,0)(0,1,2)[12] Model Forecast for Monthly Log Landings",
+       x = "Year",
+       y = "Log Landings") +
+  theme_minimal()
+arima_month_total_forecast <- forecast(arima_month_total, h = 8*12)
+autoplot(arima_month_total_forecast) +
+  autolayer(month_test_total_ts, series = "Test Data") +
+  labs(title = "ARIMA(2,0,0)(0,1,2)[12] Model Forecast for Monthly Total Landings",
+       x = "Year",
+       y = "Total Landings") +
+  theme_minimal()
+ets_month_log_forecast <- forecast(ets_month_log, h = 8*12)
+autoplot(ets_month_log_forecast) +
+  autolayer(month_test_log_ts, series = "Test Data") +
+  labs(title = "ETS(A,N,A) Model Forecast for Monthly Log Landings",
+       x = "Year",
+       y = "Log Landings") +
+  theme_minimal()
+ets_month_total_forecast <- forecast(ets_month_total, h = 8*12)
+autoplot(ets_month_total_forecast) +
+  autolayer(month_test_total_ts, series = "Test Data") +
+  labs(title = "ETS(A,A,A) Model Forecast for Monthly Total Landings",
+       x = "Year",
+       y = "Total Landings") +
+  theme_minimal()
+
+# Compare the forecast of ARIMA and ETS models for yearly log and total landings
+arima_year_log_forecast <- forecast(arima_year_log, h = 13)
+autoplot(arima_year_log_forecast) +
+  autolayer(year_test_log_ts, series = "Test Data") +
+  labs(title = "ARIMA(1,0,0) Model Forecast for Yearly Log Landings",
+       x = "Year",
+       y = "Log Landings") +
+  theme_minimal()
+arima_year_total_forecast <- forecast(arima_year_total, h = 13)
+autoplot(arima_year_total_forecast) +
+  autolayer(year_test_total_ts, series = "Test Data") +
+  labs(title = "ARIMA(1,0,0) Model Forecast for Yearly Total Landings",
+       x = "Year",
+       y = "Total Landings") +
+  theme_minimal()
+ets_year_log_forecast <- forecast(ets_year_log, h = 13)
+autoplot(ets_year_log_forecast) +
+  autolayer(year_test_log_ts, series = "Test Data") +
+  labs(title = "ETS(A,N,N) Model Forecast for Yearly Log Landings",
+       x = "Year",
+       y = "Log Landings") +
+  theme_minimal()
+ets_year_total_forecast <- forecast(ets_year_total, h = 13)
+autoplot(ets_year_total_forecast) +
+  autolayer(year_test_total_ts, series = "Test Data") +
+  labs(title = "ETS(A,N,N) Model Forecast for Yearly Total Landings",
+       x = "Year",
+       y = "Total Landings") +
+  theme_minimal()
+```
+
+# Model Performance Diagnostics
+```{r}
+# Check the residuals of ARIMA and ETS models for monthly log and total landings
+checkresiduals(arima_month_log)
+checkresiduals(arima_month_total)
+checkresiduals(ets_month_log)
+checkresiduals(ets_month_total)
+# Check the residuals of ARIMA and ETS models for yearly log and total landings
+checkresiduals(arima_year_log)
+checkresiduals(arima_year_total)
+checkresiduals(ets_year_log)
+checkresiduals(ets_year_total)
+# Compare accuracy measures for ARIMA and ETS models
+accuracy_list <- list(
+  ARIMA_Month_Log_Landings = accuracy(arima_month_log_forecast, month_test_log_ts),
+  ARIMA_Month_Total_Landings = accuracy(arima_month_total_forecast, month_test_total_ts),
+  ETS_Month_Log_Landings = accuracy(ets_month_log_forecast, month_test_log_ts),
+  ETS_Month_Total_Landings = accuracy(ets_month_total_forecast, month_test_total_ts),
+  ARIMA_Year_Log_Landings = accuracy(arima_year_log_forecast, year_test_log_ts),
+  ARIMA_Year_Total_Landings = accuracy(arima_year_total_forecast, year_test_total_ts),
+  ETS_Year_Log_Landings = accuracy(ets_year_log_forecast, year_test_log_ts),
+  ETS_Year_Total_Landings = accuracy(ets_year_total_forecast, year_test_total_ts)
+)
+accuracy_list
+```
+
+# Interpretation of Results
+```{r}
+## Model comparison
+# For monthly data: ARIMA beats ETS on every metric (lower RMSE, MAE, MASE).
+# For yearly: ETS beats ARIMA across the board (lower RMSE, MAE, MASE).
+
+## Frequency comparison (monthly vs yearly)
+# Monthly models are superior for forecasting precision, assuming total landings are used to avoid log-transform pitfalls. Yearly models sacrifice granularity but are more stable with log transformations
+
+## Scale comparison (log vs total landings)
+# Log landing models outperform total landings in accuracy but only work for yearly data (avoids Inf errors). Total landing models avoid back-transformation errors with better test stability and reliability.
+```
+

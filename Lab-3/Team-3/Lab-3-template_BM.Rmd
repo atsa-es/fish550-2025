@@ -16,8 +16,7 @@ options(dplyr.summarise.inform = FALSE)
 
 # Data
 
-Describe what plankton groups and covariates you used and indicate any temporal subsetting you chose. 
-
+We are interesting in looking at how all of the zooplankton species respond in the most recent years (1985 - 1994) other than Neomysis and __________, which there were very few measurements of during this time period. 
 
 ## Load the data
 
@@ -32,19 +31,333 @@ data(lakeWAplankton, package = "MARSS")
 ## so the 0's are replaced with NA's and the data z-scored
 all_dat <- lakeWAplanktonTrans
 
-#1985-1994 
-#All Zooplankton other than neomysis and 
 ```
 
 ## Wrangle the data
 
-* You can choose any taxa to include in your analyses, but make sure there are at least 5 groups. You can mix phytoplankton and zooplankton, if you'd like, but justify any choices you make. 
-
-* You will want to subset the data to a time period with adequate observations for the taxa of interest. Your time window should include at lest 5 years (60 months).
-
 ```{r wrangle_data}
-## add some code here
+library(dplyr)
+
+data(lakeWAplankton)
+# we want lakeWAplanktonTrans, which has been log-transformed
+# and the 0s replaced with NAs
+plankdat <- lakeWAplanktonTrans
+years <- plankdat[, "Year"] >= 1985 & plankdat[, "Year"] < 1994
+plankton <- c(
+"Conochilus", "Cyclops", "Daphnia",
+"Diaptomus", "Epischura","Non.daphnid.cladocerans","Non.colonial.rotifers"
+)
+plankton <- plankdat[years, plankton]
+Temp <- t(plankdat[years, "Temp", drop = FALSE])
+TP <- t(plankdat[years, "TP", drop = FALSE])
+pH <- t(plankdat[years, "pH", drop = FALSE])
+
+plankton <- t(plankton)
+N.ts <- nrow(plankton)
+TT <- ncol(plankton)
+
+
 ```
+
+
+
+#According to lecture, the steps are first to... 
+- fit the most complex model you can envision based on all of your possible
+  covariates and random factors (states)
+  
+-keep the covariates fixed and choose the number of trends (states) using AICc
+
+- keep the covariates & states fixed and choose the form for R
+
+- sort out the covariates while keeping the states & R fixed
+
+
+
+
+1. fit the most complex model you can envision based on all the possible covariates. 
+
+```{r, echo = FALSE, results = FALSE}
+# List of covariates
+covariates <- rbind(Temp, TP, pH)
+
+# Initialize control list
+cntl.list <- list(maxit = 50000)
+
+# Initialize AICc storage
+aicc_values <- numeric(7)
+state_numbers <- 1:7
+
+# Loop over states from 1 to 7
+for (m in state_numbers) {
+  model.list <- list(m = m, R = "diagonal and unequal")
+  
+  # Fit the model for each number of states
+  model <- suppressMessages(suppressWarnings(
+    MARSS(plankton,
+          model = model.list,
+          z.score = TRUE, 
+          form = "dfa", 
+          control = cntl.list, 
+          covariates = covariates, 
+          method = "BFGS")
+  ))
+  
+  # Store the AICc value
+  aicc_values[m] <- model$AICc
+}
+
+# Print the results
+print(cbind(
+  model = paste(state_numbers, "States", sep = ""),
+  AICc = round(aicc_values)
+), quote = FALSE)
+
+ordered_results <- cbind(
+  model = paste(state_numbers, "States", sep = ""),
+  AICc = round(aicc_values)
+)
+
+# Print the ordered results
+print(ordered_results, quote = FALSE)
+
+# model   AICc
+# [1,] 6States 1546
+# [2,] 7States 1548
+# [3,] 5States 1552
+# [4,] 4States 1566
+# [5,] 3States 1578
+# [6,] 2States 1595
+# [7,] 1States 1644
+
+
+```
+
+## ok now we've decided on a six state model, and we can test different forms for R 
+
+```{r}
+
+m<-6
+
+# "diagonal and equal" - Same observation error for all species
+R_equal <- MARSS(plankton,
+  model = list(m =m, R = "diagonal and equal"),
+  z.score = TRUE, 
+  form = "dfa", 
+  control = cntl.list, 
+  covariates = rbind(Temp, TP, pH), 
+  method = "BFGS"
+)
+
+# "unconstrained" - Allow correlated observation errors
+R_unconstrained <- MARSS(plankton,
+  model = list(m = m  , R = "unconstrained"),
+  z.score = TRUE, 
+  form = "dfa", 
+  control = cntl.list, 
+  covariates = rbind(Temp, TP, pH), 
+  method = "BFGS"
+)
+
+# Compare AICc values
+print(cbind(
+  model = c("diag_unequal", "diag_equal", "unconstrained"),
+  AICc = round(c(
+      aicc_values[1], 
+      R_equal$AICc, 
+      R_unconstrained$AICc)
+  )
+), quote = FALSE)
+
+#    model         AICc
+# [1,] diag_unequal  1644
+# [2,] diag_equal    1566
+# [3,] unconstrained 1555
+
+
+```
+
+
+# Now test covariate combinations 
+
+```{r}
+# Set up your control list for all models
+cntl.list <- list(maxit = 500)
+best_R <- "unconstrained"  # Your best R structure
+best_m <- 6  # Your best number of states
+
+# No covariates (baseline model)
+No_Covars <- MARSS(plankton,
+  model = list(m = best_m, R = best_R),
+  z.score = TRUE, 
+  form = "dfa", 
+  control = cntl.list, 
+  method = "BFGS"
+)
+
+# Single covariates
+Temp_only <- MARSS(plankton,
+  model = list(m = best_m, R = best_R),
+  z.score = TRUE, 
+  form = "dfa", 
+  control = cntl.list, 
+  covariates = rbind(Temp), 
+  method = "BFGS"
+)
+
+TP_only <- MARSS(plankton,
+  model = list(m = best_m, R = best_R),
+  z.score = TRUE, 
+  form = "dfa", 
+  control = cntl.list, 
+  covariates = rbind(TP), 
+  method = "BFGS"
+)
+
+pH_only <- MARSS(plankton,
+  model = list(m = best_m, R = best_R),
+  z.score = TRUE, 
+  form = "dfa", 
+  control = cntl.list, 
+  covariates = rbind(pH), 
+  method = "BFGS"
+)
+
+# Pairs of covariates
+Temp_TP <- MARSS(plankton,
+  model = list(m = best_m, R = best_R),
+  z.score = TRUE, 
+  form = "dfa", 
+  control = cntl.list, 
+  covariates = rbind(Temp, TP), 
+  method = "BFGS"
+)
+
+Temp_pH <- MARSS(plankton,
+  model = list(m = best_m, R = best_R),
+  z.score = TRUE, 
+  form = "dfa", 
+  control = cntl.list, 
+  covariates = rbind(Temp, pH), 
+  method = "BFGS"
+)
+
+TP_pH <- MARSS(plankton,
+  model = list(m = best_m, R = best_R),
+  z.score = TRUE, 
+  form = "dfa", 
+  control = cntl.list, 
+  covariates = rbind(TP, pH), 
+  method = "BFGS"
+)
+
+# All covariates (your current best model)
+All_Covars <- MARSS(plankton,
+  model = list(m = best_m, R = best_R),
+  z.score = TRUE, 
+  form = "dfa", 
+  control = cntl.list, 
+  covariates = rbind(Temp, TP, pH), 
+  method = "BFGS"
+)
+
+# Compare AICc values
+models_df <- data.frame(
+  model = c("No_Covars", "Temp_only", "TP_only", "pH_only", 
+            "Temp_TP", "Temp_pH", "TP_pH", "All_Covars"),
+  AICc = c(No_Covars$AICc, Temp_only$AICc, TP_only$AICc, pH_only$AICc,
+           Temp_TP$AICc, Temp_pH$AICc, TP_pH$AICc, All_Covars$AICc)
+)
+
+# Sort by AICc
+models_df <- models_df[order(models_df$AICc),]
+print(models_df)
+
+# 8	All_Covars	1554.900		
+# 6	Temp_pH	1555.025		
+# 7	TP_pH	1591.661		
+# 2	Temp_only	1598.316		
+# 5	Temp_TP	1599.731		
+# 4	pH_only	1604.539		
+# 3	TP_only	1633.710		
+# 1	No_Covars	1652.562
+
+
+```
+
+The most parsimonious model includes 6 states and all covariates 
+
+# Plot trends and individual loadings 
+```{r}
+
+# Extract the key components from your best model
+Best_Model <- All_Covars
+
+# Get the Z matrix (factor loadings)
+Z_est <- coef(Best_Model, type = "matrix")$Z
+
+# Since you have only one state in your model, make sure Z is properly formatted
+if(!is.matrix(Z_est)) {
+  Z_est <- matrix(Z_est, ncol = 1)
+}
+
+# Number of time series (species)
+N.ts <- nrow(plankton)
+spp <- rownames(plankton)
+
+# Set threshold for minimum loading to display
+minZ <- 0.05
+
+# Number of states/trends
+m <- ncol(Z_est)
+
+# Set y-axis limits
+ylims <- c(-1.1 * max(abs(Z_est)), 1.1 * max(abs(Z_est)))
+
+# Create plot
+par(mfrow = c(ceiling(m/2), min(2, m)), mar = c(3, 4, 1.5, 0.5), oma = c(0.4, 1, 1, 1))
+
+for(i in 1:m) {
+  # Plot factor loadings as vertical lines
+  plot(c(1:N.ts)[abs(Z_est[, i]) > minZ], 
+       as.vector(Z_est[abs(Z_est[, i]) > minZ, i]), 
+       type = "h", 
+       lwd = 2, 
+       xlab = "", 
+       ylab = "", 
+       xaxt = "n", 
+       ylim = ylims, 
+       xlim = c(0, N.ts+1))
+  
+  # Add species labels
+  for(j in 1:N.ts) {
+    if(Z_est[j, i] > minZ) {
+      text(j, -0.05, spp[j], srt = 90, adj = 1, cex = 0.9)
+    }
+    if(Z_est[j, i] < -minZ) {
+      text(j, 0.05, spp[j], srt = 90, adj = 0, cex = 0.9)
+    }
+  }
+  
+  # Add horizontal line at zero
+  abline(h = 0, lwd = 1, col = "gray")
+  
+  # Add title
+  mtext(paste("Factor loadings on trend", i, sep = " "), side = 3, line = .5)
+}
+
+```
+
+# Plot Model fit and uncertainty 
+```{r}
+
+```
+
+# Describe the effects of environmental or dummy variables on patterns in the data 
+
+```{r}
+
+```
+
 
 
 # General tasks
@@ -52,9 +365,6 @@ all_dat <- lakeWAplanktonTrans
 Each group has the same general tasks, but you will adapt them as you work on the data.
 
 1) Find the most parsimonious model among a set that examines the effects of environmental covariates and/or an indicator of seasonality, varying numbers of trends, and different forms of variance-covariance matrices for the observation errors.
-
-
-
 
 2) Plot trends and individual loadings for the model identified in task (1) above.
 
@@ -88,3 +398,70 @@ Please address the following in your methods:
 
 Example: "All team members helped decide on the goal and ran the analyses for the individual regions. Team members 2 & 3 wrote most of the code for the analysis. Team member 1 worked on the plotting section of the report using and adapting code that team member 3 wrote. All team members helped edit the report and wrote the discussion together."
 
+
+
+````````````````````````````````
+
+
+
+
+
+
+# the complicated way of doing things (all the matrix math and such)
+```{r}
+
+
+# Record the number of rows 
+N.ts <- nrow(plankton)  # Number of observation time series (3 plankton species)
+N.states <- 3  # Let's assume 3 hidden states (one per plankton group, but could be different)
+
+# Set up the Z matrix (observation matrix)
+# For 3 plankton species, 3 states
+Z.vals <- list(
+  "z11", 0, 0,        # Conochilus only affected by state 1
+  "z21", "z22", 0,    # Cyclops affected by states 1 and 2
+  "z31", "z32", "z33" # Daphnia affected by all three states
+)
+Z <- matrix(Z.vals, nrow = nrow(plankton), ncol = 3, byrow = TRUE)
+
+Q <- B <- diag(1, 3)
+
+# R.vals <- list(
+# "r11", 0, 0, 
+# 0, "r22", 0, 
+# 0, 0, "r33"
+# )
+
+R <-"diagonal and unequal"
+x0 <- U <- A <- "zero"
+V0 <- diag(3, 3)
+
+dfa.model <- list(
+Z = Z, A = "zero", R = R, B = B, U = U,
+Q = Q, x0 = x0, V0 = V0
+)
+cntl.list <- list(maxit = 500000)
+
+ThreeStates<- MARSS(plankton , model = dfa.model, control = cntl.list)
+
+```
+
+# The much simpler way
+
+```{r}
+
+model.list <- list(m = 3, R = "diagonal and unequal")
+cntl.list <- list(maxit = 50000)
+
+ThreeStates <- MARSS(plankton,
+  model = model.list,
+  z.score = TRUE, 
+  form = "dfa", 
+  control = cntl.list, 
+  method="BFGS"
+)
+
+
+
+
+```

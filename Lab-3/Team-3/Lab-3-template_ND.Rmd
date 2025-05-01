@@ -37,6 +37,15 @@ yr_frst <- 1985
 yr_last <- 1994
 plank_dat <- all_dat[all_dat[, "Year"] >= yr_frst & 
                        all_dat[, "Year"] <= yr_last,]
+#subset covariates
+temp<-plank_dat[,c("Temp")]
+ph<-plank_dat[,c("pH")]
+tp<-plank_dat[,c("TP")]
+greens<-plank_dat[,c("Greens")]
+greens<-na.approx(greens, na.rm = FALSE)
+cos_t <- cos(2 * pi * seq(TT) / 12)
+sin_t <- sin(2 * pi * seq(TT) / 12)
+szn<- rbind(cos_t, sin_t)
 
 ## create vector of phytoplankton group names
 zooplankton<- c("Conochilus", "Cyclops","Daphnia", "Diaptomus", "Epischura","Non.daphnid.cladocerans", "Non.colonial.rotifers")
@@ -54,31 +63,29 @@ y_bar <- apply(dat_zoo, 1, mean, na.rm = TRUE)
 ## subtract the means
 dat <- dat_zoo - y_bar
 
-## assign new column names
-spp <- rownames(dat_zoo)
-rownames(dat) <- spp
+spp <- rownames(dat)
 dat<-t(apply(dat, 1, function(x) na.approx(x, na.rm = FALSE)))
-palette<-brewer.pal(6, "Blues")
-palette2<-brewer.pal(6, "Greens")
 
-plot(dat[1,], type="l", main=zooplankton[1], ylab="Abundance Index", col=palette[3])
-plot(dat[2,], type="l", main=zooplankton[2],ylab="Abundance Index", col=palette[4])
-plot(dat[3,], type="l", main=zooplankton[3],ylab="Abundance Index", col=palette[5])
-plot(dat[4,], type="l", main=zooplankton[4],ylab="Abundance Index", col=palette[6])
-plot(dat[5,], type="l", main=zooplankton[5],ylab="Abundance Index", col=palette2[4])
-plot(dat[6,], type="l", main=zooplankton[6],ylab="Abundance Index", col=palette2[5])
-plot(dat[7,], type="l", main=zooplankton[7],ylab="Abundance Index", col=palette2[6])
-
-#ACF Plots
-acf(dat[1,], main=zooplankton[1])
-acf(dat[2,], main=zooplankton[2])
-acf(dat[3,], main=zooplankton[3])
-acf(dat[4,], main=zooplankton[4])
-acf(dat[5,], main=zooplankton[5])
-acf(dat[6,], main=zooplankton[6])
-acf(dat[7,], main=zooplankton[7])
 ```
 
+```{r, echo=FALSE}
+palette<-brewer.pal(6, "Blues")
+palette2<-brewer.pal(6, "Greens")
+color<-c(palette[2:6], palette2[3:6])
+## initialize a counter
+cnt <- 1
+## set up plotting space & make plots
+par(mfrow = c(N_ts, 1), mai = c(0.5, 0.7, 0.1, 0.1), omi = c(0, 0, 0, 0))
+
+for(i in 1:length(spp)){
+  plot(dat[i,],  bty = "L", xaxt = "n", pch = 16,
+       xlab = "",
+       ylab = "Abundance index", col=color[i], type="b")
+  axis(1, 12 * (0:dim(dat)[2]) + 1, yr_frst + 0:dim(dat)[2])
+  title(spp[i])
+  cnt <- cnt + 1
+  }
+```
 
 # General tasks
 
@@ -86,13 +93,265 @@ Each group has the same general tasks, but you will adapt them as you work on th
 
 1) Find the most parsimonious model among a set that examines the effects of environmental covariates and/or an indicator of seasonality, varying numbers of trends, and different forms of variance-covariance matrices for the observation errors.
 ```{r}
+### No covariates, m=3
+## Observation model
+# Loadings matrix
+Z_vals <- list("z11", 0  ,  0  ,
+               "z21","z22",  0  ,
+               "z31","z32","z33",
+               "z41","z42","z43",
+               "z51","z52","z53",
+               "z61","z62","z63",
+               "z71","z72","z73")
+ZZ <- matrix(Z_vals, nrow = N_ts, ncol = 3, byrow = TRUE)
+## 'aa' is the offset/scaling
+aa <- "zero"
 
+## 'DD' and 'd' are for covariates
+DD <- "zero"  # matrix(0,mm,1)
+dd <- "zero"  # matrix(0,1,wk_last)
+## 'RR' is var-cov matrix for obs errors
+RR <- "diagonal and unequal"
+## Process eq
+## number of processes
+mm <- 3
+## 'BB' is identity: 1's along the diagonal & 0's elsewhere
+BB <- "identity"  # diag(mm)
+## 'uu' is a column vector of 0's
+uu <- "zero"  # matrix(0, mm, 1)
+## 'CC' and 'cc' are for covariates
+CC <- "zero"  # matrix(0, mm, 1)
+cc <- "zero"  # matrix(0, 1, wk_last)
+## 'QQ' is identity
+QQ <- "identity"  # diag(mm)
+
+mod_list <- list(Z = ZZ, A = aa, D = DD, d = dd, R = RR,
+                 B = BB, U = uu, C = CC, c = cc, Q = QQ)
+## list with model inits
+init_list <- list(x0 = matrix(rep(0, mm), mm, 1))
+## list with model control parameters
+con_list <- list(maxit = 3000, allow.degen = TRUE)
+dfa_1 <- MARSS(y = dat, model = mod_list, inits = init_list, control = con_list)
+mod_list$R<-"diagonal and equal"
+dfa_2<-MARSS(y = dat, model = mod_list, inits = init_list, control = con_list)
+mod_list$R<-"equalvarcov"
+dfa_3<-MARSS(y = dat, model = mod_list, inits = init_list, control = con_list)
+aicoutput<-print(cbind(model = c("diag and unequal", "diag and equal", "equalvarcov"),
+      AICc = round(c(dfa_1$AICc,
+                     dfa_2$AICc,
+                     dfa_3$AICc)),
+      quote = FALSE))
+mod_list$R<-"diagonal and equal"
+# diag and unequal R structure is best
+#fit most complex covariate form
+dfa_all <- MARSS(dat, model = list(m=3, R="diagonal and equal"), form = "dfa",z.score = FALSE,
+                  control = con_list, covariates = rbind(temp, ph, tp, greens))
+dfa_szn3<-MARSS(dat, model = list(m=3, R="diagonal and equal"), form = "dfa",z.score = FALSE,
+                  control = con_list, covariates = rbind(szn))
+
+#The dummy seasonal model performed best
+aicoutput<-print(cbind(model = c("All four covariates", "Dummy seasonal"),
+      AICc = round(c(dfa_all$AICc,
+                     dfa_szn$AICc))))
+
+# Now going to try changing level with the szn model
+dfa_szn2<-MARSS(dat, model = list(m=2, R="diagonal and equal"), form = "dfa",z.score = FALSE,
+                  control = con_list, covariates = rbind(szn))
+dfa_szn1<-MARSS(dat, model = list(m=1, R="diagonal and equal"), form = "dfa",z.score = FALSE,
+                  control = con_list, covariates = rbind(szn))
+dfa_szn4<-MARSS(dat, model = list(m=4, R="diagonal and equal"), form = "dfa",z.score = FALSE,
+                  control = con_list, covariates = rbind(szn))
+dfa_szn5<-MARSS(dat, model = list(m=5, R="diagonal and equal"), form = "dfa",z.score = FALSE,
+                  control = con_list, covariates = rbind(szn))
+dfa_szn6<-MARSS(dat, model = list(m=6, R="diagonal and equal"), form = "dfa",z.score = FALSE,
+                  control = con_list, covariates = rbind(szn))
+
+aicoutput<-print(cbind(model = c("m=1", "m=2", "m=3", "m=4", "m=5", "m=6"),
+      AICc = round(c(dfa_szn1$AICc,
+                     dfa_szn2$AICc,
+                     dfa_szn3$AICc, dfa_szn4$AICc,
+                     dfa_szn5$AICc, dfa_szn6$AICc))))
+# m=6 is the best model, now going to test cutting covariates
+dfa_tptempph <- MARSS(dat, model = list(m=6, R="diagonal and equal"), form = "dfa",z.score = FALSE,
+                  control = con_list, covariates = rbind(temp, ph, tp))
+dfa_tptemp <- MARSS(dat, model = list(m=6, R="diagonal and equal"), form = "dfa",z.score = FALSE,
+                  control = con_list, covariates = rbind(temp, tp))
+dfa_tp <- MARSS(dat, model = list(m=6, R="diagonal and equal"), form = "dfa",z.score = FALSE,
+                  control = con_list, covariates = rbind(tp))
+dfa_tptempgreens<-MARSS(dat, model = list(m=6, R="diagonal and equal"), form = "dfa",z.score = FALSE,
+                  control = con_list, covariates = rbind(temp, tp, greens))
+dfa_tpgreens<-MARSS(dat, model = list(m=6, R="diagonal and equal"), form = "dfa",z.score = FALSE,
+                  control = con_list, covariates = rbind(tp, greens))
+dfa_tempgreens<-MARSS(dat, model = list(m=6, R="diagonal and equal"), form = "dfa",z.score = FALSE,
+                  control = con_list, covariates = rbind(temp, greens))
+dfa_tempph<-MARSS(dat, model = list(m=6, R="diagonal and equal"), form = "dfa",z.score = FALSE,
+                  control = con_list, covariates = rbind(temp, ph))
+dfa_temp<-MARSS(dat, model = list(m=6, R="diagonal and equal"), form = "dfa",z.score = FALSE,
+                  control = con_list, covariates = rbind(temp))
+dfa_ph<-MARSS(dat, model = list(m=6, R="diagonal and equal"), form = "dfa",z.score = FALSE,
+                  control = con_list, covariates = rbind(ph))
+dfa_greens<-MARSS(dat, model = list(m=6, R="diagonal and equal"), form = "dfa",z.score = FALSE,
+                  control = con_list, covariates = rbind(greens))
+
+aicoutput<-print(cbind(model = c("All four", "-greens", "-ph", "TP + greens", "TP+temp", "Temp+ph",
+                                 "TP", "Temp", "Greens", "pH", "Dummy seasonal"),
+      AICc = round(c(dfa_all$AICc,
+                     dfa_tptempph$AICc,
+                     dfa_tptempgreens$AICc, dfa_tpgreens$AICc,
+                     dfa_tptemp$AICc, dfa_tempph$AICc,
+                     dfa_tp$AICc, dfa_temp$AICc, dfa_greens$AICc, dfa_ph$AICc, dfa_szn6$AICc))))
+
+# The temp+ph model performed best
+
+# Re-checking R structures
+dfa_tempph.Runequal<-MARSS(dat, model = list(m=6, R="diagonal and unequal"), form = "dfa",
+                           z.score = FALSE,control = con_list, covariates = rbind(temp, ph))
+
+dfa_tempph.Requalvarcov<-MARSS(dat, model = list(m=6, R="equalvarcov"), form = "dfa",
+                           z.score = FALSE,control = con_list, covariates = rbind(temp, ph))
+aicoutput<-print(cbind(model = c("diag and equal", "diag and unequal", "equalvarcov"),
+      AICc = round(c(dfa_tempph$AICc, dfa_tempph.Runequal$AICc, dfa_tempph.Requalvarcov$AICc))))
+#Checking m levels
+dfa_tempph6<-MARSS(dat, model = list(m=6, R="diagonal and unequal"), form = "dfa",z.score = FALSE,
+                  control = con_list, covariates = rbind(temp, ph))
+dfa_tempph5<-MARSS(dat, model = list(m=5, R="diagonal and unequal"), form = "dfa",z.score = FALSE,
+                  control = con_list, covariates = rbind(temp, ph))
+dfa_tempph4<-MARSS(dat, model = list(m=4, R="diagonal and unequal"), form = "dfa",z.score = FALSE,
+                  control = con_list, covariates = rbind(temp, ph))
+dfa_tempph3<-MARSS(dat, model = list(m=3, R="diagonal and unequal"), form = "dfa",z.score = FALSE,
+                  control = con_list, covariates = rbind(temp, ph))
+dfa_tempph2<-MARSS(dat, model = list(m=2, R="diagonal and unequal"), form = "dfa",z.score = FALSE,
+                  control = con_list, covariates = rbind(temp, ph))
+dfa_tempph1<-MARSS(dat, model = list(m=1, R="diagonal and unequal"), form = "dfa",z.score = FALSE,
+                  control = con_list, covariates = rbind(temp, ph))
+aicoutput<-print(cbind(model = c("m=1", "m=2", "m=3", "m=4", "m=5", "m=6"),
+      AICc = round(c(dfa_tempph1$AICc,
+                     dfa_tempph2$AICc,
+                     dfa_tempph3$AICc, dfa_tempph4$AICc,
+                     dfa_tempph5$AICc,
+                     dfa_tempph6$AICc))))
+
+# the model with 6 levels is still "best", but performs about the same as m=5 so m=5 is most parsimonious
+dfa_tempph5
 ```
 
+
 2) Plot trends and individual loadings for the model identified in task (1) above.
+```{r, echo=FALSE}
+Z_est <- coef(dfa_tempph5, type = "matrix")$Z
 
+## get the inverse of the rotation matrix
+H_inv <- varimax(Z_est)$rotmat
+
+Z_rot = Z_est %*% H_inv   
+
+## rotate processes
+proc_rot = solve(H_inv) %*% dfa_tempph5$states
+
+ylbl <- zooplankton
+w_ts <- seq(dim(dat)[2])
+layout(matrix(c(1,2,3,4,5,6), mm, 2), widths = c(2,1))
+par(mai = c(0.5, 0.5, 0.5, 0.1), omi = c(0, 0, 0, 0))
+
+## plot the processes
+for(i in 1:5) {
+  ylm <- c(-1, 1) * max(abs(proc_rot[i,]))
+  ## set up plot area
+  plot(w_ts,proc_rot[i,], type = "n", bty = "L",
+       ylim = ylm, xlab = "", ylab = "", xaxt = "n")
+  ## draw zero-line
+  abline(h = 0, col = "gray")
+  ## plot trend line
+  lines(w_ts, proc_rot[i,], lwd = 2)
+  lines(w_ts, proc_rot[i,], lwd = 2)
+  ## add panel labels
+  mtext(paste("State",i), side = 3, line = 0.5)
+  axis(1, 12 * (0:dim(dat_1980)[2]) + 1, yr_frst + 0:dim(dat_1980)[2])
+}
+## plot the loadings
+minZ <- 0
+ylm <- c(-1, 1) * max(abs(Z_rot))
+for(i in 1:5) {
+  plot(x = c(1:N_ts)[abs(Z_rot[,i])>minZ],
+       y = as.vector(Z_rot[abs(Z_rot[,i])>minZ,i]),
+       type = "h",
+       lwd = 2, xlab = "", ylab = "", xaxt = "n", ylim = ylm,
+       xlim = c(0.5, N_ts + 0.5), col = clr)
+  for(j in 1:N_ts) {
+    if(Z_rot[j,i] > minZ) {text(j, -0.03, ylbl[j], srt = 90, adj = 1, cex = 1.2, col = clr[j])}
+    if(Z_rot[j,i] < -minZ) {text(j, 0.03, ylbl[j], srt = 90, adj = 0, cex = 1.2, col = clr[j])}
+    abline(h = 0, lwd = 1.5, col = "gray")
+  } 
+  mtext(paste("Factor loadings on state", i), side = 3, line = 0.5)
+}
+
+## set up plotting area
+par(mai = c(0.9,0.9,0.1,0.1))
+
+## plot CCF's
+ccf(proc_rot[1,],proc_rot[2,], lag.max = 12, main="")
+
+
+```
 3) Plot model fits and uncertainty intervals for the model identified in task (1) above.
+```{r}
+get_DFA_fits <- function(MLEobj, dd = NULL, alpha = 0.05) {
+  ## empty list for results
+  fits <- list()
+  ## extra stuff for var() calcs
+  Ey <- MARSS:::MARSShatyt(MLEobj)
+  ## model params
+  ZZ <- coef(MLEobj, type="matrix")$Z
+  ## number of obs ts
+  nn <- dim(Ey$ytT)[1]
+  ## number of time steps
+  TT <- dim(Ey$ytT)[2]
+  ## get the inverse of the rotation matrix
+  H_inv <- varimax(ZZ)$rotmat
+  ## check for covars
+  if(!is.null(dd)) {
+    DD <- coef(MLEobj, type = "matrix")$D
+    ## model expectation
+    fits$ex <- ZZ %*% H_inv %*% MLEobj$states + DD %*% dd
+  } else {
+    ## model expectation
+    fits$ex <- ZZ %*% H_inv %*% MLEobj$states
+  }
+  ## Var in model fits
+  VtT <- MARSSkfss(MLEobj)$VtT
+  VV <- NULL
+  for(tt in 1:TT) {
+    RZVZ <- coef(MLEobj, type = "matrix")$R - ZZ %*% VtT[,,tt] %*% t(ZZ)
+    SS <- Ey$yxtT[,,tt] - Ey$ytT[,tt,drop = FALSE] %*% t(MLEobj$states[,tt,drop = FALSE])
+    VV <- cbind(VV, diag(RZVZ + SS %*% t(ZZ) + ZZ %*% t(SS)))
+  }
+  SE <- sqrt(VV)
+  ## upper & lower (1-alpha)% CI
+  fits$up <- qnorm(1-alpha/2)*SE + fits$ex
+  fits$lo <- qnorm(alpha/2)*SE + fits$ex
+  return(fits)
+}
 
+mod_fit <- get_DFA_fits(dfa_tempph5)
+
+## set up plotting area
+par(mfrow = c(N_ts, 1), mai = c(0.5, 0.7, 0.1, 0.1), omi = c(0, 0, 0, 0))
+
+## plot the fits
+for(i in 1:N_ts) {
+  up <- mod_fit$up[i,]
+  mn <- mod_fit$ex[i,]
+  lo <- mod_fit$lo[i,]
+  plot(w_ts, mn, type = "n", ylim = c(min(lo), max(up)),
+       cex.lab = 1.2,
+       xlab = "", ylab = ylbl[i], xaxt = "n")
+  axis(1, 12 * (0:dim(dat)[2]) + 1, yr_frst + 0:dim(dat)[2])
+  points(w_ts,dat[i,], pch = 16, col = clr[i])
+  lines(w_ts, up, col = "darkgray")
+  lines(w_ts, mn, col = "black", lwd = 2)
+  lines(w_ts, lo, col = "darkgray")
+}
+```
 4) Describe the effects of environmental or dummy variables on (possibly seasonal) patterns in the data.
 
 
@@ -100,7 +359,7 @@ Each group has the same general tasks, but you will adapt them as you work on th
 
 Please address the following in your methods:
 
-* Which plankton taxa did you choose and how did you choose them?
+We chose to use the seven zooplankton taxa that had complete observations from 1985 to 1994. Thus, Leptodora and Neomysis were excluded. We chose to examine the last ten years of the data set (from 1985 to 1994) because we were interested in the zooplankton community following all of the changes to the lake throughout the 1970's and 1980's (Ben could explain this better probably). The covariates we looked at were temperature, total phosphorus, and pH.
 
 
 

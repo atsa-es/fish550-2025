@@ -1,0 +1,34 @@
+---
+title: "Lab_3"
+editor: visual
+---
+
+# Questions
+
+1.  
+
+2.  Grazers and Edible Phytoplankton = Z matrix (t\*2)
+
+3.  Impacts of different time periods on DFA of best model
+
+## Candidate Models
+
+1.  Grazers and Edible Phytoplankton = Z matrix (t\*2)
+
+2.  Grazers and Edible Phytoplankton = Z matrix (t\*2) +c(Phosphorus)
+
+3.  Grazers and Edible Phytoplankton = Z matrix (t\*2) +c(Phosphorus)+c\*(Temp)
+
+4.  Grazers and Predators = Z matrix (t\*2)
+
+5.  Predators = Z matrix (t\*2)
+
+### Bonus:
+
+DFA Analysis of effects of adding 10 year increments. Choose a model with DFA and see how the loadings change with increments.
+
+Anna?
+
+# Data
+
+\#

@@ -132,8 +132,6 @@ autoplot(obj, plot.type="residuals")
 ```
 To estimate the population trends over time, we fit biased random walk models to each subpopulation's data. In one model, we assumed the U term is equal across all sub-populations. This model estimated U to be 0.0349, which indicates that the Oregon Coast coho ESU is generally stable and experiencing a slight increase from historical abundances. When we change this assumption of U being equal to U being unequal, the model estimated a population trend for each of the 21 sub-populations in the ESU. 
 
-*add matrix equation here*
-
 ``` {r, include=FALSE}
 ## Part 2: Estimates of decrease from historical abundance
 #Fit with biased random walk
@@ -151,7 +149,7 @@ rownames(U)<-c("U=")
 colnames(U)<-"U Estimate for total ESU"
 print(U)
 ```
-Oregon Coast ESU sub-population U estimates from biased random walk with unequal U terms *add matrix equation*
+Oregon Coast ESU sub-population U estimates from biased random walk with unequal U terms 
 ```{r, echo=FALSE}
 #Unequal U biased random walk
 #Are sub-groups experiencing same trends over time?
@@ -172,7 +170,7 @@ maxtrend<-max(cohoU)
 ### Question 2
 The Oregon Coast Coho ESU is divided into five “major population groups” (MPGs), based on biological or geographical similarities. In this question, we test whether these groups reflect real ecological patterns—specifically, whether populations within the same MPG show more similar (i.e., correlated) abundance trends than populations in different groups.
 
-We evaluate this by fitting three MARSS models with different assumptions about grouping and comparing them using AICc. The model with the lowest AICc provides the best support for its grouping hypothesis. For this first analysis, we assumed unequal drift, which aligns with the varying population trends we calculated in question 1, and hidden states allowed to correlate (Q="equalvarcov"). We also fit these models with an assumption of equal drift, and zero drift. These both could also be reasonable assumptions because the population trends amongst the sub-populations in this ESU did not vary much, with a range in U values of -0.047 to 0.087. These are also close to zero, and so we could test the assumption that there is no underlying population trend. *Add matrix form for the first three models with different Z matrices*
+We evaluate this by fitting three MARSS models with different assumptions about grouping and comparing them using AICc. The model with the lowest AICc provides the best support for its grouping hypothesis. For this first analysis, we assumed unequal drift, which aligns with the varying population trends we calculated in question 1, and hidden states allowed to correlate (Q="equalvarcov"). We also fit these models with an assumption of equal drift, and zero drift. These both could also be reasonable assumptions because the population trends amongst the sub-populations in this ESU did not vary much, with a range in U values of -0.047 to 0.087. These are also close to zero, and so we could test the assumption that there is no underlying population trend. 
 
 ```{r, echo=FALSE}
 # Helper function: converts a grouping vector into a Z matrix
@@ -226,6 +224,32 @@ AICc.tab <- tibble(
 AICc.tab
 
 ```
+
+
+
+These models allowed us to test how different grouping structures affect the model fit. We tested three grouping assumptions using the Z matrix: one group for all sites, one group per site, and the original five major population groups (MPGs) defined in the dataset.
+
+The Z matrix determines how each observed population is linked to the hidden states. Below is a simplified example of the Z matrix used for the five-group MPG model:
+
+\[
+Z = 
+\begin{bmatrix}
+1 & 0 & 0 & 0 & 0 \\
+1 & 0 & 0 & 0 & 0 \\
+0 & 1 & 0 & 0 & 0 \\
+0 & 1 & 0 & 0 & 0 \\
+0 & 0 & 1 & 0 & 0 \\
+0 & 0 & 0 & 1 & 0 \\
+\vdots & \vdots & \vdots & \vdots & \vdots \\
+0 & 0 & 0 & 0 & 1 \\
+\end{bmatrix}
+\]
+
+Each row corresponds to a population time series, and each column represents a hidden state. This setup assumes that populations within the same MPG share a common trend.
+
+Under the assumption of unequal drift (U = unequal), the model that assigned one hidden state to **each site** performed best. However, the estimated drift values were generally small and centered near zero. When we assumed equal or zero drift (U = equal or U = zero), the five-group MPG model was best supported.
+
+This suggests that while site-specific variation exists, the MPG groupings are biologically reasonable and are supported by the data.
 
 ```{r, include=FALSE}
 # Change assumption to zero U
@@ -470,7 +494,7 @@ groups4.3<-tibble(
 groups4.3
 ```
 ### Question 3
-To further explore variation in population trends over time for the Oregon Coast ESU, we evaluate the evidence of cycling in Oregon Coast coho spawner abundance. We compared three structural approaches using MARSS models: a polynomial trend, a Fourier series (cyclic component), and a null model (the best performed from above analysis). We hypothesized that coho populations might exhibit 4-year cycles due to biological factors. *add matrix equation*
+To further explore variation in population trends over time for the Oregon Coast ESU, we evaluate the evidence of cycling in Oregon Coast coho spawner abundance. We compared three structural approaches using MARSS models: a polynomial trend, a Fourier series (cyclic component), and a null model (the best performed from above analysis). We hypothesized that coho populations might exhibit 4-year cycles due to biological factors.
 
 ```{r, echo=FALSE}
 # Create time covariates
@@ -573,26 +597,30 @@ To better understand the relationships between major population groups, we visua
 In the heatmap below, stronger red indicates higher positive correlation (groups move together), while blue indicates negative correlation (groups move in opposite directions), and white indicates weak or no correlation.
 
 This visual allows us to assess whether some MPGs are tightly linked or behaving independently, even within the group structure.
-*Something happened here, I copied your code but the output does not look the same. I then tried copying the code from the Lab2-MARSS.rmd and am getting the same results, did I do something wrong while fitting the model?*
 
 ```{r}
-Q <- coef(fit.site, type="matrix")$Q
-corrmat <- diag(1/sqrt(diag(Q))) %*% Q %*% diag(1/sqrt(diag(Q)))
-corrplot(corrmat, main="Site model")
 
 Q <- coef(fit.grp, type="matrix")$Q
 corrmat <- diag(1/sqrt(diag(Q))) %*% Q %*% diag(1/sqrt(diag(Q)))
 corrplot(corrmat, main="5 Group model")
 
 ```
+### Interpretation of the Correlation Heatmap
 
-However, when unequal drift is assumed, the model that treats each sub-population as its own group performs the best. The 5-group MPG model that assumes unequal drift also performs better than the same model fit with equal or zero drift, which further supports the idea that there might be differences among the populations in this ESU resulting in different population trends. 
+We initially hypothesized that major population groups (MPGs) might behave similarly over time, potentially leading to strong positive correlations. However, the MARSS model estimated mostly weak or slightly negative correlations between MPG hidden states.
 
-To further investigate this, we changed our assumptions of the groupings and fit alternative models to the Oregon Coast ESU sub-populations. However, none of the combinations of 7, 6, 5 (different from the original groups), 4, or 3 groupings that we fit to the data performed better. The original 5 groupings considered in the Oregon Coast ESU did seem to be the most appropriate for the data. While larger groups or considering each population as its own group might produce better model results, the goal of creating population groups to explain the data is achieved with the original five. The model that treated each sub-population did not perform extremely better relative to the 5 group model, and so there is merit in that grouping assumption. 
+This is reflected in the heatmap, where most off-diagonal cells appear pale or blue. These results suggest that while the grouping structure improves overall model fit, the residual fluctuations among MPGs are largely independent.
+
+Although the model supports the 5-group MPG structure overall, it does not imply strong synchronous behavior between those groups. The lack of consistent positive correlation across groups indicates that sub-populations likely respond independently to localized environmental conditions.
+
+When we assume unequal drift, the site-level model performs slightly better, suggesting that individual sub-populations are experiencing their own distinct trends. However, the 5-group MPG model with unequal drift also performed better than the versions with equal or zero drift, reinforcing the idea that the original groupings are still biologically meaningful.
+
+To further explore grouping assumptions, we fit alternative models with 3–7 groups. None outperformed the original 5-group model. Although more granular or alternative groupings might capture slightly more variation, the original MPG structure remains the most parsimonious and supported approach.
+ 
 
 ### Cyclic dynamics
 All tested cycle periods (2–10 years) yielded higher AICc values than the null model (ΔAICc > 0), indicating no statistical evidence for cyclic dynamics in Oregon Coast coho spawner abundance (see AICc comparisons below). 
-```{r, echo=FASLSE}
+```{r, echo=FALSE}
 print(aicc.tab)
 print(cycle_results)
 ```
@@ -602,7 +630,7 @@ In this lab, we explored population structure, trends, and cyclic dynamics of th
 
 There is variation in the population trends experienced by the 21 sub-populations; on average, the sub-populations in this ESU have experienced slightly positive trends from their historical abundances in the early 1990's. Two populations- the Floras Creek and Sixed River- have experienced slight declines. 
 
-We then tested several hypotheses about the ESU population groups to explore the variation amongst these twenty-one sub-populations. We did this by changing the assumptions of population groupings in the Z-matrix of our model equations based on possible underlying population structures (all sub-populations are one homogenous group, or each is their own individual group, population groupings based on latitude, etc.). Comparing the models we fit to the data strongly supported the original five sub-groups included in the original data set. When we change the model assumption to allow unequal drift (population trends) the best-performing model was the one that considered each sub-population as its own group. When the drift was assumed to be equal or zero, the original 5-group model performed best. This is a reasonable assumption since the population trends observed for each sub-population are centered around zero and very small. And so this grouping assumption is reasonable, and is supported by the data. *add matrix form for original 5 group matrix, same as above in the methdods*
+We then tested several hypotheses about the ESU population groups to explore the variation amongst these twenty-one sub-populations. We did this by changing the assumptions of population groupings in the Z-matrix of our model equations based on possible underlying population structures (all sub-populations are one homogenous group, or each is their own individual group, population groupings based on latitude, etc.). Comparing the models we fit to the data strongly supported the original five sub-groups included in the original data set. When we change the model assumption to allow unequal drift (population trends) the best-performing model was the one that considered each sub-population as its own group. When the drift was assumed to be equal or zero, the original 5-group model performed best. This is a reasonable assumption since the population trends observed for each sub-population are centered around zero and very small. And so this grouping assumption is reasonable, and is supported by the data.
 
 An alternative hypothesis to population structure driving variation within this ESU is the hypothesis of cyclic dynamics within the time series data. To investigate this, we fit several models with varying cycle periods to the data.
 

@@ -2,6 +2,7 @@
 library(MARSS)
 library(panelr)
 library(tidyverse)
+library(zoo)
 
 ## load the data (there are 3 datasets contained here)
 data(lakeWAplankton, package = "MARSS")
@@ -112,7 +113,7 @@ plot <- ggplot(data = states_long, aes(x = Date, y = fitted, group = state)) +
   geom_ribbon(aes(ymin=lb, ymax=ub, fill=state), alpha=0.35, linetype=0) +
   theme_classic() +
   theme(legend.position="bottom") + 
-  scale_x_discrete(breaks = c(1980, 1983, 1986, 1989, 1992, 1995))
+  scale_x_continuous(breaks = c(1980, 1983, 1986, 1989, 1992, 1995))
 plot
 
 # get only zooplankton

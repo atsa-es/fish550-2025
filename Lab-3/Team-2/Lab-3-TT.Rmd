@@ -54,7 +54,7 @@ all_dat <- lakeWAplanktonTrans
 * You will want to subset the data to a time period with adequate observations for the taxa of interest. Your time window should include at lest 5 years (60 months).
 
 ```{r wrangle_data}
-## use 10 years from 1980-1989
+## use 10 years from 1985-1994
 yr_frst <- 1985
 yr_last <- 1994
 plank_dat <- all_dat[all_dat[, "Year"] >= yr_frst & 

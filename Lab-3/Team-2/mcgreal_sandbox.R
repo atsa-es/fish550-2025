@@ -2,6 +2,7 @@
 library(MARSS)
 library(panelr)
 library(tidyverse)
+library(zoo)
 
 ## load the data (there are 3 datasets contained here)
 data(lakeWAplankton, package = "MARSS")

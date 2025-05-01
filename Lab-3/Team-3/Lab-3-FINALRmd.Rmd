@@ -16,31 +16,20 @@ options(dplyr.summarise.inform = FALSE)
 
 # Data
 
-We are interesting in looking at how all of the zooplankton species respond in the most recent years (1985 - 1994) other than Neomysis and __________, which there were very few measurements of during this time period. 
+We are interesting in looking at how all of the zooplankton species respond in the most recent years (1985 - 1994) other than Neomysis and __________, which there were very few measurements of during this time period. Despite the well documented changes to zooplankton community dynamics following the treatment of sewage early in the data, our group was curious about what was happening to phytoplankton abundances in the more recent time period. 
 
 ## Load the data
 
 ```{r load_data}
 ## load MARSS for data and analyses
 library(MARSS)
-
-## load the raw data (there are 3 datasets contained here)
 data(lakeWAplankton, package = "MARSS")
-
-## we want `lakeWAplanktonTrans`, which has been transformed
-## so the 0's are replaced with NA's and the data z-scored
 all_dat <- lakeWAplanktonTrans
-
 ```
 
 ## Wrangle the data
-
 ```{r wrangle_data}
 library(dplyr)
-
-data(lakeWAplankton)
-# we want lakeWAplanktonTrans, which has been log-transformed
-# and the 0s replaced with NAs
 plankdat <- lakeWAplanktonTrans
 years <- plankdat[, "Year"] >= 1985 & plankdat[, "Year"] < 1994
 plankton <- c(
@@ -57,11 +46,9 @@ N.ts <- nrow(plankton)
 TT <- ncol(plankton)
 ```
 
+#According to lecture, the steps are to... 
 
-
-#According to lecture, the steps are first to... 
-- fit the most complex model you can envision based on all of your possible
-  covariates and random factors (states)
+- fit the most complex model you can envision based on all of your possible covariates and random factors (states)
   
 -keep the covariates fixed and choose the number of trends (states) using AICc
 
@@ -69,17 +56,68 @@ TT <- ncol(plankton)
 
 - sort out the covariates while keeping the states & R fixed
 
+#1. Fit the Dummy variable (Seasonal component) and the most complex model 
 
-
-
-1. fit the most complex model you can envision based on all the possible covariates. 
-
-```{r, echo = FALSE, results = FALSE}
+```{r, echo = FALSE, results = FALSE, include = FALSE}
 # List of covariates
 covariates <- rbind(Temp, TP, pH)
 
 # Initialize control list
 cntl.list <- list(maxit = 50000)
+
+# First, all the covariates 
+model.list <- list(m = 7, R = "diagonal and unequal") #All unique but
+allcov <- suppressMessages(suppressWarnings(
+    MARSS(plankton,
+          model = model.list,
+          z.score = TRUE, 
+          form = "dfa", 
+          control = cntl.list, 
+          covariates = covariates, 
+          method = "BFGS")))
+
+# Then, Dummy variable (seasonal)
+
+# Create the dummy variable 
+
+cos_t <- cos(2 * pi * seq(TT) / 12)
+sin_t <- sin(2 * pi * seq(TT) / 12)
+szn<- rbind(cos_t, sin_t)
+
+# Add this to the covariates
+
+model.list <- list(m = 7, R = "diagonal and unequal") #All unique but
+sznmodel <- suppressMessages(suppressWarnings(
+    MARSS(plankton,
+          model = model.list,
+          z.score = TRUE, 
+          form = "dfa", 
+          control = cntl.list, 
+          covariates = szn, 
+          method = "BFGS")))
+
+# Compare AICc
+aicc_allcov <- allcov$AICc
+aicc_szn <- sznmodel$AICc
+
+# Print AICc values
+print(cbind(
+  model = c("All Covariates", "Seasonal Dummy"),
+  AICc = round(c(aicc_allcov, aicc_szn))
+), quote = FALSE)
+
+# model          AICc
+# [1,] All Covariates 1548
+# [2,] Seasonal Dummy 1558
+# The AICc for the model with all covariates is lower than the seasonal dummy model,
+```
+
+
+# All covariates works best. As such, we will now test the optimal number of states using all covariates 
+
+```{r}
+
+# keep the seasonal dummy variable and change the number of states 
 
 # Initialize AICc storage
 aicc_values <- numeric(7)
@@ -87,7 +125,8 @@ state_numbers <- 1:7
 
 # Loop over states from 1 to 7
 for (m in state_numbers) {
-  model.list <- list(m = m, R = "diagonal and unequal")
+  model.list <- list(m = m, R = "diagonal and unequal") 
+  #All unique but uncorrelated 
   
   # Fit the model for each number of states
   model <- suppressMessages(suppressWarnings(
@@ -119,26 +158,36 @@ ordered_results <- cbind(
 print(ordered_results, quote = FALSE)
 
 # model   AICc
-# [1,] 6States 1546
-# [2,] 7States 1548
-# [3,] 5States 1552
+# [1,] 1States 1644
+# [2,] 2States 1595
+# [3,] 3States 1578
 # [4,] 4States 1566
-# [5,] 3States 1578
-# [6,] 2States 1595
-# [7,] 1States 1644
-
+# [5,] 5States 1552
+# [6,] 6States 1546 # Best!
+# [7,] 7States 1548 # Second best, close .... 
 
 ```
 
-## ok now we've decided on a six state model, and we can test different forms for R 
+## ok now we've decided on a 6 state model, and we can test different forms for R 
 
-```{r}
-
+```{r, echo = FALSE, results = FALSE, include = FALSE}
+# Set this equal to the number of best states 
 m<-6
 
 # "diagonal and equal" - Same observation error for all species
 R_equal <- MARSS(plankton,
   model = list(m =m, R = "diagonal and equal"),
+  z.score = TRUE, 
+  form = "dfa", 
+  control = cntl.list, 
+  covariates = rbind(Temp, TP, pH), 
+  method = "BFGS"
+)
+
+
+# 'diagonal and unequal' - Different observation error for each species
+R_unequal <- MARSS(plankton,
+  model = list(m = m, R = "diagonal and unequal"),
   z.score = TRUE, 
   form = "dfa", 
   control = cntl.list, 
@@ -156,31 +205,43 @@ R_unconstrained <- MARSS(plankton,
   method = "BFGS"
 )
 
+### I couldnt get this one to work... might have something to do with the unconstrained problem. 
+# Diagonal and unequal varcov 
+# Indpendent observation error and ..*figure out what this means* 
+
+# R_unconstrained <- MARSS(plankton,
+#   model = list(m = m  , R = "equalvarcov"),
+#   z.score = TRUE, 
+#   form = "dfa", 
+#   control = cntl.list, 
+#   covariates = rbind(Temp, TP, pH), 
+#   method = "BFGS"
+# )
+
 # Compare AICc values
 print(cbind(
-  model = c("diag_unequal", "diag_equal", "unconstrained"),
+  model = c("diag_equal", "diag_unequal", "unconstrained"), #"equalvarcov"),
   AICc = round(c(
-      aicc_values[1], 
-      R_equal$AICc, 
-      R_unconstrained$AICc)
-  )
+    R_equal$AICc,
+    R_unequal$AICc,
+    R_unconstrained$AICc
+    #R_unconstrained$AICc
+  ))
 ), quote = FALSE)
 
-#    model         AICc
-# [1,] diag_unequal  1644
-# [2,] diag_equal    1566
+# model         AICc
+# [1,] diag_equal    1566
+# [2,] diag_unequal  1546 #Best 
 # [3,] unconstrained 1555
-
-
 ```
 
-
+# The best R Structure is diagonal and unequal, meaning each species has a different observation error and they are not correlated 
 # Now test covariate combinations 
 
-```{r}
+```{r, echo = FALSE, results = FALSE, include = FALSE}
 # Set up your control list for all models
 cntl.list <- list(maxit = 500)
-best_R <- "unconstrained"  # Your best R structure
+best_R <- "diagonal and unequal"  # Your best R structure
 best_m <- 6  # Your best number of states
 
 # No covariates (baseline model)
@@ -270,15 +331,16 @@ models_df <- data.frame(
 models_df <- models_df[order(models_df$AICc),]
 print(models_df)
 
-# 8	All_Covars	1554.900		
-# 6	Temp_pH	1555.025		
-# 7	TP_pH	1591.661		
-# 2	Temp_only	1598.316		
-# 5	Temp_TP	1599.731		
-# 4	pH_only	1604.539		
-# 3	TP_only	1633.710		
-# 1	No_Covars	1652.562
+# 6	Temp_pH	1543.220 # BEST 		
+# 8	All_Covars	1545.882		
+# 2	Temp_only	1589.997		
+# 7	TP_pH	1590.000		
+# 5	Temp_TP	1590.515		
+# 4	pH_only	1609.318		
+# 3	TP_only	1632.277		
+# 1	No_Covars	1656.677	
 
+# ##### 
 
 ```
 
@@ -286,62 +348,6 @@ The most parsimonious model includes 6 states and all covariates
 
 # Plot trends and individual loadings 
 ```{r}
-
-# Extract the key components from your best model
-Best_Model <- All_Covars
-
-# Get the Z matrix (factor loadings)
-Z_est <- coef(Best_Model, type = "matrix")$Z
-
-# Since you have only one state in your model, make sure Z is properly formatted
-if(!is.matrix(Z_est)) {
-  Z_est <- matrix(Z_est, ncol = 1)
-}
-
-# Number of time series (species)
-N.ts <- nrow(plankton)
-spp <- rownames(plankton)
-
-# Set threshold for minimum loading to display
-minZ <- 0.05
-
-# Number of states/trends
-m <- ncol(Z_est)
-
-# Set y-axis limits
-ylims <- c(-1.1 * max(abs(Z_est)), 1.1 * max(abs(Z_est)))
-
-# Create plot
-par(mfrow = c(ceiling(m/2), min(2, m)), mar = c(3, 4, 1.5, 0.5), oma = c(0.4, 1, 1, 1))
-
-for(i in 1:m) {
-  # Plot factor loadings as vertical lines
-  plot(c(1:N.ts)[abs(Z_est[, i]) > minZ], 
-       as.vector(Z_est[abs(Z_est[, i]) > minZ, i]), 
-       type = "h", 
-       lwd = 2, 
-       xlab = "", 
-       ylab = "", 
-       xaxt = "n", 
-       ylim = ylims, 
-       xlim = c(0, N.ts+1))
-  
-  # Add species labels
-  for(j in 1:N.ts) {
-    if(Z_est[j, i] > minZ) {
-      text(j, -0.05, spp[j], srt = 90, adj = 1, cex = 0.9)
-    }
-    if(Z_est[j, i] < -minZ) {
-      text(j, 0.05, spp[j], srt = 90, adj = 0, cex = 0.9)
-    }
-  }
-  
-  # Add horizontal line at zero
-  abline(h = 0, lwd = 1, col = "gray")
-  
-  # Add title
-  mtext(paste("Factor loadings on trend", i, sep = " "), side = 3, line = .5)
-}
 
 ```
 
@@ -351,12 +357,11 @@ for(i in 1:m) {
 ```
 
 # Describe the effects of environmental or dummy variables on patterns in the data 
-
 ```{r}
 
 ```
 
-
+#########################################
 
 # General tasks
 
@@ -389,6 +394,8 @@ Please address the following in your methods:
 # Results
 
 
+
+
 # Discussion
 
 
@@ -397,6 +404,15 @@ Please address the following in your methods:
 Example: "All team members helped decide on the goal and ran the analyses for the individual regions. Team members 2 & 3 wrote most of the code for the analysis. Team member 1 worked on the plotting section of the report using and adapting code that team member 3 wrote. All team members helped edit the report and wrote the discussion together."
 
 
+### To do. 
+
+Ben : Run code and comment out the AICc. Write results. Explain why we chose the time period and taxa we did.
+
+Lilac: Write a few matrix equations
+
+Nicole: Write out plots 
+
+All: Discussion 
 
 ````````````````````````````````
 

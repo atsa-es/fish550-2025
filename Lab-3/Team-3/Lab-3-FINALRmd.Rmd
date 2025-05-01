@@ -23,6 +23,7 @@ We are interesting in looking at how all of the zooplankton species respond in t
 ```{r load_data}
 ## load MARSS for data and analyses
 library(MARSS)
+library(RColorBrewer)
 data(lakeWAplankton, package = "MARSS")
 all_dat <- lakeWAplanktonTrans
 ```
@@ -45,7 +46,30 @@ plankton <- t(plankton)
 N.ts <- nrow(plankton)
 TT <- ncol(plankton)
 ```
+## Visualizing the Data
+```{r, echo=FALSE}
+palette<-brewer.pal(6, "Blues")
+palette2<-brewer.pal(6, "Greens")
+color<-c(palette[2:6], palette2[3:6])
+## initialize a counter
+cnt <- 1
+## set up plotting space & make plots
+par(mfrow = c(N.ts, 1), mai = c(0.5, 0.7, 0.1, 0.1), omi = c(0, 0, 0, 0))
 
+spp <- rownames(plankton)
+## get length of time series
+TT <- dim(plankton)[2] 
+yr_frst<-1985
+yr_last<-1994
+for(i in 1:length(spp)){
+  plot(plankton[i,],  bty = "L", xaxt = "n", pch = 16,
+       xlab = "",
+       ylab = "Abundance index", col=color[i], type="b")
+  axis(1, 12 * (0:dim(plankton)[2]) + 1, yr_frst + 0:dim(plankton)[2])
+  title(spp[i])
+  cnt <- cnt + 1
+  }
+```
 #According to lecture, the steps are to... 
 
 - fit the most complex model you can envision based on all of your possible covariates and random factors (states)
@@ -142,7 +166,8 @@ for (m in state_numbers) {
   # Store the AICc value
   aicc_values[m] <- model$AICc
 }
-
+```
+```{r, echo=FALSE}
 # Print the results
 print(cbind(
   model = paste(state_numbers, "States", sep = ""),
@@ -156,7 +181,6 @@ ordered_results <- cbind(
 
 # Print the ordered results
 print(ordered_results, quote = FALSE)
-
 # model   AICc
 # [1,] 1States 1644
 # [2,] 2States 1595
@@ -165,10 +189,9 @@ print(ordered_results, quote = FALSE)
 # [5,] 5States 1552
 # [6,] 6States 1546 # Best!
 # [7,] 7States 1548 # Second best, close .... 
-
+## ok now we've decided on a 6 state model, and we can test different forms for R
 ```
 
-## ok now we've decided on a 6 state model, and we can test different forms for R 
 
 ```{r, echo = FALSE, results = FALSE, include = FALSE}
 # Set this equal to the number of best states 
@@ -217,7 +240,8 @@ R_unconstrained <- MARSS(plankton,
 #   covariates = rbind(Temp, TP, pH), 
 #   method = "BFGS"
 # )
-
+```
+```{r, echo=FALSE}
 # Compare AICc values
 print(cbind(
   model = c("diag_equal", "diag_unequal", "unconstrained"), #"equalvarcov"),
@@ -233,10 +257,11 @@ print(cbind(
 # [1,] diag_equal    1566
 # [2,] diag_unequal  1546 #Best 
 # [3,] unconstrained 1555
-```
-
 # The best R Structure is diagonal and unequal, meaning each species has a different observation error and they are not correlated 
 # Now test covariate combinations 
+```
+
+
 
 ```{r, echo = FALSE, results = FALSE, include = FALSE}
 # Set up your control list for all models
@@ -326,7 +351,8 @@ models_df <- data.frame(
   AICc = c(No_Covars$AICc, Temp_only$AICc, TP_only$AICc, pH_only$AICc,
            Temp_TP$AICc, Temp_pH$AICc, TP_pH$AICc, All_Covars$AICc)
 )
-
+```
+```{r, echo=FALSE}
 # Sort by AICc
 models_df <- models_df[order(models_df$AICc),]
 print(models_df)
@@ -341,19 +367,164 @@ print(models_df)
 # 1	No_Covars	1656.677	
 
 # ##### 
+```
+```{r, include=FALSE}
+#Check if fewer states has lower AICc for temp-ph model
+Temp_pH_5 <- MARSS(plankton,
+  model = list(m = 5, R = best_R),
+  z.score = TRUE, 
+  form = "dfa", 
+  control = cntl.list, 
+  covariates = rbind(Temp, pH), 
+  method = "BFGS"
+)
 
+Temp_pH_4 <- MARSS(plankton,
+  model = list(m = 4, R = best_R),
+  z.score = TRUE, 
+  form = "dfa", 
+  control = cntl.list, 
+  covariates = rbind(Temp, pH), 
+  method = "BFGS"
+)
+```
+```{r, echo=FALSE}
+models_df <- data.frame(
+  model = c("m=6", "m=5", "m=4"),
+  AICc = c(Temp_pH$AICc, Temp_pH_5$AICc, Temp_pH_4$AICc)
+)
+print(models_df)
+
+#Model #AICc
+#m=6	1543.220			
+#m=5	1545.452			
+#m=4	1558.606	
+
+### The temp_ph model with 5 states performs about the same as 6 states, and is more parsimonious so I propose we consider this the best model
 ```
 
-The most parsimonious model includes 6 states and all covariates 
+The most parsimonious model includes 5 states and temperature and pH as covariates.
 
 # Plot trends and individual loadings 
-```{r}
+```{r, echo=FALSE}
+Z_est <- coef(Temp_pH_5, type = "matrix")$Z
+mm<-5
+## get the inverse of the rotation matrix
+H_inv <- varimax(Z_est)$rotmat
+
+Z_rot = Z_est %*% H_inv   
+
+## rotate processes
+proc_rot = solve(H_inv) %*% Temp_pH_5$states
+
+ylbl <- zooplankton
+w_ts <- seq(dim(plankton)[2])
+layout(matrix(c(1,2,3,4,5), mm, 1), widths = c(2,1))
+par(mai = c(0.5, 0.5, 0.5, 0.1), omi = c(0, 0, 0, 0))
+
+## plot the processes
+for(i in 1:mm) {
+  ylm <- c(-1, 1) * max(abs(proc_rot[i,]))
+  ## set up plot area
+    plot(w_ts,proc_rot[i,], type = "n", bty = "L",
+         ylim = ylm, xlab = "", ylab = "", xaxt = "n")
+    ## draw zero-line
+    abline(h = 0, col = "gray")
+    ## plot trend line
+    lines(w_ts, proc_rot[i,], lwd = 2)
+    lines(w_ts, proc_rot[i,], lwd = 2)
+    ## add panel labels
+    mtext(paste("State",i), side = 3, line = 0.5)
+    axis(1, 12 * (0:dim(plankton)[2]) + 1, yr_frst + 0:dim(plankton)[2])
+}
+## plot the loadings
+minZ <- 0
+ylm <- c(-1, 1) * max(abs(Z_rot))
+for(i in 1:mm) {
+  plot(x = c(1:N.ts)[abs(Z_rot[,i])>minZ],
+       y = as.vector(Z_rot[abs(Z_rot[,i])>minZ,i]),
+       type = "h",
+       lwd = 2, xlab = "", ylab = "", xaxt = "n", ylim = ylm,
+       xlim = c(0.5, N.ts + 0.5), col = clr)
+  for(j in 1:N.ts) {
+    if(Z_rot[j,i] > minZ) {text(j, -0.03, ylbl[j], srt = 90, adj = 1, cex = 1.2, col = clr[j])}
+    if(Z_rot[j,i] < -minZ) {text(j, 0.03, ylbl[j], srt = 90, adj = 0, cex = 1.2, col = clr[j])}
+    abline(h = 0, lwd = 1.5, col = "gray")
+  } 
+  mtext(paste("Factor loadings on state", i), side = 3, line = 0.5)
+}
+
+## set up plotting area
+par(mai = c(0.9,0.9,0.1,0.1))
+
+## plot CCF's
+ccf(proc_rot[1,],proc_rot[2,], lag.max = 12, main="")
 
 ```
 
 # Plot Model fit and uncertainty 
+Note: When we used the function from the lab materials to calcualte model fit and uncertainty, it returned NaN values and so we could not include the upper and lower confidence intervals in the plot. Mark looked at the code during lab on 5/1, but could not figure out the cause of the error. 
 ```{r}
+#### When we use this function we cannot get the confidence intervals, but we can get the means
+# Mark says not to worry about it
+# Mention this in the write up, describe the error- we were getting NaN's when trying to calculate the high and low confidence intervals.
+ get_DFA_fits <- function(MLEobj, dd = NULL, alpha = 0.05) {
+  ## empty list for results
+  fits <- list()
+  ## extra stuff for var() calcs
+  Ey <- MARSS:::MARSShatyt(MLEobj)
+  ## model params
+    ZZ <- coef(MLEobj, type="matrix")$Z
+    ## number of obs ts
+    nn <- dim(Ey$ytT)[1]
+    ## number of time steps
+    TT <- dim(Ey$ytT)[2]
+    ## get the inverse of the rotation matrix
+    H_inv <- varimax(ZZ)$rotmat
+    ## check for covars
+    if(!is.null(dd)) {
+      DD <- coef(MLEobj, type = "matrix")$D
+      ## model expectation
+      fits$ex <- ZZ %*% H_inv %*% MLEobj$states + DD %*% dd
+    } else {
+      ## model expectation
+      fits$ex <- ZZ %*% H_inv %*% MLEobj$states
+    }
+    ## Var in model fits
+    VtT <- MARSSkfss(MLEobj)$VtT
+    VV <- NULL
+    for(tt in 1:TT) {
+      RZVZ <- coef(MLEobj, type = "matrix")$R - ZZ %*% VtT[,,tt] %*% t(ZZ)
+      SS <- Ey$yxtT[,,tt] - Ey$ytT[,tt,drop = FALSE] %*% t(MLEobj$states[,tt,drop = FALSE])
+      VV <- cbind(VV, diag(RZVZ + SS %*% t(ZZ) + ZZ %*% t(SS)))
+      }
+    SE <- sqrt(VV)
+    ## upper & lower (1-alpha)% CI
+    fits$up <- qnorm(1-alpha/2)*SE + fits$ex
+    fits$lo <- qnorm(alpha/2)*SE + fits$ex
+    return(fits)
+}
 
+## get model fits & CI's
+mod_fit <- get_DFA_fits(Temp_pH_5,dd = rbind(Temp, pH), alpha = 0.05)
+
+## set up plotting area
+par(mfrow = c(N_ts, 1), mai = c(0.5, 0.7, 0.1, 0.1), omi = c(0, 0, 0, 0))
+
+## plot the fits
+for(i in 1:N.ts) {
+  #up <- mod_fit$up[i,]
+  mn <- mod_fit$ex[i,]
+  #lo <- mod_fit$lo[i,]
+  plot(w_ts, mn, type = "n", #ylim = c(min(lo), max(up)),
+       cex.lab = 1.2,
+       xlab = "", ylab = ylbl[i], xaxt = "n")
+  axis(1, 12 * (0:dim(plankton)[2]) + 1, yr_frst + 0:dim(plankton)[2])
+  points(w_ts,plankton[i,], pch = 16, col = clr[i])
+  #lines(w_ts, up, col = "darkgray")
+  lines(w_ts, mn, col = "black", lwd = 2)
+  #lines(w_ts, lo, col = "darkgray")
+}
 ```
 
 # Describe the effects of environmental or dummy variables on patterns in the data 

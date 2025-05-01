@@ -23,6 +23,7 @@ We are interesting in looking at how all of the zooplankton species respond in t
 ```{r load_data}
 ## load MARSS for data and analyses
 library(MARSS)
+library(RColorBrewer)
 data(lakeWAplankton, package = "MARSS")
 all_dat <- lakeWAplanktonTrans
 ```

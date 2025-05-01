@@ -1,0 +1,353 @@
+---
+title: Team 1 - Lab 1
+subtitle: Dynamic Factor Analysis (DFA) - Common trends in plankton data
+author: "Name 1, Name 2, Name 3"
+date: April XX, 2025
+output: 
+  html_document:
+    code-folding: true
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include = FALSE}
+options(dplyr.summarise.inform = FALSE)
+```
+
+# Data
+
+Describe what plankton groups and covariates you used and indicate any temporal subsetting you chose.
+
+I selected the five primary producer from the phytoplankton group, which include
+* `Cryptomonas`: small brown or green algae (edible)  
+* `Diatoms`: small algae rich in silica (edible)  
+* `Greens`: general class of algae (edible)  
+* `Unicells`: very small algae (edible)  
+* `Other.algae`: generic catch-all for atypical species (edible)
+
+because there are too many missing values in `Bluegreens`.  
+
+For the covariates, I selected environmental factors including
+* `Temp`: water temperature in degrees C  
+* `TP`: total phosphorous concentration in mg m<sup>-3</sup>  
+* `pH`: pH.
+
+
+## Load the data
+
+```{r load_data}
+## load MARSS for data and analyses
+library(MARSS)
+
+## load the raw data (there are 3 datasets contained here)
+data(lakeWAplankton, package = "MARSS")
+
+## we want `lakeWAplanktonTrans`, which has been transformed
+## so the 0's are replaced with NA's and the data z-scored
+all_dat <- lakeWAplanktonTrans
+```
+
+## Wrangle the data
+
+* You can choose any taxa to include in your analyses, but make sure there are at least 5 groups. You can mix phytoplankton and zooplankton, if you'd like, but justify any choices you make. 
+
+* You will want to subset the data to a time period with adequate observations for the taxa of interest. Your time window should include at lest 5 years (60 months).
+
+```{r wrangle_data}
+## use 10 years from 1980-1989
+yr_frst <- 1985
+yr_last <- 1994
+plank_dat <- all_dat[all_dat[, "Year"] >= yr_frst & 
+                     all_dat[, "Year"] <= yr_last,]
+
+## create vector of phytoplankton group names
+phytoplankton <- c("Cryptomonas", "Diatoms", "Greens",
+                   "Unicells", "Other.algae")
+
+## get only the phytoplankton
+dat_1985 <- plank_dat[, phytoplankton]
+
+## transpose data so time goes across columns
+dat_1985 <- t(dat_1985)
+
+## get number of time series
+N_ts <- dim(dat_1985)[1]
+
+## get length of time series
+TT <- dim(dat_1985)[2]
+
+## mean of each taxon
+y_bar <- apply(dat_1985, 1, mean, na.rm = TRUE)
+
+## de-mean the data - subtract the means
+dat <- dat_1985 - y_bar
+
+## assign new column names
+spp <- rownames(dat_1985)
+rownames(dat) <- spp
+```
+
+```{r plot_data}
+## set plot colors for six groups
+clr <- c("blue", "darkgreen", "darkred", "purple", "orange")
+
+## initialize a counter
+cnt <- 1
+
+## set up plotting space for six time series
+par(mfrow = c(N_ts, 1), mai = c(0.5, 0.7, 0.1, 0.1), omi = c(0, 0, 0, 0))
+
+## loop through each phytoplankton group
+for(i in spp){
+  plot(dat[i,], bty = "L", xaxt = "n", pch = 16,
+       xlab = "",
+       ylab = "Abundance index", col = clr[cnt], type = "b")
+  axis(1, 12 * (0:dim(dat_1980)[2]) + 1, yr_frst + 0:dim(dat_1980)[2])
+  title(i)
+  cnt <- cnt + 1
+}
+
+```
+
+I plan to examine models that considered three underlying state options: one, two,
+and three states. I will also test three observation error matrices,
+diagonal and equal, diagonal and unequal, and equal variance and covariance.
+I aim to consider all combinations of three environmental covariates.
+
+```{r model_params}
+model.states <- 1:3
+names(model.states) <- c("one_state", "two_states","three_states")
+
+# testing different observation error matrices
+R.models <- c("diagonal and unequal","equalvarcov", "diagonal and equal")
+
+# covariates must be z-scored if the response variables are demeaned, and subset covariates to same time window and transpose
+cov_temp <- t(zscore(plank_dat[,"Temp", drop = FALSE]))
+cov_TP   <- t(zscore(plank_dat[,"TP", drop = FALSE]))
+cov_pH   <- t(zscore(plank_dat[,"pH", drop = FALSE]))
+cov_temp_TP   <- t(zscore(plank_dat[, c("Temp", "TP")]))
+cov_TP_pH     <- t(zscore(plank_dat[, c("TP", "pH")]))
+cov_temp_pH   <- t(zscore(plank_dat[, c("Temp", "pH")]))
+cov_all       <- t(zscore(plank_dat[, c("Temp", "TP", "pH")]))
+
+d.models <- list(
+  Temp            = cov_temp,
+  TP              = cov_TP,
+  pH              = cov_pH,
+  "Temp and TP"   = cov_temp_TP,
+  "TP and pH"     = cov_TP_pH,
+  "Temp and pH"   = cov_temp_pH,
+  "Temp,TP, and pH" = cov_all
+)
+
+# define model list 
+mod.list = list(
+  A = "zero", # this is set to zero because it is the offset/scaling
+  Q = "identity", # Q is set to the default value, the identify matrix, which can also be "diagonal and equal" or "diagonal and unequal"
+  x0 = "zero" # x0 can be also be set to "unconstrained" or "unequal" it might be useful to try these later
+)
+
+```
+
+
+
+```{r MARSS_models_fitting}
+## Create a results list to store model fits and AICs
+model_fits <- list()
+model_AICs <- data.frame(
+  ModelID = character(),
+  NumStates = integer(),
+  R_Model = character(),
+  Covariates = character(),
+  AICc = numeric(),
+  stringsAsFactors = FALSE
+)
+
+# Check and handle NAs in covariates (assuming plank_dat is already subsetted)
+# Apply linear interpolation to covariates to fill NAs
+library(zoo)
+plank_df <- as.data.frame(plank_dat)
+plank_df$Temp <- na.approx(plank_df$Temp, na.rm = FALSE)
+plank_df$TP <- na.approx(plank_df$TP, na.rm = FALSE)
+plank_df$pH <- na.approx(plank_df$pH, na.rm = FALSE)
+
+# Recreate covariates with scaling after handling NAs
+cov_temp <- t(scale(plank_df[,"Temp", drop = FALSE]))
+cov_TP   <- t(scale(plank_df[,"TP", drop = FALSE]))
+cov_pH   <- t(scale(plank_df[,"pH", drop = FALSE]))
+cov_temp_TP   <- t(scale(plank_df[, c("Temp", "TP")]))
+cov_TP_pH     <- t(scale(plank_df[, c("TP", "pH")]))
+cov_temp_pH   <- t(scale(plank_df[, c("Temp", "pH")]))
+cov_all       <- t(scale(plank_df[, c("Temp", "TP", "pH")]))
+
+# Update d.models with corrected covariates
+d.models <- list(
+  Temp            = cov_temp,
+  TP              = cov_TP,
+  pH              = cov_pH,
+  "Temp and TP"   = cov_temp_TP,
+  "TP and pH"     = cov_TP_pH,
+  "Temp and pH"   = cov_temp_pH,
+  "Temp,TP, and pH" = cov_all
+)
+
+model_id <- 1
+for(n_state in model.states){
+  for(R_mod in R.models){
+    for(d_name in names(d.models)){
+      
+      # Define the Z matrix with correct dimensions
+      if(n_state == 1){
+        Z.model <- matrix("z", N_ts, n_state)  # All species load on single trend
+      } else {
+        # Create unique loadings for each species and state
+        Z.model <- matrix(paste0("z", 1:(N_ts * n_state)), N_ts, n_state)
+      }
+      
+      # Define model list with updated Z and correct dimensions
+      mod.list <- list(
+        Z = Z.model,
+        R = R_mod,
+        A = "zero",
+        Q = "identity",
+        x0 = "zero",
+        D = "unconstrained",
+        d = d.models[[d_name]]
+      )
+      
+      # Fit the model
+      fit <- tryCatch({
+        MARSS(dat, model = mod.list, silent = TRUE, control = list(maxit = 5000))
+      }, error = function(e) NULL)
+      
+      # Store results if successful
+      if(!is.null(fit) && !is.null(fit$AICc)){
+        model_fits[[paste0("model", model_id)]] <- fit
+        model_AICs <- rbind(model_AICs, data.frame(
+          ModelID = paste0("model", model_id),
+          NumStates = n_state,
+          R_Model = R_mod,
+          Covariates = d_name,
+          AICc = fit$AICc
+        ))
+      } else {
+        cat("Model", model_id, "failed or AICc missing\n")
+      }
+      
+      model_id <- model_id + 1
+    }
+  }
+}
+
+```
+
+```{r MARSS_models_comparison}
+library(dplyr)
+model_AICs %>% 
+  arrange(AICc) %>% 
+  head(10)
+
+# Find the best model ID
+best_model_id <- model_AICs$ModelID[which.min(model_AICs$AICc)]
+
+# Get the best model object
+best_model <- model_fits[[best_model_id]]
+
+# View model summary
+summary(best_model)
+
+# View estimated parameters
+coef(best_model, type = "matrix")$Z  # Loadings
+coef(best_model, type = "matrix")$D  # Covariate effects
+```
+```{r best_model_visualization}
+# Plot the estimated trends
+library(ggplot2)
+trends <- data.frame(
+  Time = 1:TT,
+  Trend = as.vector(best_model$states),
+  SE = as.vector(best_model$states.se)
+)
+
+ggplot(trends, aes(x = Time, y = Trend)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = Trend - 1.96*SE, ymax = Trend + 1.96*SE), alpha = 0.2) +
+  labs(title = "Estimated Common Trends")
+
+# Get fitted values
+fitted_vals <- fitted(best_model)
+
+# Plot for each species
+ggplot(fitted_vals, aes(x = t, y = .fitted)) +
+  geom_line(color = "blue") +
+  geom_point(aes(y = y), color = "black", size = 1) +
+  facet_wrap(~.rownames, scales = "free_y") +
+  labs(x = "Time", y = "Abundance", title = "Model Fits vs Observations")
+
+# Get covariate coefficients
+covar_effects <- coef(best_model, type = "matrix")$D
+
+# Plot effects
+data.frame(
+  Species = rownames(dat),
+  covar_effects
+) %>% 
+  tidyr::pivot_longer(-Species, names_to = "Covariate", values_to = "Effect") %>% 
+  ggplot(aes(x = Covariate, y = Effect, color = Species)) +
+  geom_point(size = 3) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  coord_flip() +
+  theme_minimal()
+```
+
+```{r best_model_diagnostics}
+# Residuals analysis
+resids <- residuals(best_model)
+plot(resids)
+
+# Autocorrelation check
+acf(resids$model.residuals, na.action = na.pass)
+```
+
+# General tasks
+
+Each group has the same general tasks, but you will adapt them as you work on the data.
+
+1) Find the most parsimonious model among a set that examines the effects of environmental covariates and/or an indicator of seasonality, varying numbers of trends, and different forms of variance-covariance matrices for the observation errors.
+
+2) Plot trends and individual loadings for the model identified in task (1) above.
+
+3) Plot model fits and uncertainty intervals for the model identified in task (1) above.
+
+4) Describe the effects of environmental or dummy variables on (possibly seasonal) patterns in the data.
+
+
+
+
+
+
+# Methods
+
+Please address the following in your methods:
+
+* Which plankton taxa did you choose and how did you choose them?
+   
+* What time period(s) did you examine and why?
+
+* What environmental or dummy variables did you include and why?
+
+* What forms of models did you fit (ie, write them out in matrix form)?
+
+* What sort of model diagnostics did you use to examine model assumptions?
+
+
+# Results
+
+
+# Discussion
+
+
+# Team contributions
+
+Example: "All team members helped decide on the goal and ran the analyses for the individual regions. Team members 2 & 3 wrote most of the code for the analysis. Team member 1 worked on the plotting section of the report using and adapting code that team member 3 wrote. All team members helped edit the report and wrote the discussion together."
+

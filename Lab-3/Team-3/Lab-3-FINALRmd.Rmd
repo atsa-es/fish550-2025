@@ -59,11 +59,13 @@ par(mfrow = c(N.ts, 1), mai = c(0.5, 0.7, 0.1, 0.1), omi = c(0, 0, 0, 0))
 spp <- rownames(plankton)
 ## get length of time series
 TT <- dim(plankton)[2] 
+yr_frst<-1985
+yr_last<-1994
 for(i in 1:length(spp)){
   plot(plankton[i,],  bty = "L", xaxt = "n", pch = 16,
        xlab = "",
        ylab = "Abundance index", col=color[i], type="b")
-  axis(1, 12 * (0:dim(dat)[2]) + 1, yr_frst + 0:dim(dat)[2])
+  axis(1, 12 * (0:dim(plankton)[2]) + 1, yr_frst + 0:dim(plankton)[2])
   title(spp[i])
   cnt <- cnt + 1
   }
@@ -461,6 +463,7 @@ ccf(proc_rot[1,],proc_rot[2,], lag.max = 12, main="")
 ```
 
 # Plot Model fit and uncertainty 
+Note: When we used the function from the lab materials to calcualte model fit and uncertainty, it returned NaN values and so we could not include the upper and lower confidence intervals in the plot. Mark looked at the code during lab on 5/1, but could not figure out the cause of the error. 
 ```{r}
 #### When we use this function we cannot get the confidence intervals, but we can get the means
 # Mark says not to worry about it

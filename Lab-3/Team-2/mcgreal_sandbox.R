@@ -53,7 +53,7 @@ phyto.list <- list(
   Z = "identity",
   A = "zero",
   R = "diagonal and equal",
-  c = month_cov,
+  c = phyto.c,
   C= "unconstrained",
   x0 = "unequal",
   V0 = "zero",

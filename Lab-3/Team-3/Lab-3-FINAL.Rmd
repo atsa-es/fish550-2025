@@ -403,7 +403,119 @@ print(models_df)
 ### The temp_ph model with 5 states performs about the same as 6 states, and is more parsimonious so I propose we consider this the best model
 ```
 
-The most parsimonious model includes 5 states and temperature and pH as covariates.
+The most parsimonious model includes 5 states with diagonal and unequal R structure and temperature and pH as covariates.
+
+# Matrix form
+DFA model with covariates has the following structure:
+$$
+\mathbf{y}_t = \mathbf{Z} \mathbf{x}_t + \mathbf{a} + \mathbf{D} \mathbf{d}_t + \mathbf{v}_t \quad \text{where } \mathbf{v}_t \sim \text{MVN}(0, \mathbf{R})
+$$
+
+$$
+\mathbf{x}_t = \mathbf{x}_{t-1} + \mathbf{w}_t \quad \text{where } \mathbf{w}_t \sim \text{MVN}(0, \mathbf{Q})
+$$
+
+Using the constraints, the observation equation for the DFA model above becomes:
+$$
+\begin{bmatrix}
+y_1 \\
+y_2 \\
+y_3 \\
+\vdots \\
+y_{108}
+\end{bmatrix}_t
+=
+\begin{bmatrix}
+z_{1,1} & 0 & 0 & 0 & 0 \\
+z_{2,1} & z_{2,2} & 0 & 0 & 0 \\
+z_{3,1} & z_{3,2} & z_{3,3} & 0 & 0 \\
+\vdots & \vdots & \vdots & \vdots & \vdots \\
+z_{108,1} & z_{108,2} & z_{108,3} & z_{108,4} & z_{108,5}
+\end{bmatrix}
+\begin{bmatrix}
+x_1 \\
+x_2 \\
+x_3 \\
+x_4 \\
+x_5
+\end{bmatrix}_t
++
+\begin{bmatrix}
+0 \\
+0 \\
+0 \\
+\vdots \\
+0
+\end{bmatrix}
++
+\begin{bmatrix}
+d_{1,temp} & d_{1,pH} \\
+d_{2,temp} & d_{2,pH} \\
+d_{3,temp} & d_{3,pH} \\
+\vdots & \vdots \\
+d_{108,temp} & d_{108,pH}
+\end{bmatrix}
+\begin{bmatrix}
+\text{temp} \\
+\text{pH} 
+\end{bmatrix}_t
++
+\begin{bmatrix}
+v_1 \\
+v_2 \\
+v_3 \\
+\vdots \\
+v_{108}
+\end{bmatrix}_t
+$$ 
+
+where $\textbf{v}_t \sim \mathcal{N}(0,\textbf{R})$ and:
+$$
+\textbf{R} = 
+\begin{bmatrix}
+r_1 & 0 & 0 & \cdots & 0 \\
+0 & r_2 & 0 & \cdots & 0 \\
+0 & 0 & r_3 & 0 & 0 \\
+\vdots & \vdots & \vdots & \ddots & \vdots \\
+0 & 0 & 0 & 0 & r_{108}
+\end{bmatrix}
+$$
+
+and the process equation becomes:
+$$
+\begin{bmatrix}
+x_1 \\
+x_2 \\
+x_3 \\
+x_4 \\
+x_5
+\end{bmatrix}_t
+=
+\begin{bmatrix}
+1 & 0 & 0 & 0 & 0 \\
+0 & 1 & 0 & 0 & 0 \\
+0 & 0 & 1 & 0 & 0 \\
+0 & 0 & 0 & 1 & 0 \\
+0 & 0 & 0 & 0 & 1
+\end{bmatrix}
+\begin{bmatrix}
+x_1 \\
+x_2 \\
+x_3 \\
+x_4 \\
+x_5
+\end{bmatrix}_{t-1}
++
+\begin{bmatrix}
+w_1 \\
+w_2 \\
+w_3 \\
+w_4 \\
+w_5
+\end{bmatrix}_t \; \text{where} \: \textbf{w}_t \sim \mathcal{N}(0,\textbf{Q})
+$$
+
+where $\mathbf{Q}$ is set equal to the identity matrix $\mathbf{I}_m$.
 
 # Plot trends and individual loadings 
 ```{r, echo=FALSE}

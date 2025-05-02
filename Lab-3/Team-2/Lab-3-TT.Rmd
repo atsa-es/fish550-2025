@@ -102,7 +102,7 @@ for(i in spp){
   plot(dat[i,], bty = "L", xaxt = "n", pch = 16,
        xlab = "",
        ylab = "Abundance index", col = clr[cnt], type = "b")
-  axis(1, 12 * (0:dim(dat_1980)[2]) + 1, yr_frst + 0:dim(dat_1980)[2])
+  axis(1, 12 * (0:dim(dat_1985)[2]) + 1, yr_frst + 0:dim(dat_1985)[2])
   title(i)
   cnt <- cnt + 1
 }
@@ -200,8 +200,23 @@ for(n_state in model.states){
       if(n_state == 1){
         Z.model <- matrix("z", N_ts, n_state)  # All species load on single trend
       } else {
-        # Create unique loadings for each species and state
-        Z.model <- matrix(paste0("z", 1:(N_ts * n_state)), N_ts, n_state)
+        Z.model <- matrix(0, N_ts, n_state)  # Start with zeros
+        param_count <- 1
+        for(i in 1:N_ts){
+          for(j in 1:n_state){
+            if(i < N_ts && j > i){
+              # upper-triangle for first m-1 rows stays zero
+              next
+            } else {
+              if(i == j){
+                Z.model[i, j] <- paste0("z", param_count, "+")  # diagonal: positive
+              } else {
+                Z.model[i, j] <- paste0("z", param_count)
+              }
+              param_count <- param_count + 1
+            }
+          }
+        }
       }
       
       # Define model list with updated Z and correct dimensions
@@ -301,12 +316,20 @@ data.frame(
 ```
 
 ```{r best_model_diagnostics}
-# Residuals analysis
-resids <- residuals(best_model)
-plot(resids)
+# Extract residuals from the best model
+resids <- MARSSresiduals(best_model)
 
-# Autocorrelation check
-acf(resids$model.residuals, na.action = na.pass)
+# Time series plot of model residuals (observation errors)
+model_res <- resids$model.residuals
+ts.plot(t(model_res), main = "Time Series of Model Residuals", ylab = "Residuals", xlab = "Time", col = 1:nrow(model_res))
+legend("topright", legend = rownames(model_res), col = 1:nrow(model_res), lty = 1)
+
+# Autocorrelation check for each time series
+par(mfrow = c(ceiling(nrow(model_res)/2), 2), mar = c(4, 4, 2, 1))  # layout for ACF plots
+for(i in 1:nrow(model_res)){
+  acf(model_res[i, ], na.action = na.pass, main = paste("ACF -", rownames(model_res)[i]))
+}
+par(mfrow = c(1,1))  # reset layout
 ```
 
 # General tasks

@@ -189,6 +189,7 @@ print(ordered_results, quote = FALSE)
 # [5,] 5States 1552
 # [6,] 6States 1546 # Best!
 # [7,] 7States 1548 # Second best, close .... 
+
 ## ok now we've decided on a 6 state model, and we can test different forms for R
 ```
 
@@ -400,7 +401,8 @@ print(models_df)
 #m=5	1545.452			
 #m=4	1558.606	
 
-### The temp_ph model with 5 states performs about the same as 6 states, and is more parsimonious so I propose we consider this the best model
+### The temp_ph model with 5 states performs about the same as 6 states, and is more parsimonious so this is our best and most parsimonious model
+
 ```
 
 The most parsimonious model includes 5 states with diagonal and unequal R structure and temperature and pH as covariates.
@@ -576,6 +578,7 @@ ccf(proc_rot[1,],proc_rot[2,], lag.max = 12, main="")
 
 # Plot Model fit and uncertainty 
 Note: When we used the function from the lab materials to calcualte model fit and uncertainty, it returned NaN values and so we could not include the upper and lower confidence intervals in the plot. Mark looked at the code during lab on 5/1, but could not figure out the cause of the error. 
+
 ```{r}
 #### When we use this function we cannot get the confidence intervals, but we can get the means
 # Mark says not to worry about it
@@ -639,10 +642,67 @@ for(i in 1:N.ts) {
 }
 ```
 
-# Describe the effects of environmental or dummy variables on patterns in the data 
-```{r}
 
-```
+##################
+# Methods
+##################
+
+The nutrient composition and, subsequently, zooplankton and phytoplankton community changed dramatically 
+following both the rapid increase in human development on its shores and the beginning of sewage treatment by 
+Seattle metro in the early 60's. Its well documented that this change resulted in a decrease in blue-green algae and an increase in daphnia from nearly undetectable numbers to modern value. However, our group was curious to explore what continued trends have been occuring in phytoplankton communities in more recently years. To do so , we chose the most recent 10 year period ( 1984 - 1995) and selected all zooplankton types other than those with significant gaps, presumably due to low numbers. As a result, we analyzed trends in "Conochilus", "Cyclops", "Daphnia", "Diaptomus", "Epischura","Non daphnid cladocerans", and "Non colonial rotifers"
+
+We tested several combinations of models including those with different number of states (1-7), different numbers and combinations of covariates, and different structures for the observation error matrix. The matrix forms are written throughout the script 
+
+
+* What sort of model diagnostics did you use to examine model assumptions?
+
+##################
+# Results
+##################
+
+## Most parsimonious model
+
+In models which compared a seasonal dummy variable comprised of sin and consine functions with a model containing all covariates. The model with all covariates was a better fit in terms of AICc. Keep this value constant, we found that a model with 6 states had the best support, and that the best model included a "diagonal and unequal" observation variance structure, meaning each species has a different level of observation error and they were not correlated among species. Finally, pH and temperature had the ebst support as the combination of covariates with the lowest AICc. Once we determined what our best structure for observation error and covariates was, we check the AICc of the same model but with fewer states (5 as opposed to 6) and found that the model fit was the same. Therefore, this model was a more parsimonious fit. 
+
+## Loadings and interpretation 
+
+# Describe the effects of environmental or dummy variables on patterns in the data 
+
+
+##################
+# Discussion
+##################
+
+
+
+
+
+##################
+# Team contributions
+##################
+
+Example: "All team members helped decide on the goal and ran the analyses for the individual regions. All team members contributed significant code adopting code structure from team member 3. Team member 2 wrote matrix equations in the body of the script. Team member 3 produced visualizations of resulting loadings and trends. All team members helped edit and wrote the discussion and results section together. 
+
+
+
+
+
+
+
+
+
+
+
+### To do. 
+
+Ben : Run code and comment out the AICc. Write results. Explain why we chose the time period and taxa we did.
+
+Lilac: Write a few matrix equations
+
+Nicole: Write out plots 
+
+All: Discussion 
+
 
 #########################################
 
@@ -658,107 +718,4 @@ Each group has the same general tasks, but you will adapt them as you work on th
 
 4) Describe the effects of environmental or dummy variables on (possibly seasonal) patterns in the data.
 
-
-# Methods
-
-Please address the following in your methods:
-
-* Which plankton taxa did you choose and how did you choose them?
-   
-* What time period(s) did you examine and why?
-
-* What environmental or dummy variables did you include and why?
-
-* What forms of models did you fit (ie, write them out in matrix form)?
-
-* What sort of model diagnostics did you use to examine model assumptions?
-
-
-# Results
-
-
-
-
-# Discussion
-
-
-# Team contributions
-
-Example: "All team members helped decide on the goal and ran the analyses for the individual regions. Team members 2 & 3 wrote most of the code for the analysis. Team member 1 worked on the plotting section of the report using and adapting code that team member 3 wrote. All team members helped edit the report and wrote the discussion together."
-
-
-### To do. 
-
-Ben : Run code and comment out the AICc. Write results. Explain why we chose the time period and taxa we did.
-
-Lilac: Write a few matrix equations
-
-Nicole: Write out plots 
-
-All: Discussion 
-
 ````````````````````````````````
-
-
-
-
-
-
-# the complicated way of doing things (all the matrix math and such)
-```{r}
-
-
-# Record the number of rows 
-N.ts <- nrow(plankton)  # Number of observation time series (3 plankton species)
-N.states <- 3  # Let's assume 3 hidden states (one per plankton group, but could be different)
-
-# Set up the Z matrix (observation matrix)
-# For 3 plankton species, 3 states
-Z.vals <- list(
-  "z11", 0, 0,        # Conochilus only affected by state 1
-  "z21", "z22", 0,    # Cyclops affected by states 1 and 2
-  "z31", "z32", "z33" # Daphnia affected by all three states
-)
-Z <- matrix(Z.vals, nrow = nrow(plankton), ncol = 3, byrow = TRUE)
-
-Q <- B <- diag(1, 3)
-
-# R.vals <- list(
-# "r11", 0, 0, 
-# 0, "r22", 0, 
-# 0, 0, "r33"
-# )
-
-R <-"diagonal and unequal"
-x0 <- U <- A <- "zero"
-V0 <- diag(3, 3)
-
-dfa.model <- list(
-Z = Z, A = "zero", R = R, B = B, U = U,
-Q = Q, x0 = x0, V0 = V0
-)
-cntl.list <- list(maxit = 500000)
-
-ThreeStates<- MARSS(plankton , model = dfa.model, control = cntl.list)
-
-```
-
-# The much simpler way
-
-```{r}
-
-model.list <- list(m = 3, R = "diagonal and unequal")
-cntl.list <- list(maxit = 50000)
-
-ThreeStates <- MARSS(plankton,
-  model = model.list,
-  z.score = TRUE, 
-  form = "dfa", 
-  control = cntl.list, 
-  method="BFGS"
-)
-
-
-
-
-```

@@ -556,8 +556,8 @@ for(i in 1:mm) {
        lwd = 2, xlab = "", ylab = "", xaxt = "n", ylim = ylm,
        xlim = c(0.5, N.ts + 0.5), col = c("black"))
   for(j in 1:N.ts) {
-    if(Z_rot[j,i] > minZ) {text(j, -0.03, ylbl[j], srt = 90, adj = 1, cex = 1.2, col = color[j])}
-    if(Z_rot[j,i] < -minZ) {text(j, 0.03, ylbl[j], srt = 90, adj = 0, cex = 1.2, col = color[j])}
+    if(Z_rot[j,i] > minZ) {text(j, -0.03, spp[j], srt = 90, adj = 1, cex = 1.2, col = color[j])}
+    if(Z_rot[j,i] < -minZ) {text(j, 0.03, spp[j], srt = 90, adj = 0, cex = 1.2, col = color[j])}
     abline(h = 0, lwd = 1.5, col = "gray")
   } 
   mtext(paste("Factor loadings on state", i), side = 3, line = 0.5)

@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.5.57">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Lab_3</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="Lab3_550_AAS_files/libs/clipboard/clipboard.min.js"></script>
+<script src="Lab3_550_AAS_files/libs/quarto-html/quarto.js"></script>
+<script src="Lab3_550_AAS_files/libs/quarto-html/popper.min.js"></script>
+<script src="Lab3_550_AAS_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="Lab3_550_AAS_files/libs/quarto-html/anchor.min.js"></script>
+<link href="Lab3_550_AAS_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="Lab3_550_AAS_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="Lab3_550_AAS_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="Lab3_550_AAS_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="Lab3_550_AAS_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Lab_3</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Load all necessary data and packages</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(atsalibrary)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'atsalibrary' was built under R version 4.4.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: broom</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: corrplot</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>corrplot 0.95 loaded</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: dplyr</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: 'dplyr'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from 'package:stats':
+
+    filter, lag</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from 'package:base':
+
+    intersect, setdiff, setequal, union</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: forecast</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Registered S3 method overwritten by 'quantmod':
+  method            from
+  as.zoo.data.frame zoo </code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: fpp2</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>── Attaching packages ────────────────────────────────────────────── fpp2 2.5 ──</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>✔ ggplot2   3.5.1     ✔ expsmooth 2.3  
+✔ fma       2.5       </code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code></code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: ggmap</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>ℹ Google's Terms of Service: &lt;https://mapsplatform.google.com&gt;
+  Stadia Maps' Terms of Service: &lt;https://stadiamaps.com/terms-of-service/&gt;
+  OpenStreetMap's Tile Usage Policy: &lt;https://operations.osmfoundation.org/policies/tiles/&gt;
+ℹ Please cite ggmap if you use it! Use `citation("ggmap")` for details.
+Loading required package: grid
+
+Loading required package: gridExtra
+
+
+Attaching package: 'gridExtra'
+
+
+The following object is masked from 'package:dplyr':
+
+    combine
+
+
+Loading required package: Hmisc
+
+
+Attaching package: 'Hmisc'
+
+
+The following objects are masked from 'package:dplyr':
+
+    src, summarize
+
+
+The following objects are masked from 'package:base':
+
+    format.pval, units
+
+
+Loading required package: kableExtra
+
+
+Attaching package: 'kableExtra'
+
+
+The following object is masked from 'package:dplyr':
+
+    group_rows
+
+
+Loading required package: knitr
+
+Loading required package: loo
+
+This is loo version 2.8.0
+
+- Online documentation and vignettes at mc-stan.org/loo
+
+- As of v2.0.0 loo defaults to 1 core but we recommend using as many as possible. Use the 'cores' argument or set options(mc.cores = NUM_CORES) for an entire session. 
+
+
+Attaching package: 'loo'
+
+
+The following object is masked from 'package:fma':
+
+    milk
+
+
+Loading required package: magrittr
+
+
+Attaching package: 'magrittr'
+
+
+The following object is masked from 'package:ggmap':
+
+    inset
+
+
+Loading required package: MARSS</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'MARSS' was built under R version 4.4.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: quantmod
+Loading required package: xts
+Loading required package: zoo
+
+Attaching package: 'zoo'
+
+The following objects are masked from 'package:base':
+
+    as.Date, as.Date.numeric
+
+
+######################### Warning from 'xts' package ##########################
+#                                                                             #
+# The dplyr lag() function breaks how base R's lag() function is supposed to  #
+# work, which breaks lag(my_xts). Calls to lag(my_xts) that you type or       #
+# source() into this session won't work correctly.                            #
+#                                                                             #
+# Use stats::lag() to make sure you're not using dplyr::lag(), or you can add #
+# conflictRules('dplyr', exclude = 'lag') to your .Rprofile to stop           #
+# dplyr from breaking base R's lag() function.                                #
+#                                                                             #
+# Code in packages is not affected. It's protected by R's namespace mechanism #
+# Set `options(xts.warn_dplyr_breaks_lag = FALSE)` to suppress this warning.  #
+#                                                                             #
+###############################################################################
+
+Attaching package: 'xts'
+
+The following objects are masked from 'package:dplyr':
+
+    first, last
+
+Loading required package: TTR
+
+Attaching package: 'quantmod'
+
+The following object is masked from 'package:Hmisc':
+
+    Lag
+
+Loading required package: RCurl
+Loading required package: readr
+Loading required package: reshape2
+Loading required package: rmarkdown
+Loading required package: stringr
+Loading required package: tidyr
+
+Attaching package: 'tidyr'
+
+The following object is masked from 'package:reshape2':
+
+    smiths
+
+The following object is masked from 'package:RCurl':
+
+    complete
+
+The following object is masked from 'package:magrittr':
+
+    extract
+
+Loading required package: tseries
+Loading required package: urca</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(MARSS)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="data" class="level1">
+<h1>Data</h1>
+<p>This lab used a monthly data set of plankton concentrations in Lake Washington from 1962-1994. We had data on 15 different plankton groups, both grazers and primary producers. The data set also contained three covariates:</p>
+<section id="environmental-dat" class="level3">
+<h3 class="anchored" data-anchor-id="environmental-dat"><strong>Environmental dat</strong></h3>
+<ul>
+<li><p><code>Temp</code>: water temperature in degrees C</p></li>
+<li><p><code>TP</code>: total phosphorous concentration in mg m<sup>-3</sup></p></li>
+<li><p><code>pH</code>: pH.</p></li>
+</ul>
+</section>
+<section id="phytoplankton" class="level3">
+<h3 class="anchored" data-anchor-id="phytoplankton"><strong>Phytoplankton</strong></h3>
+<ul>
+<li><p><code>Cryptomonas</code>: small brown or green algae (edible)</p></li>
+<li><p><code>Diatoms</code>: small algae rich in silica (edible)</p></li>
+<li><p><code>Greens</code>: general class of algae (edible)</p></li>
+<li><p><code>Bluegreens</code>: cyanobacteria that can fix nitrogen (inedible)</p></li>
+<li><p><code>Unicells</code>: very small algae (edible)</p></li>
+<li><p><code>Other.algae</code>: generic catch-all for atypical species (edible)</p></li>
+</ul>
+</section>
+<section id="zooplankton" class="level3">
+<h3 class="anchored" data-anchor-id="zooplankton"><strong>Zooplankton</strong></h3>
+<ul>
+<li><p><code>Conochilus</code>: colonial form of rotifer (grazer)</p></li>
+<li><p><code>Cyclops</code>: cyclopoid copepod (grazer)</p></li>
+<li><p><code>Daphnia</code>: cladoceran (grazer)</p></li>
+<li><p><code>Diaptomus</code>: calanoid copepod (grazer)</p></li>
+<li><p><code>Epischura</code>: very large calanoid copepod (predator)</p></li>
+<li><p><code>Leptodora</code>: very large cladoceran (predator)</p></li>
+<li><p><code>Neomysis</code>: opossum shrimp (predator)</p></li>
+<li><p><code>Non.daphnid.cladocerans</code>: catch-all for other cladocerans (grazers)</p></li>
+<li><p><code>Non.colonial.rotifers</code>: free-floating rotifers (grazers)</p></li>
+</ul>
+</section>
+</section>
+<section id="methods" class="level1">
+<h1>Methods</h1>
+<section id="approach-to-the-lab-research-questions" class="level3">
+<h3 class="anchored" data-anchor-id="approach-to-the-lab-research-questions">Approach to the Lab &amp; Research Questions</h3>
+<p>Based on the general lab instructions and some of our own questions, we chose to structure our lab in the following way. Lab instructions were:</p>
+<ol type="1">
+<li><p>Find the most parsimonious model among a set that examines the effects of environmental covariates and/or an indicator of seasonality, varying numbers of trends, and different forms of variance-covariance matrices for the observation errors.</p></li>
+<li><p>Plot trends and individual loadings for the model identified in task (1) above.</p></li>
+<li><p>Plot model fits and uncertainty intervals for the model identified in task (1) above.</p></li>
+<li><p>Describe the effects of environmental or dummy variables on (possibly seasonal) patterns in the data.</p></li>
+</ol>
+<p>Using this, we formulated three main questions:</p>
+<ol type="1">
+<li><p>How do grazers and phytoplankton trends vary? Can the same/opposite factors be detected for both predators and prey? (we would expect opposite trends)</p></li>
+<li><p>How do different model error structures alter our results</p></li>
+<li><p>How does peeling back time periods alter model results?</p></li>
+</ol>
+</section>
+<section id="data-wrangling-data-selection" class="level3">
+<h3 class="anchored" data-anchor-id="data-wrangling-data-selection">Data Wrangling &amp; Data Selection</h3>
+<p>For our analysis, we needed our data to be cleaned up and transformed for the MARSS model - this meant replacing zeros with NAs and z-scoring the data. It also involved transposing the data such that years were a single column.</p>
+<ul>
+<li><p>Which plankton taxa did you choose and how did you choose them?</p></li>
+<li><p>What time period(s) did you examine and why?</p></li>
+<li><p>What environmental or dummy variables did you include and why?</p></li>
+</ul>
+<p>We subset our data to 10 year block from 1980-1989.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>all_dat <span class="ot">&lt;-</span> lakeWAplanktonTrans</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="do">## use only the 10 years from 1980-1989</span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>yr_frst <span class="ot">&lt;-</span> <span class="dv">1980</span></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>yr_last <span class="ot">&lt;-</span> <span class="dv">1989</span></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>plank_dat <span class="ot">&lt;-</span> all_dat[all_dat[, <span class="st">"Year"</span>] <span class="sc">&gt;=</span> yr_frst <span class="sc">&amp;</span> </span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>                       all_dat[, <span class="st">"Year"</span>] <span class="sc">&lt;=</span> yr_last,]</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a><span class="do">## create vector of phytoplankton group names</span></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>phytoplankton <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"Cryptomonas"</span>, <span class="st">"Diatoms"</span>, <span class="st">"Greens"</span>,</span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>                   <span class="st">"Unicells"</span>, <span class="st">"Other.algae"</span>)</span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a><span class="do">## get only the phytoplankton</span></span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>dat_1980 <span class="ot">&lt;-</span> plank_dat[, phytoplankton]</span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a><span class="do">## ----dfa-trans-data-------------------------------------------------------------------------------------------</span></span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a><span class="do">## transpose data so time goes across columns</span></span>
+<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a>dat_1980 <span class="ot">&lt;-</span> <span class="fu">t</span>(dat_1980)</span>
+<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a><span class="do">## get number of time series</span></span>
+<span id="cb21-18"><a href="#cb21-18" aria-hidden="true" tabindex="-1"></a>N_ts <span class="ot">&lt;-</span> <span class="fu">dim</span>(dat_1980)[<span class="dv">1</span>]</span>
+<span id="cb21-19"><a href="#cb21-19" aria-hidden="true" tabindex="-1"></a><span class="do">## get length of time series</span></span>
+<span id="cb21-20"><a href="#cb21-20" aria-hidden="true" tabindex="-1"></a>TT <span class="ot">&lt;-</span> <span class="fu">dim</span>(dat_1980)[<span class="dv">2</span>] </span>
+<span id="cb21-21"><a href="#cb21-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-22"><a href="#cb21-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-23"><a href="#cb21-23" aria-hidden="true" tabindex="-1"></a><span class="do">## ----dfa-demean-data------------------------------------------------------------------------------------------</span></span>
+<span id="cb21-24"><a href="#cb21-24" aria-hidden="true" tabindex="-1"></a>y_bar <span class="ot">&lt;-</span> <span class="fu">apply</span>(dat_1980, <span class="dv">1</span>, mean, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb21-25"><a href="#cb21-25" aria-hidden="true" tabindex="-1"></a>dat <span class="ot">&lt;-</span> dat_1980 <span class="sc">-</span> y_bar</span>
+<span id="cb21-26"><a href="#cb21-26" aria-hidden="true" tabindex="-1"></a><span class="fu">rownames</span>(dat) <span class="ot">&lt;-</span> <span class="fu">rownames</span>(dat_1980)</span>
+<span id="cb21-27"><a href="#cb21-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-28"><a href="#cb21-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-29"><a href="#cb21-29" aria-hidden="true" tabindex="-1"></a><span class="do">## ----dfa-plot-phytos, fig.height=9, fig.width=8, fig.cap='Demeaned time series of Lake Washington phytoplankton.'----</span></span>
+<span id="cb21-30"><a href="#cb21-30" aria-hidden="true" tabindex="-1"></a>spp <span class="ot">&lt;-</span> <span class="fu">rownames</span>(dat_1980)</span>
+<span id="cb21-31"><a href="#cb21-31" aria-hidden="true" tabindex="-1"></a>clr <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"brown"</span>,<span class="st">"blue"</span>,<span class="st">"darkgreen"</span>,<span class="st">"darkred"</span>,<span class="st">"purple"</span>)</span>
+<span id="cb21-32"><a href="#cb21-32" aria-hidden="true" tabindex="-1"></a>cnt <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb21-33"><a href="#cb21-33" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow =</span> <span class="fu">c</span>(N_ts,<span class="dv">1</span>), <span class="at">mai =</span> <span class="fu">c</span>(<span class="fl">0.5</span>,<span class="fl">0.7</span>,<span class="fl">0.1</span>,<span class="fl">0.1</span>), <span class="at">omi =</span> <span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">0</span>))</span>
+<span id="cb21-34"><a href="#cb21-34" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(i <span class="cf">in</span> spp){</span>
+<span id="cb21-35"><a href="#cb21-35" aria-hidden="true" tabindex="-1"></a>  <span class="fu">plot</span>(dat[i,],<span class="at">xlab =</span> <span class="st">""</span>,<span class="at">ylab=</span><span class="st">"Abundance index"</span>, <span class="at">bty =</span> <span class="st">"L"</span>, <span class="at">xaxt =</span> <span class="st">"n"</span>, <span class="at">pch=</span><span class="dv">16</span>, <span class="at">col=</span>clr[cnt], <span class="at">type=</span><span class="st">"b"</span>)</span>
+<span id="cb21-36"><a href="#cb21-36" aria-hidden="true" tabindex="-1"></a>  <span class="fu">axis</span>(<span class="dv">1</span>,<span class="dv">12</span><span class="sc">*</span>(<span class="dv">0</span><span class="sc">:</span><span class="fu">dim</span>(dat_1980)[<span class="dv">2</span>])<span class="sc">+</span><span class="dv">1</span>,yr_frst<span class="sc">+</span><span class="dv">0</span><span class="sc">:</span><span class="fu">dim</span>(dat_1980)[<span class="dv">2</span>])</span>
+<span id="cb21-37"><a href="#cb21-37" aria-hidden="true" tabindex="-1"></a>  <span class="fu">title</span>(i)</span>
+<span id="cb21-38"><a href="#cb21-38" aria-hidden="true" tabindex="-1"></a>  cnt <span class="ot">&lt;-</span> cnt <span class="sc">+</span> <span class="dv">1</span></span>
+<span id="cb21-39"><a href="#cb21-39" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Lab3_550_AAS_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="section" class="level3">
+<h3 class="anchored" data-anchor-id="section"></h3>
+</section>
+<section id="model-forms" class="level3">
+<h3 class="anchored" data-anchor-id="model-forms">Model Forms</h3>
+<section id="initial-model-test-case" class="level4">
+<h4 class="anchored" data-anchor-id="initial-model-test-case">Initial Model (Test Case)</h4>
+<p>Our base state-space model took on the following structure</p>
+<p><strong>Observation Equation:</strong></p>
+<p><span class="math inline">\(\mathbf{y}_t = \mathbf{Z} \mathbf{x}_t + \mathbf{d} + \mathbf{v}_t\)</span></p>
+<p>where: - <span class="math inline">\(\mathbf{y}_t\)</span> is the <span class="math inline">\((N_t \times 1)\)</span> vector of observations at time <span class="math inline">\(t\)</span>. - <span class="math inline">\(\mathbf{Z}\)</span> is the <span class="math inline">\((N_t \times mm)\)</span> loadings matrix. - <span class="math inline">\(\mathbf{x}_t\)</span> is the <span class="math inline">\((mm \times 1)\)</span> vector of hidden states at time <span class="math inline">\(t\)</span>. - <span class="math inline">\(\mathbf{d}\)</span> is the <span class="math inline">\((N_t \times 1)\)</span> vector of observation offsets (set to zero in the code). - <span class="math inline">\(\mathbf{v}_t\)</span> is the <span class="math inline">\((N_t \times 1)\)</span> vector of observation errors, with a variance-covariance matrix <span class="math inline">\(\mathbf{R}\)</span>.</p>
+<p><strong>State/Process Equation:</strong></p>
+<p><span class="math inline">\(\mathbf{x}_t = \mathbf{B} \mathbf{x}_{t-1} + \mathbf{c} + \mathbf{w}_t\)</span></p>
+<p>where: - <span class="math inline">\(\mathbf{x}_t\)</span> is the <span class="math inline">\((mm \times 1)\)</span> vector of hidden states at time <span class="math inline">\(t\)</span>. - <span class="math inline">\(\mathbf{B}\)</span> is the <span class="math inline">\((mm \times mm)\)</span> state transition matrix (here, an identity matrix). - <span class="math inline">\(\mathbf{c}\)</span> is the <span class="math inline">\((mm \times 1)\)</span> vector of state offsets (set to zero). - <span class="math inline">\(\mathbf{w}_t\)</span> is the <span class="math inline">\((mm \times 1)\)</span> vector of state process errors, with a variance-covariance matrix <span class="math inline">\(\mathbf{Q}\)</span>.</p>
+<p><strong>Matrix Definitions based on the R code:</strong></p>
+<ul>
+<li><p><span class="math inline">\(\mathbf{Z} = \begin{bmatrix} z11 &amp; 0 &amp; 0 \\ z21 &amp; z22 &amp; 0 \\ z31 &amp; z32 &amp; z33 \\ z41 &amp; z42 &amp; z43 \\ z51 &amp; z52 &amp; z53 \end{bmatrix}\)</span> (where <span class="math inline">\(N_t = 5\)</span> and <span class="math inline">\(mm = 3\)</span>)</p></li>
+<li><p><span class="math inline">\(\mathbf{d} = \begin{bmatrix} 0 \\ 0 \\ 0 \\ 0 \\ 0 \end{bmatrix}\)</span> (a <span class="math inline">\((5 \times 1)\)</span> zero vector)</p></li>
+<li><p><span class="math inline">\(\mathbf{R}\)</span> is a <span class="math inline">\((5 \times 5)\)</span> diagonal matrix with unequal variances for the observation errors.</p></li>
+<li><p><span class="math inline">\(mm = 3\)</span> (number of processes/hidden states)</p></li>
+<li><p><span class="math inline">\(\mathbf{B} = \begin{bmatrix} 1 &amp; 0 &amp; 0 \\ 0 &amp; 1 &amp; 0 \\ 0 &amp; 0 &amp; 1 \end{bmatrix}\)</span> (a <span class="math inline">\((3 \times 3)\)</span> identity matrix)</p></li>
+<li><p><span class="math inline">\(\mathbf{c} = \begin{bmatrix} 0 \\ 0 \\ 0 \end{bmatrix}\)</span> (a <span class="math inline">\((3 \times 1)\)</span> zero vector)</p></li>
+<li><p><span class="math inline">\(\mathbf{Q}\)</span> is a <span class="math inline">\((3 \times 3)\)</span> identity matrix.</p></li>
+</ul>
+<p>In practice, this model looks like:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="do">## ----dfa-dfa-obs-eqn------------------------------------------------------------------------------------------</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="do">## 'ZZ' is loadings matrix</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>Z_vals <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="st">"z11"</span>,  <span class="dv">0</span>  ,  <span class="dv">0</span>  ,</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>               <span class="st">"z21"</span>,<span class="st">"z22"</span>,  <span class="dv">0</span>  ,</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>               <span class="st">"z31"</span>,<span class="st">"z32"</span>,<span class="st">"z33"</span>,</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>               <span class="st">"z41"</span>,<span class="st">"z42"</span>,<span class="st">"z43"</span>,</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>               <span class="st">"z51"</span>,<span class="st">"z52"</span>,<span class="st">"z53"</span>)</span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>ZZ <span class="ot">&lt;-</span> <span class="fu">matrix</span>(Z_vals, <span class="at">nrow =</span> N_ts, <span class="at">ncol =</span> <span class="dv">3</span>, <span class="at">byrow =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>ZZ</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>     [,1]  [,2]  [,3] 
+[1,] "z11" 0     0    
+[2,] "z21" "z22" 0    
+[3,] "z31" "z32" "z33"
+[4,] "z41" "z42" "z43"
+[5,] "z51" "z52" "z53"</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="do">## 'aa' is the offset/scaling</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>aa <span class="ot">&lt;-</span> <span class="st">"zero"</span></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a><span class="do">## 'DD' and 'd' are for covariates</span></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>DD <span class="ot">&lt;-</span> <span class="st">"zero"</span>  <span class="co"># matrix(0,mm,1)</span></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>dd <span class="ot">&lt;-</span> <span class="st">"zero"</span>  <span class="co"># matrix(0,1,wk_last)</span></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a><span class="do">## 'RR' is var-cov matrix for obs errors</span></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>RR <span class="ot">&lt;-</span> <span class="st">"diagonal and unequal"</span></span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a><span class="do">## ----dfa-dfa-proc-eqn-----------------------------------------------------------------------------------------</span></span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a><span class="do">## number of processes</span></span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a>mm <span class="ot">&lt;-</span> <span class="dv">3</span></span>
+<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a><span class="do">## 'BB' is identity: 1's along the diagonal &amp; 0's elsewhere</span></span>
+<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a>BB <span class="ot">&lt;-</span> <span class="st">"identity"</span>  <span class="co"># diag(mm)</span></span>
+<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a><span class="do">## 'uu' is a column vector of 0's</span></span>
+<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a>uu <span class="ot">&lt;-</span> <span class="st">"zero"</span>  <span class="co"># matrix(0, mm, 1)</span></span>
+<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a><span class="do">## 'CC' and 'cc' are for covariates</span></span>
+<span id="cb24-18"><a href="#cb24-18" aria-hidden="true" tabindex="-1"></a>CC <span class="ot">&lt;-</span> <span class="st">"zero"</span>  <span class="co"># matrix(0, mm, 1)</span></span>
+<span id="cb24-19"><a href="#cb24-19" aria-hidden="true" tabindex="-1"></a>cc <span class="ot">&lt;-</span> <span class="st">"zero"</span>  <span class="co"># matrix(0, 1, wk_last)</span></span>
+<span id="cb24-20"><a href="#cb24-20" aria-hidden="true" tabindex="-1"></a><span class="do">## 'QQ' is identity</span></span>
+<span id="cb24-21"><a href="#cb24-21" aria-hidden="true" tabindex="-1"></a>QQ <span class="ot">&lt;-</span> <span class="st">"identity"</span>  <span class="co"># diag(mm)</span></span>
+<span id="cb24-22"><a href="#cb24-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-23"><a href="#cb24-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-24"><a href="#cb24-24" aria-hidden="true" tabindex="-1"></a><span class="do">## ----dfa-create-model-lists-----------------------------------------------------------------------------------</span></span>
+<span id="cb24-25"><a href="#cb24-25" aria-hidden="true" tabindex="-1"></a><span class="do">## list with specifications for model vectors/matrices</span></span>
+<span id="cb24-26"><a href="#cb24-26" aria-hidden="true" tabindex="-1"></a>mod_list <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">Z =</span> ZZ, <span class="at">A =</span> aa, <span class="at">D =</span> DD, <span class="at">d =</span> dd, <span class="at">R =</span> RR,</span>
+<span id="cb24-27"><a href="#cb24-27" aria-hidden="true" tabindex="-1"></a>                 <span class="at">B =</span> BB, <span class="at">U =</span> uu, <span class="at">C =</span> CC, <span class="at">c =</span> cc, <span class="at">Q =</span> QQ)</span>
+<span id="cb24-28"><a href="#cb24-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-29"><a href="#cb24-29" aria-hidden="true" tabindex="-1"></a><span class="do">## list with model inits</span></span>
+<span id="cb24-30"><a href="#cb24-30" aria-hidden="true" tabindex="-1"></a>init_list <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">x0 =</span> <span class="fu">matrix</span>(<span class="fu">rep</span>(<span class="dv">0</span>, mm), mm, <span class="dv">1</span>))</span>
+<span id="cb24-31"><a href="#cb24-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-32"><a href="#cb24-32" aria-hidden="true" tabindex="-1"></a><span class="do">## list with model control parameters</span></span>
+<span id="cb24-33"><a href="#cb24-33" aria-hidden="true" tabindex="-1"></a>con_list <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">maxit =</span> <span class="dv">3000</span>, <span class="at">allow.degen =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb24-34"><a href="#cb24-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-35"><a href="#cb24-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-36"><a href="#cb24-36" aria-hidden="true" tabindex="-1"></a><span class="do">## ----dfa-fit-dfa-1, cache=TRUE--------------------------------------------------------------------------------</span></span>
+<span id="cb24-37"><a href="#cb24-37" aria-hidden="true" tabindex="-1"></a><span class="do">## fit MARSS</span></span>
+<span id="cb24-38"><a href="#cb24-38" aria-hidden="true" tabindex="-1"></a>dfa_1 <span class="ot">&lt;-</span> <span class="fu">MARSS</span>(<span class="at">y =</span> dat, <span class="at">model =</span> mod_list, <span class="at">inits =</span> init_list, <span class="at">control =</span> con_list)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Success! abstol and log-log tests passed at 246 iterations.
+Alert: conv.test.slope.tol is 0.5.
+Test with smaller values (&lt;0.1) to ensure convergence.
+
+MARSS fit is
+Estimation method: kem 
+Convergence test: conv.test.slope.tol = 0.5, abstol = 0.001
+Estimation converged in 246 iterations. 
+Log-likelihood: -692.9795 
+AIC: 1425.959   AICc: 1427.42   
+ 
+                            Estimate
+Z.z11                         0.2738
+Z.z21                         0.4487
+Z.z31                         0.3170
+Z.z41                         0.4107
+Z.z51                         0.2553
+Z.z22                         0.3608
+Z.z32                        -0.3690
+Z.z42                        -0.0990
+Z.z52                        -0.3793
+Z.z33                         0.0185
+Z.z43                        -0.1404
+Z.z53                         0.1317
+R.(Cryptomonas,Cryptomonas)   0.1638
+R.(Diatoms,Diatoms)           0.2913
+R.(Greens,Greens)             0.8621
+R.(Unicells,Unicells)         0.3080
+R.(Other.algae,Other.algae)   0.5000
+x0.X1                         0.2218
+x0.X2                         1.8155
+x0.X3                        -4.8097
+Initial states (x0) defined at t=0
+
+Standard errors have not been calculated. 
+Use MARSSparamCIs to compute CIs and bias estimates.</code></pre>
+</div>
+</div>
+</section>
+<section id="model-diagnostics" class="level4">
+<h4 class="anchored" data-anchor-id="model-diagnostics">Model Diagnostics</h4>
+</section>
+<section id="alternate-model-forms" class="level4">
+<h4 class="anchored" data-anchor-id="alternate-model-forms">Alternate Model Forms</h4>
+<p>Following this initial fit, we experiment with the following candidate models</p>
+<p>Grazers and Edible Phytoplankton</p>
+<ul>
+<li><p><span class="math inline">\(\mathbf{Z} = \begin{bmatrix} z_{11} &amp; 0 &amp; 0 \\ z_{21} &amp; z_{22} &amp; 0 \\ z_{31} &amp; z_{32} &amp; z_{33} \\ z_{41} &amp; z_{42} &amp; z_{43} \\ z_{51} &amp; z_{52} &amp; z_{53} \end{bmatrix}\)</span></p></li>
+<li><p>d=[0&nbsp;0​]</p></li>
+</ul>
+<p>Grazers and Edible Phytoplankton = Z matrix (t*2) +c(Phosphorus)</p>
+<p>Grazers and Edible Phytoplankton = Z matrix (t*2) +c(Phosphorus)+c*(Temp)</p>
+<p>Grazers and Predators = Z matrix (t*2)</p>
+<p>Predators = Z matrix (t*2)</p>
+<p>## Z Matrices and Covariate Components in LaTeX</p>
+<p>Here’s how the $\mathbf{Z}$ matrices and covariate components (within the $\mathbf{d}$ vector) would be represented using LaTeX notation for each scenario. We assume $mm = 3$ hidden states.</p>
+<p>**Scenario 1: Grazers and Edible Phytoplankton = Z matrix (t*2)**</p>
+<p>* $\mathbf{Z} = \begin{bmatrix} z_{11} &amp; 0 &amp; 0 \\ z_{21} &amp; z_{22} &amp; 0 \\ z_{31} &amp; z_{32} &amp; z_{33} \\ z_{41} &amp; z_{42} &amp; z_{43} \\ z_{51} &amp; z_{52} &amp; z_{53} \end{bmatrix}$ (where $N_t = 5$ and $mm = 3$)</p>
+<p>* $\mathbf{d} = \begin{bmatrix} 0 \\ 0 \end{bmatrix}$</p>
+<p>**Scenario 2: Grazers and Edible Phytoplankton = Z matrix (t*2) + c(Phosphorus)**</p>
+<p>* $\mathbf{Z} = \begin{bmatrix} z_{11} &amp; z_{12} &amp; z_{13} \\ z_{21} &amp; z_{22} &amp; z_{23} \end{bmatrix}$</p>
+<p>* $\mathbf{d} = \begin{bmatrix} d_{1,Phosphorus} \\ d_{2,Phosphorus} \end{bmatrix} \text{Phosphorus}_t$</p>
+<p>**Scenario 3: Grazers and Edible Phytoplankton = Z matrix (t*2) + c(Phosphorus) + c(Temp)**</p>
+<p>* $\mathbf{Z} = \begin{bmatrix} z_{11} &amp; z_{12} &amp; z_{13} \\ z_{21} &amp; z_{22} &amp; z_{23} \end{bmatrix}$</p>
+<p>* $\mathbf{d} = \begin{bmatrix} d_{1,Phosphorus} \\ d_{2,Phosphorus} \end{bmatrix} \text{Phosphorus}t + \begin{bmatrix} d{1,Temp} \\ d_{2,Temp} \end{bmatrix} \text{Temp}_t$</p>
+<p>**Scenario 4: Grazers and Predators = Z matrix (t*2)**</p>
+<p>* $\mathbf{Z} = \begin{bmatrix} z_{11} &amp; z_{12} &amp; z_{13} \\ z_{21} &amp; z_{22} &amp; z_{23} \end{bmatrix}$</p>
+<p>* $\mathbf{d} = \begin{bmatrix} 0 \\ 0 \end{bmatrix}$</p>
+<p>**Scenario 5: Predators = Z matrix (t*2)**</p>
+<p>$ \mathbf{Z} = \begin{bmatrix} z_{11} &amp; z_{12} &amp; z_{13} \end{bmatrix} $</p>
+<p>* $\mathbf{d} = [0]$</p>
+<p>As well as the following</p>
+</section>
+</section>
+<section id="section-1" class="level3">
+<h3 class="anchored" data-anchor-id="section-1"></h3>
+</section>
+</section>
+<section id="results" class="level1">
+<h1>Results</h1>
+<p>$ \mathbf{Z} = \begin{bmatrix} z_{1,1} &amp; z_{1,2} &amp; \cdots &amp; z_{1,mm} \\ z_{2,1} &amp; z_{2,2} &amp; \cdots &amp; z_{2,mm} \end{bmatrix} $</p>
+</section>
+<section id="discussion" class="level1">
+<h1>Discussion</h1>
+</section>
+<section id="questions" class="level1">
+<h1>Questions</h1>
+<p>Each group was given the same 4 general tasks:</p>
+<p>Each group has the same general tasks, but you will adapt them as you work on the data.</p>
+<ol type="1">
+<li><p>Find the most parsimonious model among a set that examines the effects of environmental covariates and/or an indicator of seasonality, varying numbers of trends, and different forms of variance-covariance matrices for the observation errors.</p></li>
+<li><p>Plot trends and individual loadings for the model identified in task (1) above.</p></li>
+<li><p>Plot model fits and uncertainty intervals for the model identified in task (1) above.</p></li>
+<li><p>Describe the effects of environmental or dummy variables on (possibly seasonal) patterns in the data.</p></li>
+</ol>
+<p>For our group, we adapted</p>
+<ol type="1">
+<li><p>Grazers and Edible Phytoplankton = Z matrix (t*2)</p></li>
+<li><p>Impacts of different time periods on DFA of best model</p></li>
+<li><p>Messing with the R matrix.</p></li>
+</ol>
+<section id="q1---candidate-models" class="level2">
+<h2 class="anchored" data-anchor-id="q1---candidate-models">Q1 - Candidate Models</h2>
+</section>
+<section id="q2---dfa-and-10-year-increments" class="level2">
+<h2 class="anchored" data-anchor-id="q2---dfa-and-10-year-increments">Q2 - DFA and 10 year increments</h2>
+<p>DFA Analysis of effects of adding 10 year increments. Choose a model with DFA and see how the loadings change with increments.</p>
+</section>
+<section id="q3---error-structure-of-one-candidate-model-3" class="level2">
+<h2 class="anchored" data-anchor-id="q3---error-structure-of-one-candidate-model-3">Q3 - Error Structure of one Candidate model (#3?)</h2>
+</section>
+</section>
+<section id="section-2" class="level1">
+<h1></h1>
+</section>
+<section id="section-3" class="level1">
+<h1></h1>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

@@ -386,80 +386,80 @@ run_dfa <- function(data, model, remove_years = NULL) {
 Now we can experiment and see what the effects of different windows and window sizes are on the results:
 
 ```{r}
-
-results <- list()
-
-years_to_remove <- list(NULL, 1:10, 11:20, 21:30,1:20,1:30) # Different year removal options
-
-#Make the dataset for this
-window_dat <- all_dat[, phytoplankton]
-
-#Set up the model
-
-## transpose data so time goes across columns
-window_dat  <- t(window_dat )
-## get number of time series
-window_ts <- dim(window_dat )[1]
-## get length of time series
-window_TT <- dim(window_dat)[2] 
-
-#De-mean data
-y_bar <- apply(window_dat , 1, mean, na.rm = TRUE)
-window_dat_done <- window_dat  - y_bar
-rownames(window_dat_done) <- rownames(window_dat )
-
-
-#Make the model list
-
-#OBSERVE
-
-## 'aa' is the offset/scaling
-aa <- "zero"
-
-## 'DD' and 'd' are for covariates
-DD <- "zero"  # matrix(0,mm,1)
-dd <- "zero"  # matrix(0,1,wk_last)
-
-## 'RR' is var-cov matrix for obs errors
-RR <- "diagonal and unequal"
-
-#PROCESS
-
-## number of processes
-mm <- 3
-
-## 'BB' is identity: 1's along the diagonal & 0's elsewhere
-
-BB <- "identity"  # diag(mm)
-
-## 'uu' is a column vector of 0's
-uu <- "zero"  # matrix(0, mm, 1)
-
-## 'CC' and 'cc' are for covariates
-CC <- "zero"  # matrix(0, mm, 1)
-cc <- "zero"  # matrix(0, 1, wk_last)
-
-## 'QQ' is identity
-QQ <- "identity"  # diag(mm)
-
-#Model
-
-## list with specifications for model vectors/matrices
-window_list <- list(Z = ZZ, A = aa, D = DD, d = dd, R = RR,
-                 B = BB, U = uu, C = CC, c = cc, Q = QQ)
-## list with model inits
-init_list <- list(x0 = matrix(rep(0, mm), mm, 1))
-## list with model control parameters
-con_list <- list(maxit = 3000, allow.degen = TRUE)
-
-# Loop through and run DFA for window
-count <- 1 #make a counter
-
-
-for (i in 1:length(years_to_remove)) {
-    results[[count]] <- run_dfa(dat_window, window_list, years_to_remove[[i]])
-    count <- count + 1
-  }
+# 
+# results <- list()
+# 
+# years_to_remove <- list(NULL, 1:10, 11:20, 21:30,1:20,1:30) # Different year removal options
+# 
+# #Make the dataset for this
+# window_dat <- all_dat[, phytoplankton]
+# 
+# #Set up the model
+# 
+# ## transpose data so time goes across columns
+# window_dat  <- t(window_dat )
+# ## get number of time series
+# window_ts <- dim(window_dat )[1]
+# ## get length of time series
+# window_TT <- dim(window_dat)[2] 
+# 
+# #De-mean data
+# y_bar <- apply(window_dat , 1, mean, na.rm = TRUE)
+# window_dat_done <- window_dat  - y_bar
+# rownames(window_dat_done) <- rownames(window_dat )
+# 
+# 
+# #Make the model list
+# 
+# #OBSERVE
+# 
+# ## 'aa' is the offset/scaling
+# aa <- "zero"
+# 
+# ## 'DD' and 'd' are for covariates
+# DD <- "zero"  # matrix(0,mm,1)
+# dd <- "zero"  # matrix(0,1,wk_last)
+# 
+# ## 'RR' is var-cov matrix for obs errors
+# RR <- "diagonal and unequal"
+# 
+# #PROCESS
+# 
+# ## number of processes
+# mm <- 3
+# 
+# ## 'BB' is identity: 1's along the diagonal & 0's elsewhere
+# 
+# BB <- "identity"  # diag(mm)
+# 
+# ## 'uu' is a column vector of 0's
+# uu <- "zero"  # matrix(0, mm, 1)
+# 
+# ## 'CC' and 'cc' are for covariates
+# CC <- "zero"  # matrix(0, mm, 1)
+# cc <- "zero"  # matrix(0, 1, wk_last)
+# 
+# ## 'QQ' is identity
+# QQ <- "identity"  # diag(mm)
+# 
+# #Model
+# 
+# ## list with specifications for model vectors/matrices
+# window_list <- list(Z = ZZ, A = aa, D = DD, d = dd, R = RR,
+#                  B = BB, U = uu, C = CC, c = cc, Q = QQ)
+# ## list with model inits
+# init_list <- list(x0 = matrix(rep(0, mm), mm, 1))
+# ## list with model control parameters
+# con_list <- list(maxit = 3000, allow.degen = TRUE)
+# 
+# # Loop through and run DFA for window
+# count <- 1 #make a counter
+# 
+# 
+# for (i in 1:length(years_to_remove)) {
+#     results[[count]] <- run_dfa(dat_window, window_list, years_to_remove[[i]])
+#     count <- count + 1
+#   }
 
 
 

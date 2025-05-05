@@ -1,0 +1,506 @@
+---
+title: Team 1  - Lab 1
+subtitle: Forecasting with ARIMA and ETS models
+author: "Anna Sulc, Brian McGreal, "
+date: April 21, 2025
+output: 
+  html_document:
+    code-folding: true
+    toc: true
+    toc_float: true
+---
+
+```{r}
+library(atsalibrary)
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+library(forecast)
+```
+
+# Data
+
+This lab used data with salmon landings in 6 different states for each month for each year from . States were Alaska, California, Oregon, Michigan, Pennsylvania, Washington. Due to sparse data, Pennsylvania and Michigan were excluded from the analysis.
+
+Times series were created at a yearly resolution and monthly resolution depending on the research question being asked.
+
+# Data Exploration and Plotting
+
+## Yearly Data
+
+```{r}
+
+chinook.year.filtered <- chinook.year %>%
+  filter(!State %in% c("Michigan", "Pennsylvania"))
+
+ggplot(chinook.year.filtered, aes(x = Year, y = metric.tons)) +
+  geom_line() +
+  facet_wrap(~ State, ncol = 2, scales = "free_y") +
+  labs(
+    title = "Chinook Landings by State",
+    x = "Year",
+    y = "Log(Metric Tons)"
+  ) +
+  theme_minimal()
+
+
+# Create the time series 
+dat_CA <- ts(chinook.year.filtered$log.metric.tons[chinook.year.filtered$State == "California"], start = chinook.year.filtered$Year[chinook.year.filtered$State == "California"][1], )
+dat_WA <-ts(chinook.year.filtered$log.metric.tons[chinook.year.filtered$State == "Washington"], start = chinook.year.filtered$Year[chinook.year.filtered$State == "Washington"][1], )
+dat_AK <-ts(chinook.year.filtered$log.metric.tons[chinook.year.filtered$State == "Alaska"], start = chinook.year.filtered$Year[chinook.year.filtered$State == "Alaska"][1], )
+dat_OR <- ts(chinook.year.filtered$log.metric.tons[chinook.year.filtered$State == "Oregon"], start = chinook.year.filtered$Year[chinook.year.filtered$State == "Oregon"][1], )
+
+
+```
+
+Check the type of relationship we are dealing with to formulate research questions. We checked the ACF and PACF using a custom function.
+
+```{r}
+check_acf <- function(ts_list, area_names) {
+  # ts_list: a list of 4 time series (e.g., list(ts_CA, ts_OR, ts_WA, ts_AK))
+  # area_names: character vector of 4 names (e.g., c("California", "Oregon", "Washington", "Alaska"))
+  
+  if (length(ts_list) != 4 | length(area_names) != 4) {
+    stop("Provide exactly 4 time series and 4 area names.")
+  }
+  
+  par(mfrow = c(4, 2), mar = c(3, 3, 3, 1))  # 4 rows, 2 columns layout
+  
+  for (i in 1:4) {
+    ts <- na.interp(ts_list[[i]])
+    
+    # ACF plot
+    acf(ts, main = paste("ACF -", area_names[i]))
+    
+    # PACF plot
+    pacf(ts, main = paste("PACF -", area_names[i]))
+  }
+  
+  # Reset layout to default
+  par(mfrow = c(1,1))
+}
+
+
+list_area <- list(dat_AK,dat_CA,dat_OR,dat_WA)
+area_names <- c("California", "Oregon", "Washington", "Alaska")
+
+check_acf(ts_list = list_area,area_names)
+```
+
+We also checked the differencing necessary for each series.
+
+```{r}
+
+ndiffs(dat_CA, test='adf')
+ndiffs(dat_AK, test='adf') #diff 1
+ndiffs(dat_WA, test='adf') #diff 1
+ndiffs(dat_OR, test='adf')
+```
+
+## Monthly Data
+
+```{r}
+ch_month <- chinook.month %>%
+  filter(!State %in% c("Michigan", "Pennsylvania"))
+
+
+```
+
+# Questions and Initial Plan
+
+For this data set, our team decided to ask a question focused on each aspect of the modeling process: data quality, model performance and real-life application. As a result, we formulated three research questions, each assigned to a team member. Following initial analysis, we hoped to bring our results together in a summary paragraph sharing what we had learned about the modelling process. Our questions were:
+
+1.  How does model predictive ability change when models are trained on a data set from a different state?
+
+2.  How forecast accuracy change with different kinds of data masking (windows vs targeted drops, etc)? (data type - yearly and yearly monthly)
+
+3.  When is the best time to sell fish (highest value per metric ton? What is the best way to predict this - do you combine the value and metric tons first or predict separately?
+
+## Question 2 - Anna
+
+I hoped to conduct a sensitivity analysis for different models following the loss of data across the time series. My aim was to show how forecasts would change with gaps in data, especially losing their ability to forecast extremes if blocks of unusual data (steep drops like in the CA series or peaks in the WA series). When we designed our analysis, the aim of this component was to complement the work in Q1 and Q3 as it could inform what components of our data set dictated model selection and model performance.
+
+### What Actually Happened...
+
+I was disappointed to find that our data was less interesting and informative than I had hoped, Our yearly data set produced a mean line with no trend and ballooning CIs. As a result, I pivoted to monthly data in hopes of investigating for interesting relationships but also found a simple seasonal trend. However, we could see clear trends and variation in the data prior to analysis. I believe the experience was useful in making me understand the limitations of these models as I scaled my expectations to the skills of something like a MARSS model that may be able to explain trends and large scale variation due to covariates.
+
+# Methods
+
+### Initial Step - Forecasting with Maximum Knowledge (ARIMA, ETS and HW)
+
+As part of my analysis process, I wanted to determine which model structure and respective function was best suited for my analysis. I started with a simple ARIMA model to see if the auto regressive process with full knowledge could be used to produce accurate forecasts. I used auto.arima to select the best model for each data set. I began with the yearly time series and found poor forecasting performance along with simple models so chose to pivot away to monthly data.
+
+```{r}
+
+#Yearly time series 
+arima_ff <- function(ts_list, labels) {
+  
+
+  results <- list()
+  par(mfrow = c(2, 2), mar = c(4, 4, 3, 2))  
+  
+  for (i in 1:length(ts_list)) {
+    ts_data <- ts_list[[i]]
+    
+    # Set training and testing data
+    train <- window(ts_data, start = start(ts_data), end = c(start(ts_data)[1] + 20))
+    test  <- window(ts_data, start = c(start(ts_data)[1] + 20), end = c(start(ts_data)[1] + 66))
+    
+    # Fit and forecast
+    model <- auto.arima(train)
+    pred <- forecast(model, h = 3)
+    acc <- accuracy(pred, test)
+    
+    model_type <- paste0("ARIMA(", paste(arimaorder(model), collapse = ","), ")")
+    
+      results[[i]] <- list(
+      Label = labels[i],
+      AIC = AIC(model),
+      BIC = BIC(model),
+      MAPE = acc[2, "MAPE"],
+      RMSE = acc[2, "RMSE"],
+      Model = model_type)
+    
+    # Plot forecast and compare
+    plot(pred, main = paste("Forecast -", labels[i]), ylab = "Value", xlab = "Time")
+    points(test, col = "red", pch = 16)
+  }
+  
+  par(mfrow = c(1, 1))  # Reset layout
+    final_results <- do.call(rbind, lapply(results, as.data.frame))
+  return(final_results)
+  
+}
+
+arima_ff(list_area,area_names)
+```
+
+My results showed that with yearly data only CA had any autocorrelation in the data while WA and AK were simple random walks. This was demonstrated by the ballooning of the confidence intervals in the forecasts like we had seen in class.
+
+Given the poor results for the yearly time series (although true values still remained within the confidence intervals) I considered using a seasonal component to inform the forecast so shifted to exploring ETS and Holt-Winters models. I also re-ran the function for the monthly data
+
+```{r}
+
+# Create the time series 
+datmon_CA <- ts(ch_month$metric.tons[ch_month$State == "CA"], start = c(1, 1), frequency = 12 )
+datmon_WA <-ts(ch_month$metric.tons[ch_month$State == "WA"], start = c(1, 1), frequency = 12 )
+datmon_OR <- ts(ch_month$metric.tons[ch_month$State == "OR"], start = c(1, 1), frequency = 12 )
+
+list_area_month <- list(datmon_CA,datmon_OR,datmon_WA )
+area_names_m <- c("California", "Oregon", "Washington")
+
+
+ets_ff <- function(ts_list, labels = NULL) {
+
+  
+  par(mfrow = c(2, 2), mar = c(4, 4, 3, 2))  # 2x2 panel layout
+  results <- list()
+  for (i in 1:length(ts_list)) {
+    ts_data <- na.interp(ts_list[[i]])
+    
+    # Define train/test split (adjust if needed based on length of your data)
+    train <- window(ts_data, start = start(ts_data), end = c(start(ts_data)[1] + 20))
+    test  <- window(ts_data, start = c(start(ts_data)[1] + 20), end = c(start(ts_data)[1] + 66))
+    
+    # Fit ARIMA and forecast
+    model <- ets(train)
+    pred <- forecast(model, h = 2*12)
+    
+    acc <- accuracy(pred, test)
+    
+    # Plot forecast with test data
+    plot(pred, main = paste("Forecast -", labels[i]), ylab = "Value", xlab = "Time")
+    points(test, col = "red", pch = 16)
+    
+    results[[i]] <- list(
+      Label = labels[i],
+      AIC = AIC(model),
+      BIC = BIC(model),
+      MAPE = acc[2, "MAPE"],
+      RMSE = acc[2, "RMSE"],
+      Model = model$method)
+    
+  }
+  
+  
+  par(mfrow = c(1, 1))  # Reset plotting for later
+  final_results <- do.call(rbind, lapply(results, as.data.frame))
+  return(final_results)
+}
+
+
+ets_ff(list_area_month,area_names_m)
+```
+
+The ETS analysis with perfect knowledge produced three models with Additive Error, No Trend, Additive Seasonality (ANA). This indicates that data oscillates around a constant mean with seasonality but no other trends are detected. As a result, the model cannot forecast
+
+I also tried Holt-Winters to explore if model performance improved.
+
+```{r}
+
+hw_ff <- function(ts_list,labels) {
+
+  
+  par(mfrow = c(2, 2), mar = c(4, 4, 3, 2)) 
+  results <- list()
+  for (i in 1:length(ts_list)) {
+    ts_data <- na.interp(ts_list[[i]])
+    
+
+    train <- window(ts_data, start = start(ts_data), end = c(start(ts_data)[1] + 20))
+    test  <- window(ts_data, start = c(start(ts_data)[1] + 20), end = c(start(ts_data)[1] + 66))
+    
+    # Fit and forecast
+    model <- hw(train)
+
+    pred <- forecast(model, h = 2*12)
+    acc <- accuracy(pred, test)
+
+    
+    # Plot forecast with test data
+    plot(pred, main = paste("Forecast HW -", labels[i]), ylab = "Value", xlab = "Time")
+    points(test, col = "red", pch = 16)
+    
+    results[[labels[i]]] <- list(
+      model_structure = model$method,
+      accuracy_metrics = acc
+    )
+  }
+  
+  final_results <- do.call(rbind, lapply(results, as.data.frame))
+  par(mfrow = c(1, 1))  # Reset plotting for later
+
+  return(final_results)
+}
+
+
+
+hw_ff(list_area_month,area_names_m)
+
+
+```
+
+While Holt-Winters showed slight improvement the model also reverted to this seasonal trend around the mean. Given the simplicity of observing changes in ETS structure and performance, I chose to use that structure for the exercise is data loss to evaluate whether data loss may change model structure.
+
+## Impacts of missing data
+
+### Block Dropping -
+
+In this section, I explored the impacts of dropping a window of data. In this case, I choose to drop 33 years of data. Originally, my plan was to place this function in a larger loop with windows that changed sizes and moved along the time series but this goal proved to be too ambitious for the length of this lab and with the issues I discovered along the way. I settled on using this window to demonstrate impacts of missing data
+
+```{r}
+
+#block size is how much is dropped, drop_start is where it happens
+ets_ff_sensitivity <- function(ts_list, labels = NULL, block_size, drop_start) {
+  
+
+  
+  results <- list()
+  par(mfrow = c(2, 2), mar = c(4, 4, 3, 2))  # Plot setup
+  
+  for (i in seq_along(ts_list)) {
+    ts_orig <- ts_list[[i]]
+    ts_mod <- ts_orig
+    
+    # Drop the block and interpolate the data
+    drop_end <- min(drop_start + block_size - 1, length(ts_mod))
+    ts_mod[drop_start:drop_end] <- NA
+    ts_clean <- na.interp(ts_mod)
+    
+    # Save original missing indexes for plotting
+    missing_idx <- which(is.na(ts_mod))
+    interpolated_times <- time(ts_clean)[missing_idx]
+    interpolated_values <- ts_clean[missing_idx]
+    
+    # Define time range
+    ts_times <- time(ts_clean)
+    
+    # Split into train/test
+    train <- window(ts_clean, start = start(ts_clean), end = c(start(ts_clean)[1] + 20))
+    test  <- window(ts_clean, start = c(start(ts_clean)[1] + 20), end = c(start(ts_clean)[1] + 66))
+    
+    # Fit ETS model
+    model <- ets(train, model = "ZZZ")
+    fc <- forecast(model, h = length(test))
+    
+    # Accuracy
+    acc <- accuracy(fc, test)
+    
+    # Store results so we can compare them later
+    results[[i]] <- list(
+      Label = labels[i],
+      AIC = AIC(model),
+      BIC = BIC(model),
+      MAPE = acc[2, "MAPE"],
+      RMSE = acc[2, "RMSE"],
+      Model = model$method
+    )
+    
+    # Plot forecast
+    plot(fc, main = paste(labels[i], "- Drop:", drop_start, "to", drop_end), ylab = "Value", xlab = "Time")
+    
+    # Learning to shade the dropped regions
+    drop_time_start <- ts_times[drop_start]
+    drop_time_end   <- ts_times[drop_end]
+    usr <- par("usr")  # plotting range
+    rect(xleft = drop_time_start, xright = drop_time_end,
+         ybottom = usr[3], ytop = usr[4],
+         col = rgb(0.9, 0.9, 0.9, 0.5), border = NA)
+    
+
+    
+    # Add test points and interpolated points
+    lines(test, col = "lightgreen")
+    points(interpolated_times, interpolated_values, col = "blue")
+    
+    # Re-plot forecast line on top
+    lines(fc$mean, col = "red")
+    
+
+    legend("topright",
+           legend = c("Forecast", "Test", "Interpolated", "Dropped"),
+           col = c("red", "lightgreen", "blue", rgb(0.9, 0.9, 0.9, 0.5)),
+           pch = c(NA, NA, 1, 15), lty = c(1, 1, NA, NA),
+           pt.cex = 0.7,  # Size of points/symbols
+           cex = 0.7,     # Size of text
+           bty = "n",     # No box
+           y.intersp = 0.7,  # Vertical spacing between lines
+           x.intersp = 0.5) 
+  }
+  
+  par(mfrow = c(1, 1))  # Reset plot layout
+  
+  # Compile results into a data frame
+  df_results <- do.call(rbind, lapply(results, as.data.frame))
+  return(df_results)
+}
+
+ets_ff_sensitivity(list_area_month, labels=area_names_m, drop_start = 30,block_size=96)
+
+
+```
+
+### Results
+
+Dropping data was most consequential for the CA data set as data was already sparse. For the CA time series, the model structure changed compared to the control case of full knowledge where the model was no longer able to detect the same auto correlative trend (A,N,A) as it did originally. This was expected and partially motivated this exercise as Brian observed some of his models doing this so we hoped I could replicate a "switch" in model types once data became sparse.
+
+For the OR and WA data set, I observed that as data decreases, the models started to settle on a mean seasonal behavior. From a practical perspective, these models with such a large block of missing data could only be used to forecast a "general" behavior rather than accounting for any sort of variation that may have been present. In the case of Washington, as the model was trained on a period of exceptionally high data, it forecasts a seasonal trend that is more dramatic than the past fluctuations.
+
+### Data Sparsity - Exclude All High Values
+
+Masking a block data can simulate a loss of funding, pause in project activities, etc. I hoped to explore a more persistent loss and chose to simulate how losing certain values across a data set impacts model results. If I decrease the magnitude of the seasonal trend, how will the model respond. For this case, I modified the function above to replace all values over 200 with an NA value that is then interpolated. The result is a dampened seasonal trend. Again, the objective was to see if this kind of data modification could cause for model specification changes and if these changes varied among models.
+
+```{r}
+ets_target_sensitivity <- function(ts_list, labels = NULL, block_size, drop_start, target) {
+  
+  if (is.null(labels)) {
+    labels <- paste("Series", 1:length(ts_list))
+  }
+  
+  results <- list()
+  par(mfrow = c(2, 2), mar = c(4, 4, 3, 2))  # Plot prep
+  
+  for (i in seq_along(ts_list)) {
+    ts_orig <- ts_list[[i]]
+    ts_mod <- ts_orig
+    
+    # Replace values above 200 with NA in the block 
+    drop_end <- min(length(ts_mod), drop_start + block_size - 1)  #-1 to make sure we're in bounds
+    ts_mod[drop_start:drop_end][ts_mod[drop_start:drop_end] > 200] <- NA
+    
+    # Interpolate the missing values in the modified data
+    ts_clean <- na.interp(ts_mod)
+    
+    # Save original missing indexes for plotting
+    miss_i <- which(is.na(ts_mod))
+    interpolated_times <- time(ts_clean)[miss_i]
+    interpolated_values <- ts_clean[miss_i]
+    
+    # Define time range for train/test
+    ts_times <- time(ts_clean)
+    
+    # Split into train/test
+    train <- window(ts_clean, start = start(ts_clean), end = c(start(ts_clean)[1] + 20))
+    test  <- window(ts_orig, start = c(start(ts_orig)[1] + 20), end = c(start(ts_orig)[1] + 66))
+    
+    # Fit model
+    model <- ets(train, model = "ZZZ")
+    pred <- forecast(model, h = length(test))
+    
+    # Accuracy stats
+    acc <- accuracy(pred, test)
+    
+    # Store results 
+    results[[i]] <- list(
+      Label = labels[i],
+      AIC = AIC(model),
+      BIC = BIC(model),
+      MAPE = acc[2, "MAPE"],
+      RMSE = acc[2, "RMSE"],
+      Model = model$method
+    )
+    
+    #True training set
+    plot(ts_orig, main = paste(labels[i], "- Drop:", target), ylab = "Value", xlab = "Time", col = "black")
+    #Interpolated values
+    lines(ts_clean, col = "blue", lwd = 2)  
+    
+    
+    # True values
+    lines(test, col = "lightgreen", pch = 16)
+    
+    # Forecasts
+    lines(pred$mean, col = "red")
+    
+    legend("topright", legend = c("Original", "Interpolated", "Forecast", "Test"),
+           col = c("black", "blue", "red", "lightgreen"),
+          lty = c(1, 1, 1, 1), pt.cex = 1.5, bty = "n")
+  }
+  
+  par(mfrow = c(1, 1))  
+  
+  # Data
+  df_results <- do.call(rbind, lapply(results, as.data.frame))
+  return(df_results)
+}
+
+# Example call to the function
+ets_target_sensitivity(list_area_month, labels = area_names_m, drop_start = 1, block_size = 33 * 12, target = 200)
+```
+
+The results of this modification proved to be impact model specification more than block elimination of data. I was surprised by this outcome as I would have expected these changes to conserve more of the original structure of the data compared to dropping a block as the seasonal component remains intact and only magnitude changes.
+
+However, this modification resulted in a (AAA), (ANA) and (MNM) model types. It seemed that only OR preserved the seasonal structure and was able to produce forecasts that may prove relevant for a practical application. The CA data produced an (AAA) model structure as the sparsity of the data prior to modification paired with the loss of values over 200 created a weak seasonal effect. This means the model had Additive Error, Additive Trend, Additive Seasonality or that seasonal trends over time are considered to be constant and predictable.The results for WA were most surprising as the large landings of salmon made it such that the greatest proportion of data was lost making the seasonal effect very weak. However, this model also changed to Multiplicative error with No trend, Multiplicative seasonality suggesting that even with the data loss the model would expect large changes in the data. Simultaneously the model also predicted the weakest seasonal trend. Perhaps the multiplicative relationship produced an very dampened prediction?
+
+### Summarizing Results
+
+Finally, I consolidated all results into a data frame to examine how changes to the data affected model type and model performance.
+
+```{r}
+
+ets_full <- ets_ff(list_area_month,area_names_m)
+
+ets_sens <- ets_ff_sensitivity(list_area_month, labels=area_names_m, drop_start = 30,block_size=96)
+
+ets_targ_sens <- ets_target_sensitivity(list_area_month, labels = area_names_m, drop_start = 1, block_size = 33 * 12, target = 200)
+
+
+#Label each result for comparison
+ets_full$type <- "test"
+ets_sens$type <- "Block"
+ets_targ_sens$type <- "Target200"
+
+
+summary_sens <- rbind(ets_sens,ets_targ_sens,ets_full)
+
+summary_sens
+
+```
+
+The comparison shows that the best performing models by AIC are those that are subject to the targeted data drops. This is unsurprising as I dampened the variability in these data sets by eliminating high values. However, it is also this kind of data loss that made them the least realistic when forecasting and changed their structure. For the dropping of blocks of data, model performance was still higher than the test series by AIC, but RMSE proved worse. Model structure was also conserved compared to the initial series .
+
+### Discussion
+
+Although I was unable to complete my initial objectives of completing a sensitivity analysis that allows us to explore what influences the way ETS and auto.arima select models, I was able to use the basic building blocks for these functions to gain insights on behavior if this was possible. I was able to understand how these models operate and see their limitations compared to other types of models I have encountered.
+
+If I had more time, I would have liked to explore different methods of data loss, perhaps focused more on proportions rather than a fixed value or different ways of replacing the data that was lost (drawing from a distribution, etc). Finally, my ideal of looping over these functions and changing the modification window would be a great next step. As noted in the joint discussion, this exercise helped me reflect on the limitations of these models, especially when I am more familiar with state space models so perhaps I overestimated the abilities of these model types.

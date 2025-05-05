@@ -1,0 +1,347 @@
+---
+title: Team 1 - Lab 1
+subtitle: Dynamic Factor Analysis (DFA) - Common trends in plankton data
+author: "Mary, Emma, Anna"
+date: April XX, 2025
+output: 
+  html_document:
+    code-folding: true
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include = FALSE, message = FALSE, warning = FALSE}
+options(dplyr.summarise.inform = FALSE)
+
+# Load libraries
+library(MARSS)
+library(tidyverse)
+library(ggpubr)
+library(rje)
+
+
+```
+
+# Data
+
+Describe what plankton groups and covariates you used and indicate any temporal subsetting you chose. 
+
+
+## Load the data
+
+```{r load_data}
+## load MARSS for data and analyses
+library(MARSS)
+
+## load the raw data (there are 3 datasets contained here)
+data(lakeWAplankton, package = "MARSS")
+
+## we want `lakeWAplanktonTrans`, which has been transformed
+## so the 0's are replaced with NA's and the data z-scored
+all_dat <- lakeWAplanktonTrans
+```
+#This gives you a time-series matrix with ~25 variables (plankton groups + environmental data), rows = time (monthly), columns = variables.
+
+#Now we want to visualze what taxa and covariates are included in the data, and how many months are convered. 
+
+```{r explore_structure}
+# View column names
+colnames(all_dat)
+
+# See number of months and variables
+dim(all_dat)
+```
+
+#To visualize data across time, we can make a heatmap of missing vs present values to help identify which variables have good coverage and what time windows have fewer gaps. 
+```{r}
+#Make a heatmap of missing vs. present values:
+
+```{r missing_data_plot}
+library(tidyr)
+library(ggplot2)
+
+# Turn matrix into long format
+dat_long <- as.data.frame(all_dat) %>%
+  mutate(month = 1:n()) %>%
+  pivot_longer(-month, names_to = "variable", values_to = "value") %>%
+  mutate(missing = is.na(value))
+
+# Plot missing data
+ggplot(dat_long, aes(x = month, y = variable, fill = missing)) +
+  geom_tile() +
+  scale_fill_manual(values = c("white", "black"), labels = c("Present", "Missing")) +
+  labs(title = "Missing data across variables and time",
+       x = "Month", y = "Variable", fill = "") +
+  theme_minimal()
+```
+
+## Wrangle the data
+Based on the available data, we decided to choose these 6 taxa groups for analysis: 
+1. Daphnia: Key grazer, central to lake food webs
+2. Cyclops: A common zooplantkton, some predation
+3. Diaptomus: Another dominant grazer
+4. Diatoms: Major edible phytoplankton group 
+5. Cryptomonus: Small, fast-growing plankton
+6. Epischura: Predatory zooplankton
+These 6 taxa were chosen due to their range of ecological roles within the Lake Washington food web, including common zooplankton grazers, major phytoplankton groups, and one large predatory zooplankton. This mix allows us to capture both bottom-up and top-down ecological dynamics, and all taxa showed sufficient data coverage over a shared time window, making them suitable for Dynamic Factor Analysis.
+
+Now we want to clarify which months have continuous data.
+
+```{r find_complete_time_window}
+# Define the selected 6 taxa
+selected_taxa <- c("Daphnia", "Cyclops", "Diaptomus", "Diatoms", "Cryptomonas", "Epischura")
+
+# Subset the dataset to just those columns
+taxa_data <- all_dat[, selected_taxa]
+
+# Count how many NAs are in each row (each month)
+row_na_count <- apply(taxa_data, 1, function(x) sum(is.na(x)))
+
+# Identify which months have no missing values across any of the 6 taxa
+complete_months <- which(row_na_count == 0)
+
+# Use rle() to find runs of consecutive complete months
+rle_blocks <- rle(diff(complete_months) == 1)
+ends <- cumsum(rle_blocks$lengths)
+starts <- c(1, head(ends, -1) + 1)
+
+# Build a table of those blocks
+blocks <- data.frame(
+  start_index = complete_months[starts],
+  end_index = complete_months[ends],
+  duration = complete_months[ends] - complete_months[starts] + 1
+)
+
+# Keep only blocks at least 60 months long (5 years)
+long_blocks <- blocks[blocks$duration >= 60, ]
+
+# Show the blocks
+print(long_blocks)
+
+```
+
+
+```{r prepare_dfa_data}
+# Step 1: Define the six selected taxa
+selected_taxa <- c("Daphnia", "Cyclops", "Diaptomus", "Diatoms", "Cryptomonas", "Epischura")
+
+# Step 2: Subset the full dataset to the selected taxa and time window (months 173 to 371)
+raw_subset <- all_dat[173:371, selected_taxa]
+
+# Step 3: Remove any months that contain missing data for these taxa
+clean_subset <- raw_subset[complete.cases(raw_subset), ]
+
+# Step 4: Transpose the data so that taxa = rows, time = columns (as required by MARSS)
+dfa_data <- t(as.matrix(clean_subset))
+
+# Step 5: Check structure and confirm no missing values
+dim(dfa_data)      # Should be 6 rows x ~190-199 columns
+anyNA(dfa_data)    # Should be FALSE
+
+```
+
+After subsetting and cleaning the data to remove missing values, we prepared a z-scored matrix of six ecologically relevant plankton taxa from Lake Washington with complete monthly records over 199 months. We now fit a dynamic factor analysis (DFA) model using the MARSS package to identify common trends in the time series. DFA is useful for uncovering latent (hidden) structures that explain shared temporal variability across multiple time series.
+
+We begin by fitting a simple model with a single common trend and a shared, correlated error structure across taxa. This allows us to assess whether a single latent process can capture major patterns across the six plankton groups.
+
+```{r fit_dfa_model}
+# Step 1: Create Z matrix for 1-trend model
+Z <- matrix(list(), nrow = 6, ncol = 1)
+rownames(Z) <- rownames(dfa_data)
+for(i in 1:6) {
+  Z[i, 1] <- paste0("z", i)
+}
+
+# Step 2: Define DFA model structure
+model.list <- list(
+  Z = Z,
+  R = "diagonal and unequal",
+  B = "identity",
+  U = "zero",
+  Q = "identity",
+  x0 = "zero",
+  V0 = "zero",
+  A = "zero"
+)
+
+# Step 3: Fit the model
+fit_1trend <- MARSS(dfa_data, model = model.list, control = list(maxit = 5000))
+
+
+# Step 4: View results
+summary(fit_1trend)
+
+
+```
+
+Plot the trend:
+```{r plot_latent_trend, fig.width=8, fig.height=4}
+# Step 1: Extract the estimated trend (state variable X) from the model
+dfa_trend <- fit_1trend$states[1, ]  # Since we only have 1 trend
+
+# Step 2: Create a time variable that matches the 199-month window
+# You originally subset rows 173:371, so the corresponding months are:
+time_index <- 173:371
+
+# Step 3: Plot the trend
+plot(time_index, dfa_trend, type = "l",
+     lwd = 2, col = "darkblue",
+     xlab = "Time (monthly index)",
+     ylab = "Estimated latent trend",
+     main = "Latent Temporal Trend Shared by 6 Plankton Taxa")
+abline(h = 0, lty = 2, col = "gray")
+
+```
+This graph represents a dynamic factor analysis (DFA) model with one latent trend (m = 1) and no covariates using six selected plankton taxa from Lake Washington. This model looked for a shared temporal pattern across the taxa and estimated how strongly each group followed that pattern. We found that Cyclops was the most closely aligned with the trend, while Epischura showed the weakest association. The model ran successfully, although we got a warning that it didn’t fully converge, which suggests there’s still room to improve the fit.
+
+
+In the first model, you assumed that one shared trend explained the dynamics of all 6 taxa. But in ecological systems, it's possible that multiple processes or groups of taxa are responding to different underlying patterns.So now we’ll fit a 2-trend DFA model (m = 2), which tries to identify two separate but simultaneous temporal trends in the data. This lets the model capture more complex patterns,reveal if some taxa group together while others behave differently,potentially lower the AIC (i.e., improve model fit).
+
+We’ll keep the observation error structure the same ("diagonal and unequal") and still avoid covariates for now — just adding a second trend.
+
+```{r fit_dfa_model_2trends, message=FALSE, warning=FALSE}
+# Step 1: Create Z matrix for 2-trend model
+Z2 <- matrix(list(), nrow = 6, ncol = 2)
+rownames(Z2) <- rownames(dfa_data)
+for(i in 1:6) {
+  Z2[i, 1] <- paste0("z", (2*i - 1))
+  Z2[i, 2] <- paste0("z", (2*i))
+}
+
+# Step 2: Define DFA model structure with 2 trends
+model.list2 <- list(
+  Z = Z2,
+  R = "diagonal and unequal",
+  B = "identity",
+  U = "zero",
+  Q = "identity",   # or "equalvarcov" if you want trends to covary
+  x0 = "zero",
+  V0 = "zero",
+  A = "zero"
+)
+
+# Step 3: Fit the model
+fit_2trend <- MARSS(dfa_data, model = model.list2, control = list(maxit = 5000))
+
+# Step 4: View results
+summary(fit_2trend)
+
+```
+
+Plot latent trends and loading:
+```{r plot_dfa_2trend_results, message=FALSE, warning=FALSE}
+# Extract the latent trends from the fitted model
+trend_ts <- fit_2trend$states
+
+# Plot each trend separately
+par(mfrow = c(2, 1))  # 2 rows, 1 column layout
+plot(trend_ts[1, ], type = "l", col = "blue", lwd = 2,
+     main = "Latent Trend 1 (X1)", ylab = "Value", xlab = "Time (months)")
+plot(trend_ts[2, ], type = "l", col = "darkgreen", lwd = 2,
+     main = "Latent Trend 2 (X2)", ylab = "Value", xlab = "Time (months)")
+
+# Reset layout
+par(mfrow = c(1, 1))
+
+# Plot the Z matrix loadings
+Z_est <- coef(fit_2trend, type = "matrix")$Z
+barplot(Z_est, beside = TRUE, col = c("blue", "darkgreen"),
+        legend = c("Trend 1", "Trend 2"),
+        main = "Taxon Loadings on Each Trend",
+        ylab = "Loading Strength")
+
+```
+After fitting the 2-trend DFA model, we examined the resulting latent trends and taxon loadings to understand the shared temporal patterns in our selected plankton groups. Trend 1 (X1) shows a long-term decline across the time series, which might reflect gradual environmental changes like nutrient limitation or warming. Trend 2 (X2) shows a more dynamic pattern with a steady rise and mild decline, possibly linked to shorter-term ecological or climatic variability.
+
+The loading plot shows how each taxon is associated with these trends. For example, Diaptomus and Cyclops load heavily on Trend 1, indicating their dynamics follow the long-term decline. Daphnia, in contrast, loads more on Trend 2, suggesting it responds more strongly to the short-term fluctuations. These loadings help us interpret which taxa are driving or responding to different types of variability in the lake ecosystem.
+
+TO reinforce model comparisons, we will now try a 3-trend model:
+```{r}
+```{r fit_dfa_model_3trends, message=FALSE, warning=FALSE}
+# Step 1: Create Z matrix for 3-trend model
+Z3 <- matrix(list(), nrow = 6, ncol = 3)
+rownames(Z3) <- rownames(dfa_data)
+for(i in 1:6) {
+  for(j in 1:3) {
+    Z3[i, j] <- paste0("z", i, j)
+  }
+}
+
+# Step 2: Define the model list
+model.list3 <- list(
+  Z = Z3,
+  R = "diagonal and unequal",
+  B = "identity",
+  U = "zero",
+  Q = "identity",
+  x0 = "zero",
+  V0 = "zero",
+  A = "zero"
+)
+
+# Step 3: Fit the model (set higher maxit just in case)
+fit_3trend <- MARSS(dfa_data, model = model.list3, control = list(maxit = 5000))
+
+# Step 4: View results
+summary(fit_3trend)
+
+```
+We also fit a 3-trend DFA model to explore whether a more complex structure would better explain variability in the plankton time series. While the model did not fully converge (abstol-only convergence), the AICc value was notably lower than the 1- and 2-trend models (AICc = 2723.66), suggesting the additional trend components helped improve model fit. We acknowledge convergence limitations but proceed with comparing this model to others for exploratory purposes.
+
+Plot the 3-trend model:
+```{r}
+```{r plot_dfa_3trend_results, message=FALSE, warning=FALSE}
+# Step 1: Extract the estimated trends (states)
+states_3trend <- fit_3trend$states
+
+# Step 2: Plot the trends over time
+ts.plot(t(states_3trend), col = 1:3, lty = 1, xlab = "Time", ylab = "Trend value", main = "Estimated DFA Trends (3-Trend Model)")
+legend("topright", legend = paste("Trend", 1:3), col = 1:3, lty = 1)
+
+# Step 3: Plot the loadings (Z matrix values)
+Z_estimates <- coef(fit_3trend, type = "matrix")$Z
+barplot(Z_estimates, beside = TRUE, col = 1:3,
+        legend.text = paste("Trend", 1:3),
+        args.legend = list(x = "topright", bty = "n"),
+        main = "Factor Loadings (Z matrix)", ylab = "Loading strength", las = 2)
+
+```
+
+# General tasks
+
+Each group has the same general tasks, but you will adapt them as you work on the data.
+
+1) Find the most parsimonious model among a set that examines the effects of environmental covariates and/or an indicator of seasonality, varying numbers of trends, and different forms of variance-covariance matrices for the observation errors.
+
+2) Plot trends and individual loadings for the model identified in task (1) above.
+
+3) Plot model fits and uncertainty intervals for the model identified in task (1) above.
+
+4) Describe the effects of environmental or dummy variables on (possibly seasonal) patterns in the data.
+
+
+# Methods
+
+Please address the following in your methods:
+
+* Which plankton taxa did you choose and how did you choose them?
+   
+* What time period(s) did you examine and why?
+
+* What environmental or dummy variables did you include and why?
+
+* What forms of models did you fit (ie, write them out in matrix form)?
+
+* What sort of model diagnostics did you use to examine model assumptions?
+
+
+# Results
+
+
+# Discussion
+
+
+# Team contributions
+
+Example: "All team members helped decide on the goal and ran the analyses for the individual regions. Team members 2 & 3 wrote most of the code for the analysis. Team member 1 worked on the plotting section of the report using and adapting code that team member 3 wrote. All team members helped edit the report and wrote the discussion together."
+

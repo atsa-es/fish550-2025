@@ -728,7 +728,7 @@ for (i in zooplankton) {
 
 ## Plot states and loadings
 Z_est_2 = coef(dfa_2_hidden, type = "matrix")$Z
-H_inv_2 = varimax(Z_est_2)$rotmat
+#H_inv_2 = varimax(Z_est_2)$rotmat
 
 states_2 = as.data.frame(t(dfa_2_hidden$states))
 states_2 = data.frame(1:TT, states_2); names(states_2) = c("Time", "State 1", "State 2")

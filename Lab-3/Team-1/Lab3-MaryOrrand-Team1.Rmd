@@ -306,42 +306,56 @@ barplot(Z_estimates, beside = TRUE, col = 1:3,
         main = "Factor Loadings (Z matrix)", ylab = "Loading strength", las = 2)
 
 ```
+After fitting DFA models with 1, 2, and 3 latent trends, we compared their performance using AIC and AICc values. The 3-trend model had the lowest AICc, suggesting it provides the best fit to the observed plankton time series. Each trend represents an underlying pattern in community dynamics over time, and the factor loadings reveal how each taxon aligns with these trends. While all models reached only abstol convergence, the consistent improvement in AICc across models supports the added complexity of the 3-trend solution.
 
-# General tasks
+##Error Structure Impacts
+```{r}
+# Step 1: Use same Z matrix and model list as before, but change R structure
+Z_equal <- matrix(list(), nrow = 6, ncol = 2)  # assuming you're comparing to your 2-trend model
+rownames(Z_equal) <- rownames(dfa_data)
+for(i in 1:6){
+  Z_equal[i,1] <- paste0("z", i)
+  Z_equal[i,2] <- paste0("z", i+6)
+}
 
-Each group has the same general tasks, but you will adapt them as you work on the data.
+# Step 2: Define new model with equal error variance
+model.equalvar <- list(
+  Z = Z_equal,
+  R = "diagonal and equal",  
+  B = "identity",
+  U = "zero",
+  Q = "identity",
+  x0 = "zero",
+  V0 = "zero",
+  A = "zero"
+)
 
-1) Find the most parsimonious model among a set that examines the effects of environmental covariates and/or an indicator of seasonality, varying numbers of trends, and different forms of variance-covariance matrices for the observation errors.
+# Step 3: Fit the model
+fit_equalvar <- MARSS(dfa_data, model = model.equalvar, control = list(maxit = 5000))
 
-2) Plot trends and individual loadings for the model identified in task (1) above.
+# Step 4: View results
+summary(fit_equalvar)
 
-3) Plot model fits and uncertainty intervals for the model identified in task (1) above.
+```
 
-4) Describe the effects of environmental or dummy variables on (possibly seasonal) patterns in the data.
+```{r}
+# Compare AICc values of equal vs unequal variance
+cbind(
+  model = c("2-trend unequal R", "2-trend equal R"),
+  AICc = c(fit_2trend$AICc, fit_equalvar$AICc)
+)
+# Compare AICc values across all fitted models
+aic_table <- data.frame(
+  Model = c("1-Trend", "2-Trend", "3-Trend", "2-Trend Equal Error"),
+  AICc = c(
+    fit_1trend$AICc,
+    fit_2trend$AICc,
+    fit_3trend$AICc,
+    fit_equalvar$AICc
+  )
+)
 
+print(aic_table)
 
-# Methods
-
-Please address the following in your methods:
-
-* Which plankton taxa did you choose and how did you choose them?
-   
-* What time period(s) did you examine and why?
-
-* What environmental or dummy variables did you include and why?
-
-* What forms of models did you fit (ie, write them out in matrix form)?
-
-* What sort of model diagnostics did you use to examine model assumptions?
-
-
-# Results
-
-
-# Discussion
-
-
-# Team contributions
-
-Example: "All team members helped decide on the goal and ran the analyses for the individual regions. Team members 2 & 3 wrote most of the code for the analysis. Team member 1 worked on the plotting section of the report using and adapting code that team member 3 wrote. All team members helped edit the report and wrote the discussion together."
+```
 

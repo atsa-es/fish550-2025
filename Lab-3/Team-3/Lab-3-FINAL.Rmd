@@ -673,7 +673,8 @@ The best-supported covariate structure included both temperature and pH, outperf
 # Discussion
 ##################
 
-
+Our dynamic factor analysis (DFA) identified distinct latent temporal patterns in zooplankton community dynamics, with several trends closely aligned with environmental drivers. The model that included temperature and pH as covariates had the strongest support based on AICc. 
+Temperature and pH were key predictors of variation across taxa: temperature had a strong positive effect on Daphnia, Epischura, and non-daphnid cladocerans, indicating that warmer conditions favored their abundance. pH also played a significant role, particularly influencing Cyclops, Conochilus, and non-colonial rotifers, which may be more sensitive to acidity or benefit from conditions associated with elevated pH levels.
 
 
 

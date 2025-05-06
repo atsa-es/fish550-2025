@@ -1069,22 +1069,18 @@ phyto_climate.list <- list(
 con_list <- list(maxit = 3000, allow.degen = TRUE)
 
 # modeling - seasonal
-ptm <- proc.time()
 if(!file.exists(here::here("Lab-3", "Team-2", "data", "phyto_month.rds"))){
   ssm.phyto_month <- MARSS(data_phyto, model = phyto_month.list, method = "kem", control = con_list)
   saveRDS(ssm.phyto_month, file=here::here("Lab-3", "Team-2", "data", "phyto_month.rds"))
 }
-proc.time()[3] - ptm
 # load in ssm.phyto_month
 ssm.phyto_month <- readRDS(file=here::here("Lab-3", "Team-2", "data", "phyto_month.rds"))
 
 # modeling - climate
-ptm <- proc.time()
 if(!file.exists(here::here("Lab-3", "Team-2", "data", "phyto_climate.rds"))){
   ssm.phyto_climate <- MARSS(data_phyto, model = phyto_climate.list, method = "kem", control = con_list)
   saveRDS(ssm.phyto_climate, file=here::here("Lab-3", "Team-2", "data", "phyto_climate.rds"))
 }
-proc.time()[3] - ptm
 # load in ssm.phyto_climate
 ssm.phyto_climate <- readRDS(file=here::here("Lab-3", "Team-2", "data", "phyto_climate.rds"))
 
@@ -1185,22 +1181,18 @@ phyto_climate.list <- list(
 )
 
 # modeling - seasonal
-ptm <- proc.time()
 if(!file.exists(here::here("Lab-3", "Team-2", "data", "phyto_month_1s.rds"))){
   ssm.phyto_month <- MARSS(data_phyto, model = phyto_month.list, method = "kem", control = con_list)
   saveRDS(ssm.phyto_month, file="Lab-3/Team-2/data/phyto_month_1s.rds")
 }
-proc.time()[3] - ptm
 # load in ssm.phyto_month
 ssm.phyto_month <- readRDS(file=here::here("Lab-3", "Team-2", "data", "phyto_month_1s.rds"))
 
 # modeling - climate
-ptm <- proc.time()
 if(!file.exists(here::here("Lab-3", "Team-2", "data", "phyto_climate_1s.rds"))){
   ssm.phyto_climate <- MARSS(data_phyto, model = phyto_climate.list, method = "kem", control = con_list)
   saveRDS(ssm.phyto_climate, file=here::here("Lab-3", "Team-2", "data", "phyto_climate_1s.rds"))
 }
-proc.time()[3] - ptm
 # load in ssm.phyto_climate
 ssm.phyto_climate <- readRDS(file=here::here("Lab-3", "Team-2", "data", "phyto_climate_1s.rds"))
 
@@ -1367,13 +1359,13 @@ cov_list <- list(d.all, d.phyto, d.temp, d.ph, d.phytemp, d.phyph, d.tempph, d.c
 
 mod_list = list(m = 4, R = "diagonal and unequal")
 for(i in 1:length(cov_list)){
-  if(!file.exists(paste("Lab-3/Team-2/data/cov_", i, ".rds", sep = ""))){
+  if(!file.exists(here("Lab-3", "Team-2", "data", paste("cov_", i, ".rds", sep = "")))){
     dfa <- MARSS(data_zoo, model = mod_list, form = "dfa", z.score = FALSE,
                     control = con_list, covariates = cov_list[[i]])
-    saveRDS(dfa, file=paste("Lab-3/Team-2/data/cov_", i, ".rds", sep = ""))
+    saveRDS(dfa, file=here("Lab-3", "Team-2", "data", paste("cov_", i, ".rds", sep = "")))
   }
   # load in ssm.phyto_climate
-  dfa <- readRDS(file=paste("Lab-3/Team-2/data/cov_", i, ".rds", sep = ""))
+  dfa <- readRDS(file=here("Lab-3", "Team-2", "data", paste("cov_", i, ".rds", sep = "")))
   covaicc_list[[i]] <- data.frame(Model = paste("cov_", i, sep = ""), AICc = dfa$AICc)
 }
 
@@ -1381,7 +1373,7 @@ for(i in 1:length(cov_list)){
 covaicc <- do.call(rbind, covaicc_list)
 covaicc
   # per AICc, the model including phyoplankton abundance, pH levels, and a seasonal component with 4 underlying factors displays the best fit
-ssm <- readRDS(file="Lab-3/Team-2/data/cov_14.rds")
+ssm <- readRDS(file=here("Lab-3", "Team-2", "data", "cov_14.rds"))
 
 covar_effects <- coef(ssm, type = "matrix")$D[, 1:2]
 colnames(covar_effects) <- list("Phytoplankton", "pH")
@@ -1519,6 +1511,7 @@ for(i in 1:N_ts) {
   lines(w_ts, lo, col = "darkgray")
 }
 ```
+
 Finally, we compare model fit to the actual data for all six groupings of grazer zooplankton. Generally fit is good, with the model proving better at estimating abundances of certain species of zooplankton than others. Diaptomus, non-colonial rotifers, and conochilus estimates fit the data fairly well, while daphnia and to (maybe) a lesser extent non-daphnid cladocerans and cyclops estimates are less accurate predictions of the data observed.
 
 # Discussion
@@ -1527,5 +1520,5 @@ Including phytoplankton abundance as a covariate in models describing the abunda
 
 # Team contributions
 
-Example: "All team members helped decide on the goal and ran the analyses for the individual regions. Team members 2 & 3 wrote most of the code for the analysis. Team member 1 worked on the plotting section of the report using and adapting code that team member 3 wrote. All team members helped edit the report and wrote the discussion together."
+Each team member contributed to a specific analysis. Tina modeled phytoplankton, Matheus modeled zooplankton, and Brian modeled zooplankton grazers with phytoplankton as covariates.
 

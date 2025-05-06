@@ -1,8 +1,8 @@
 ---
-title: Team 1 - Lab 1
+title: Team 3 - Lab 3
 subtitle: Dynamic Factor Analysis (DFA) - Common trends in plankton data
-author: "Name 1, Name 2, Name 3"
-date: April XX, 2025
+author: "Ben, Nicole, Lilac Hong"
+date: May 6, 2025
 output: 
   html_document:
     code-folding: true
@@ -16,7 +16,7 @@ options(dplyr.summarise.inform = FALSE)
 
 # Data
 
-We are interesting in looking at how all of the zooplankton species respond in the most recent years (1985 - 1994) other than Neomysis and __________, which there were very few measurements of during this time period. Despite the well documented changes to zooplankton community dynamics following the treatment of sewage early in the data, our group was curious about what was happening to phytoplankton abundances in the more recent time period. 
+We are interesting in looking at how all of the zooplankton species respond in the most recent years (1985 - 1994) other than Leptodora and Neomysis and, which there were very few measurements of during this time period. Despite the well documented changes to zooplankton community dynamics following the treatment of sewage early in the data, our group was curious about what was happening to phytoplankton abundances in the more recent time period. 
 
 ## Load the data
 
@@ -572,7 +572,7 @@ ccf(proc_rot[1,],proc_rot[2,], lag.max = 12, main="")
 ```
 
 # Plot Model fit and uncertainty 
-Note: When we used the function from the lab materials to calcualte model fit and uncertainty, it returned NaN values and so we could not include the upper and lower confidence intervals in the plot. Mark looked at the code during lab on 5/1, but could not figure out the cause of the error. 
+Note: When we used the function from the lab materials to calculate model fit and uncertainty, it returned NaN values and so we could not include the upper and lower confidence intervals in the plot. Mark looked at the code during lab on 5/1, but could not figure out the cause of the error. 
 
 ```{r}
 #### When we use this function we cannot get the confidence intervals, but we can get the means
@@ -642,14 +642,9 @@ for(i in 1:N.ts) {
 # Methods
 ##################
 
-The nutrient composition and, subsequently, zooplankton and phytoplankton community changed dramatically 
-following both the rapid increase in human development on its shores and the beginning of sewage treatment by 
-Seattle metro in the early 60's. Its well documented that this change resulted in a decrease in blue-green algae and an increase in daphnia from nearly undetectable numbers to modern value. However, our group was curious to explore what continued trends have been occuring in phytoplankton communities in more recently years. To do so , we chose the most recent 10 year period ( 1984 - 1995) and selected all zooplankton types other than those with significant gaps, presumably due to low numbers. As a result, we analyzed trends in "Conochilus", "Cyclops", "Daphnia", "Diaptomus", "Epischura","Non daphnid cladocerans", and "Non colonial rotifers"
+The nutrient composition and, subsequently, zooplankton and phytoplankton community changed dramatically following both the rapid increase in human development on its shores and the beginning of sewage treatment by Seattle metro in the early 60's. Its well documented that this change resulted in a decrease in blue-green algae and an increase in daphnia from nearly undetectable numbers to modern value. However, our group was curious to explore what continued trends have been occuring in phytoplankton communities in more recently years. To do so , we chose the most recent 10 year period (1984 - 1995) and selected all zooplankton types other than those with significant gaps, presumably due to low numbers. As a result, we analyzed trends in "Conochilus", "Cyclops", "Daphnia", "Diaptomus", "Epischura","Non daphnid cladocerans", and "Non colonial rotifers".
 
-We tested several combinations of models including those with different number of states (1-7), different numbers and combinations of covariates, and different structures for the observation error matrix. The matrix forms are written throughout the script. 
-
-
-* What sort of model diagnostics did you use to examine model assumptions?
+We tested several combinations of models including those with different number of states (1-7), different numbers and combinations of covariates, and different structures for the observation error matrix. The matrix forms are written throughout the script. We also monitored convergence and log-likelihood diagnostics from MARSS output to verify successful model fitting.
 
 ##################
 # Results
@@ -658,12 +653,21 @@ We tested several combinations of models including those with different number o
 ## Most parsimonious model
 
 In models which compared a seasonal dummy variable comprised of sin and consine functions with a model containing all covariates. The model with all covariates was a better fit in terms of AICc. Keeping this value constant, we found that a model with 6 states had the best support, and that the best model included a "diagonal and unequal" observation variance structure, meaning each species has a different level of observation error and they were not correlated among species. Finally, pH and temperature had the best support as the combination of covariates with the lowest AICc. Once we determined what our best structure for observation error and covariates was, we check the AICc of the same model but with fewer states (5 as opposed to 6) and found that the model fit was the same. Therefore, this model was a more parsimonious fit. 
+In models which compared a seasonal dummy variable comprised of sin and consine functions with a model containing all covariates. The model with all covariates was a better fit in terms of AICc. Keep this value constant, we found that a model with 6 states had the best support, and that the best model included a "diagonal and unequal" observation variance structure, meaning each species has a different level of observation error and they were not correlated among species. Finally, pH and temperature had the best support as the combination of covariates with the lowest AICc. Once we determined what our best structure for observation error and covariates was, we check the AICc of the same model but with fewer states (5 as opposed to 6) and found that the model fit was the same. Therefore, this model was a more parsimonious fit. 
 
 ## Loadings and interpretation 
+The varimax-rotated factor loadings for the selected 5-trend DFA model revealed distinct associations between taxa and latent trends, suggesting different ecological groupings and temporal responses:
 
+- Trend 1 (State 1) was most strongly associated with Non-colonial rotifers and Conochilus, both showing high positive loadings (~0.5), indicating they co-vary with the dominant pattern captured by this trend. Daphnia, Diaptomus, and Non-daphnid cladocerans also showed moderate positive loadings, while Epischura had a near-zero or slightly negative loading, suggesting it did not follow this dominant temporal signal.
+- Trend 2 (State 2) was dominated by Cyclops, which had a distinctly high positive loading (>0.6), marking it as the primary taxon associated with this temporal pattern. Daphnia and Non-colonial rotifers also had moderate positive loadings, while Diaptomus and Epischura showed low or slightly negative loadings, indicating some divergence in community response.
+- Trend 3 (State 3) showed strong negative loadings for both Epischura and Diaptomus, suggesting a shared response to a latent driver that opposes the pattern observed in other taxa. Most other taxa showed weak to neutral associations with this trend, indicating it may represent a factor more specific to copepod dynamics.
+- Trend 4 (State 4) had uniformly weak loadings across all taxa, with most values near zero or slightly negative. This suggests Trend 4 may represent low-variance background variation or unstructured noise not strongly tied to any particular group.
+- Trend 5 (State 5) highlighted a strong positive loading for Non-daphnid cladocerans and moderate contributions from Daphnia and Non-colonial rotifers, indicating that this trend may reflect dynamics specific to cladocerans and rotifers. In contrast, Diaptomus and Epischura had slight negative loadings, further distinguishing copepods from other taxa in their temporal behavior.
+
+Overall, the loading structure revealed coherent groupings: rotifers and small-bodied cladocerans frequently tracked together, while copepods, particularly Epischura and Diaptomus, often displayed opposing or unique patterns. 
 
 # Describe the effects of environmental or dummy variables on patterns in the data 
-
+The best-supported covariate structure included both temperature and pH, outperforming seasonal dummy variables and other environmental combinations in terms of AICc. Daphnia (0.64), Epischura (0.64), and Non-daphnid cladocerans (0.58) had a strong positive response to temperature and Non-colonial rotifers (0.61), Cyclops (0.55), and Conochilus (0.42) had a strong positive response to pH.
 
 ##################
 # Discussion
@@ -677,41 +681,4 @@ In models which compared a seasonal dummy variable comprised of sin and consine 
 # Team contributions
 ##################
 
-Nicole and Ben both fit models to the data. Nicole plotted the model fits and loadings. Ben contributed to the methods, results, and discussion in the write-up. 
-
-
-
-
-
-
-
-
-
-
-
-### To do. 
-
-Ben : Run code and comment out the AICc. Write results. Explain why we chose the time period and taxa we did.
-
-Lilac: Write a few matrix equations
-
-Nicole: Write out plots 
-
-All: Discussion 
-
-
-#########################################
-
-# General tasks
-
-Each group has the same general tasks, but you will adapt them as you work on the data.
-
-1) Find the most parsimonious model among a set that examines the effects of environmental covariates and/or an indicator of seasonality, varying numbers of trends, and different forms of variance-covariance matrices for the observation errors.
-
-2) Plot trends and individual loadings for the model identified in task (1) above.
-
-3) Plot model fits and uncertainty intervals for the model identified in task (1) above.
-
-4) Describe the effects of environmental or dummy variables on (possibly seasonal) patterns in the data.
-
-````````````````````````````````
+All group members brought their own initial model fitting attempts to the first meeting. The group chose to build upon Ben’s version, as it was the most complete. As a result, Ben wrote the majority of the code for model fitting and analysis, while Nicole and Lilac contributed to key decisions, including model selection. Nicole finished code of plots for model fits and factor loadings. Ben and Lilac contributed to writing the methods, results, and discussion sections of the report. 

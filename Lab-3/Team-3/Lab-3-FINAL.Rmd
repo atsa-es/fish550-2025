@@ -682,4 +682,4 @@ Temperature and pH were key predictors of variation across taxa: temperature had
 # Team contributions
 ##################
 
-All group members brought their own initial model fitting attempts to the first meeting. The group chose to build upon Ben’s version, as it was the most complete. As a result, Ben wrote the majority of the code for model fitting and analysis, while Nicole and Lilac contributed to key decisions, including model selection. Nicole finished code of plots for model fits and factor loadings. Ben and Lilac contributed to writing the methods, results, and discussion sections of the report. 
+All group members brought their own initial model fitting attempts to the first meeting. The group chose to build upon Ben’s version. As a result, Ben wrote the majority of the code for model fitting and analysis, while Nicole and Lilac contributed to key decisions, including model selection. Nicole wrote the code for plots of model fits and factor loadings. Ben and Lilac contributed to writing the methods, results, and discussion sections of the report. 

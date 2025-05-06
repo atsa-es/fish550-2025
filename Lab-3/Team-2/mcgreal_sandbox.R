@@ -15,7 +15,7 @@ all_dat$Date <- as.yearmon(paste(all_dat$Year, all_dat$Month), "%Y %m")
 for ( i in seq(3,length( all_dat )-1,1) ) plot(all_dat[,i], x=all_dat$Date, ylab=names(all_dat[i]),type="l")
 
 # dropping years pre-1980 and critters with poor data
-yr_frst <- 1980
+yr_frst <- 1985
 data <- subset(all_dat, Year  >= yr_frst)
 data <- data[-c(9, 18)]
 
@@ -34,10 +34,9 @@ zooplankton <- c("Conochilus",
                  "Cyclops", 
                  "Daphnia",
                  "Diaptomus", 
-                 "Epischura", 
-                 "Leptodora",
                  "Non.daphnid.cladocerans",
                  "Non.colonial.rotifers")
+  # only including grazers
 
 # get only the phytoplankton
 dates <- data$Date
@@ -49,11 +48,11 @@ data_phytoclimate <- t(data[, phytoclimate])
 colnames(data_phytoclimate) <- dates
 
 # monthly factor covariate matrix
-month_cov <- matrix(0, 12, 180)
+month_cov <- matrix(0, 12, 120)
 month.abb <- unique(data$Month)
-monrow <- match(data$Month, month.abb)[1:180]
+monrow <- match(data$Month, month.abb)[1:120]
 monrow
-month_cov[cbind(monrow,1:180)] <- 1
+month_cov[cbind(monrow,1:120)] <- 1
 month_cov[,1:24]
 
 # stack up the old covariate matrix
@@ -138,20 +137,20 @@ states <- as.data.frame(states)
 statesSE <- as.data.frame(statesSE)
 
 states_long <- states %>% 
-  pivot_longer("V1":"V180", names_to="Date", values_to="fitted")
+  pivot_longer("V1":"V120", names_to="Date", values_to="fitted")
 states_long <- states_long %>% 
   mutate(Date = rep(dates, 5))
 
 states_long <- states_long %>% 
-  mutate(state = c(rep(phytoplankton[1], 180),
-                   rep(phytoplankton[2], 180),
-                   rep(phytoplankton[3], 180),
-                   rep(phytoplankton[4], 180),
-                   rep(phytoplankton[5], 180)
+  mutate(state = c(rep(phytoplankton[1], 120),
+                   rep(phytoplankton[2], 120),
+                   rep(phytoplankton[3], 120),
+                   rep(phytoplankton[4], 120),
+                   rep(phytoplankton[5], 120)
   ))
 
 statesSE_long <- statesSE %>% 
-  pivot_longer("V1":"V180", names_to="Date", values_to="se")
+  pivot_longer("V1":"V120", names_to="Date", values_to="se")
 
 states_long <- states_long %>% 
   mutate(se = statesSE_long$se)
@@ -249,16 +248,16 @@ states <- as.data.frame(states)
 statesSE <- as.data.frame(statesSE)
 
 states_long <- states %>% 
-  pivot_longer("V1":"V180", names_to="Date", values_to="fitted")
+  pivot_longer("V1":"V120", names_to="Date", values_to="fitted")
 states_long <- states_long %>% 
   mutate(Date = dates)
 
 states_long <- states_long %>% 
-  mutate(state = c(rep(phytoplankton[1], 180)
+  mutate(state = c(rep(phytoplankton[1], 120)
   ))
 
 statesSE_long <- statesSE %>% 
-  pivot_longer("V1":"V180", names_to="Date", values_to="se")
+  pivot_longer("V1":"V120", names_to="Date", values_to="se")
 
 states_long <- states_long %>% 
   mutate(se = statesSE_long$se)
@@ -343,9 +342,9 @@ for(i in 1:(nrow(data_zoo)-1)){
 # Combine all into one dataframe
 aicc <- do.call(rbind, aicc_list)
 aicc
-  # per AICc, the model with 5 underlying factors displays the best fit
+  # per AICc, the model with 4 underlying factors displays the best fit
 
-ssm <- readRDS(file="Lab-3/Team-2/data/zoo_5.rds")
+ssm <- readRDS(file="Lab-3/Team-2/data/zoo_4.rds")
 
 # checking different levels of covariates
 d.phyto <- t(as.matrix(zoo.d[1,]))
@@ -356,9 +355,9 @@ d.phyph <- as.matrix(zoo.d[c(1,3),])
 d.tempph <- as.matrix(zoo.d[2:3,])
 d.all <- zoo.d
 
-# loadings matrix - 5 'states'
-Z5 <- matrix(paste0("z", seq(NN*5)), NN, 5)
-Z5[upper.tri(Z5)] <- 0
+# # loadings matrix - 5 'states'
+# Z4 <- matrix(paste0("z", seq(NN*4)), NN, 4)
+# Z4[upper.tri(Z4)] <- 0
 
 # lil lists
 covaicc_list <- list()
@@ -396,7 +395,7 @@ cov_list <- list(d.phyto, d.temp, d.ph, d.phytemp, d.phyph, d.tempph, d.all)
 #   covaicc_list[[i]] <- data.frame(Model = paste("cov_", i, sep = ""), AICc = ssm$AICc)
 # }
 
-mod_list = list(m = 5, R = "diagonal and unequal")
+mod_list = list(m = 4, R = "diagonal and unequal")
 for(i in 1:length(cov_list)){
   if(!file.exists(paste("Lab-3/Team-2/data/cov_", i, ".rds", sep = ""))){
     dfa <- MARSS(data_zoo, model = mod_list, form = "dfa", z.score = FALSE,
@@ -411,8 +410,8 @@ for(i in 1:length(cov_list)){
 # Combine all into one dataframe
 covaicc <- do.call(rbind, covaicc_list)
 covaicc
-  # per AICc, the full model (all covariates) with 5 underlying factors displays the best fit
-
+  # per AICc, the full model (all covariates) with 4 underlying factors displays the best fit
+ssm
 
 ##########################STUFF COMING FROM MARK'S CODE############################
 # the ro-to

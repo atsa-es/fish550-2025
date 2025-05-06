@@ -73,7 +73,7 @@ Using this, we formulated three main questions:
 
 1.  How do grazers and phytoplankton trends vary? Can the same/opposite factors be detected for both predators and prey? (we would expect opposite trends)
 
-2.  How do different model error structures alter our results
+2.  How do different model error structures alter our results?
 
 3.  How does peeling back time periods alter model results?
 
@@ -83,11 +83,15 @@ For our analysis, we needed our data to be cleaned up and transformed for the MA
 
 -   Which plankton taxa did you choose and how did you choose them?
 
+    In order to answer the question to our first and second question, we subset the data to include only the phytoplankton: Cryptomonas, Diatoms, Greens, Unicells, and Other Algae. This was done to be able to open the possibility of also exploring the relationships between the edible phytoplankton and the grazers.
+
 -   What time period(s) did you examine and why?
 
 We subset our data to 10 year block from 1980-1989.
 
 -   What environmental or dummy variables did you include and why?
+
+    For environmental covariates, we explored model alternatives with Temperature, Phosphorus, and a combination of Temperature and Phosphorus. To model scenarios without the presence of covariates, we also used cos and sin seasonal trends to compare.
 
 ```{r}
 
@@ -232,11 +236,11 @@ dfa_1 <- MARSS(y = dat, model = mod_list, inits = init_list, control = con_list)
 
 ```
 
-#### Model Diagnostics 
+#### Model Diagnostics
 
 #### Alternate Error Structures
 
-For this base model, we explored the impact of alterring our assumptions about error structure and comparing model performance. We explored three types of error matrices
+For this base model, we explored the impact of altering our assumptions about error structure and comparing model performance. We explored three types of error matrices
 
 #### Alternate Model Forms
 
@@ -251,7 +255,6 @@ Observation and Process equations remain the same. Only required changes are to 
 $\mathbf{Z} = \begin{bmatrix} z_{11} & 0 & 0 \\ z_{21} & z_{22} & 0 \\ z_{31} & z_{32} & z_{33} \\ z_{41} & z_{42} & z_{43} \\ z_{51} & z_{52} & z_{53} \end{bmatrix}$
 
 $\mathbf{d} = \begin{bmatrix} 0 \\ 0 \end{bmatrix}$
-
 
 Scenario 3: Grazers and Edible Phytoplankton and Phosphorus covariate
 
@@ -281,8 +284,7 @@ TP <- t(plank_dat[,"TP", drop = FALSE])
 
 ```
 
-Scenario 4: Grazers and Edible Phytoplankton with Phosphorus and Temperature covariates
-$$
+Scenario 4: Grazers and Edible Phytoplankton with Phosphorus and Temperature covariates $$
 \begin{aligned}
 \mathbf{y}_t &= \mathbf{Z}\mathbf{x}_t + \mathbf{a} + \mathbf{D}_1\mathbf{d}_{1t} + \mathbf{D}_2\mathbf{d}_{2t} + \mathbf{v}_t, \quad \text{where} \quad \mathbf{v}_t \sim \text{MVN}(\mathbf{0}, \mathbf{R}) \\
 \mathbf{x}_t &= \mathbf{x}_{t-1} + \mathbf{w}_t, \quad \text{where} \quad \mathbf{w}_t \sim \text{MVN}(\mathbf{0}, \mathbf{Q})
@@ -312,7 +314,7 @@ dfa_seas <- MARSS(dat, model = mod_list, form = "dfa", z.score = FALSE,
 dfa_seas$AICc
 ```
 
-### Model  Comparison
+### Model Comparison
 
 ```{r}
 # For models with similar structures, we used AIC to compare model performance
@@ -337,7 +339,7 @@ print(cbind(model = c("no covars", "Temp", "TP", "Temp & TP", "Dummy"),
       quote = FALSE)
 ```
 
-### Peeling Away Years 
+### Peeling Away Years
 
 An interesting idea mentioned in lecture was exploring the impact of peeling away years on a DFA model specifically it's performance and the factors identified. Given our large data set, we chose to explore this question as a final part of this lab.
 

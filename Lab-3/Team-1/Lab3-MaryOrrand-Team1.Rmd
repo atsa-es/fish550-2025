@@ -358,4 +358,4 @@ aic_table <- data.frame(
 print(aic_table)
 
 ```
-
+We compared several Dynamic Factor Analysis models using AICc to evaluate their performance. The 3-trend model had the lowest AICc value, indicating the best fit to the data despite only reaching abstol convergence. The improvement in AICc with increasing trends suggests that plankton dynamics in Lake Washington are best captured by multiple latent processes rather than a single common pattern. Additionally, when testing an alternative error structure using equal observation error variance, model fit worsened, reinforcing that allowing unequal error variance across taxa better reflects their unique variability. While the models did not fully converge, the AICc differences support using the 3-trend, unequal error variance model as the most parsimonious choice for interpreting system-wide trends.

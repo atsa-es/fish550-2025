@@ -309,7 +309,6 @@ for(i in 1:(nrow(data_zoo)-1)){
   ZZ[upper.tri(ZZ)] <- 0
   # loadings[[i]] <- assign(paste0("ZZ", i), ZZ)
 
-
   ## build model
   zoo.list <- list(
     B = "identity",
@@ -346,14 +345,26 @@ aicc
 
 ssm <- readRDS(file="Lab-3/Team-2/data/zoo_4.rds")
 
+# seasonality as sine/cosine waves
+cos_t <- cos(2 * pi * seq(120) / 12)
+sin_t <- sin(2 * pi * seq(120) / 12)
+
 # checking different levels of covariates
+d.all <- rbind(zoo.d, cos_t, sin_t)
 d.phyto <- t(as.matrix(zoo.d[1,]))
 d.temp <- t(as.matrix(zoo.d[2,]))
 d.ph <- t(as.matrix(zoo.d[3,]))
 d.phytemp <- as.matrix(zoo.d[1:2,])
 d.phyph <- as.matrix(zoo.d[c(1,3),])
 d.tempph <- as.matrix(zoo.d[2:3,])
-d.all <- zoo.d
+d.cov <- zoo.d
+d.S <- as.matrix(d.all[c(4:5),])
+d.phytoS <- as.matrix(d.all[c(1, 4:5),])
+d.tempS <- as.matrix(d.all[c(2, 4:5),])
+d.phS <- as.matrix(d.all[c(3, 4:5),])
+d.phytempS <- as.matrix(d.all[c(1:2, 4:5),])
+d.phyphS <- as.matrix(d.all[c(1,3:5),])
+d.tempphS <- as.matrix(d.all[2:5,])
 
 # # loadings matrix - 5 'states'
 # Z4 <- matrix(paste0("z", seq(NN*4)), NN, 4)
@@ -361,7 +372,7 @@ d.all <- zoo.d
 
 # lil lists
 covaicc_list <- list()
-cov_list <- list(d.phyto, d.temp, d.ph, d.phytemp, d.phyph, d.tempph, d.all)
+cov_list <- list(d.all, d.phyto, d.temp, d.ph, d.phytemp, d.phyph, d.tempph, d.cov, d.S, d.phytoS, d.tempS, d.phS, d.phytempS, d.phyphS, d.tempphS)
 
 # # looping
 # for(i in 1:length(cov_list)){
@@ -410,8 +421,8 @@ for(i in 1:length(cov_list)){
 # Combine all into one dataframe
 covaicc <- do.call(rbind, covaicc_list)
 covaicc
-  # per AICc, the full model (all covariates) with 4 underlying factors displays the best fit
-ssm
+  # per AICc, the model including phyoplankton abundance, pH levels, and a seasonal component with 4 underlying factors displays the best fit
+ssm <- readRDS(file="Lab-3/Team-2/data/cov_14.rds")
 
 ##########################STUFF COMING FROM MARK'S CODE############################
 # the ro-to
@@ -474,6 +485,11 @@ layout(1)
 par(mai = c(0.9,0.9,0.1,0.1))
 ## plot CCF's
 ccf(proc_rot[1,],proc_rot[2,], lag.max = 12, main="")
+ccf(proc_rot[1,],proc_rot[3,], lag.max = 12, main="")
+ccf(proc_rot[1,],proc_rot[4,], lag.max = 12, main="")
+ccf(proc_rot[2,],proc_rot[3,], lag.max = 12, main="")
+ccf(proc_rot[2,],proc_rot[4,], lag.max = 12, main="")
+ccf(proc_rot[3,],proc_rot[4,], lag.max = 12, main="")
 
 # plotting data and model fit
 get_DFA_fits <- function(MLEobj, dd = NULL, alpha = 0.05) {

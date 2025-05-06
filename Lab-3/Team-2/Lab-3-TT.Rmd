@@ -16,8 +16,6 @@ options(dplyr.summarise.inform = FALSE)
 
 # Data
 
-Describe what plankton groups and covariates you used and indicate any temporal subsetting you chose.
-
 We selected the five primary producer from the phytoplankton group, which include
 
 * `Cryptomonas`: small brown or green algae (edible)  
@@ -42,7 +40,7 @@ For covariates, We selected environmental factors including
 * `TP`: total phosphorous concentration in mg m<sup>-3</sup>  
 * `pH`: pH.
 
-Our analysis includes data from the year 1985 onward through the end of the dataset (December, 1994).
+Our analysis includes data from the year 1985 onward through the end of the dataset (December, 1994). These data are 'cleaned', meaning they are log-transformed and scaled.
 
 ```{r load_data, echo=FALSE, warning=FALSE, message=FALSE}
 ## load MARSS for data and analyses
@@ -974,6 +972,12 @@ model_comparison
 
 ## Grazer abundance, phytoplankton covariates
 
+This final section of our analysis focuses on modeling grazing zooplankton, treating phytoplankton abundance as a covariate as grazers feed on phytoplankton. The dataset contains time series abundance data on six species of grazing zooplankton: conochilus, cyclops, daphnia, diaptomus, non-daphnid cladocerans, and non- colonial rotifers. The first stage of this process involves modeling phytoplankton using a traditional MARSS model and recording model estimates of the underlying state of phytoplankton in Lake Washington. The next stage utilizes a dynamica factor analysis framework to consider zooplankton grazer abundance.
+
+#### Modeling phytoplankton
+
+Modeling phytoplankton abundance with traditional MARSS models is necessary for two reasons. One, the dynamic factor analysis of zooplankton grazers will include phytoplankton abundance as covariates. Covariates included in DFA models must have no missing data, and the observed phytoplankton data contains some gaps in the time series. Using MARSS models, the underlying state of phytoplankton abundance can be estimated with no missing data points. These estimates will then be passed into the DFA model. The second reason is that treating time series of five distinct phytoplankton species as representative samples of one underlying state of phytoplankton abundance is likely all that is required to observe the impact of phytoplankton abundance on the abundance of grazing zooplankton. Unless grazers are very selective in their diets, the overall level of phytoplankton in a given time period will likely be more important than the abundances of five individual phtoplankton groupings. 
+
 ```{r zp_datamanipulation, echo=FALSE, warning=FALSE, message=FALSE}
 ## load the data (there are 3 datasets contained here)
 data(lakeWAplankton, package = "MARSS")
@@ -1028,7 +1032,7 @@ month_cov[cbind(monrow,1:120)] <- 1
 phyto.c <- rbind(month_cov, data_phytoclimate)
 ```
 
-This analysis begins by building traditional MARSS models to estimate phytoplanton abundance, to be used as covariates in the zooplankton (grazer) DFA modeling. This modeling begins by considering two models with different covariate structures: one which takes into account Lake Washington's temperature, pH level, and total phosphorous measures, and another which includes a matrix of ones and zeroes corresponding to each month in order captrue seasonal trends. Each model treats each category of phytoplankton as its own underlying state.
+This analysis begins by considering two models with different covariate structures: one which takes into account Lake Washington's temperature, pH level, and total phosphorous measures, and another which includes a matrix of ones and zeroes corresponding to each month in order captrue seasonal trends. Each model treats each category of phytoplankton as its own underlying state.
 
 ```{r zp_modelbuild-phyto, echo=FALSE, warning=FALSE, message=FALSE}
 # build model - seasonal
@@ -1100,7 +1104,7 @@ out
 ssm.phyto <- ssm.phyto_month
 ```
 
-Per AICc, the model including seasonal covariates (as opposed to lake temperature and chemical compsotion) is a better fit for phyto plankton data. Aundances modeled below.
+Per AICc, the model including seasonal covariates (as opposed to lake temperature and chemical compsotion) is a better fit for phytoplankton data. Abundances are described in the figure below.
 
 ```{r zp_plot-phyto, echo=FALSE, warning=FALSE, message=FALSE}
 # grabbing model estimates
@@ -1146,6 +1150,8 @@ plot <- ggplot(data = states_long, aes(x = Date, y = fitted, group = state)) +
   scale_x_discrete(breaks = c(1980, 1983, 1986, 1989, 1992, 1995))
 plot
 ```
+
+Next we consider models which treat all five time series of phytoplankton groups as representative samples from one larger underlying state of phytoplankton abundance in Lake Washington. Once again, the two covariate structures described above will be evaluated for best fit. 
 
 ```{r zp_modelbuild-phyto1s, echo=FALSE, warning=FALSE, message=FALSE}
 # build model - seasonal
@@ -1213,6 +1219,8 @@ out
 ssm.phyto <- ssm.phyto_month
 ```
 
+As before, AICc finds that the model including seasonal covariates is a better fit for phytoplankton data. This overall abundance of phytoplankton is described in the figure below.
+
 ```{r zp_plot-phyto1s, echo=FALSE, warning=FALSE, message=FALSE}
 # grabbing model estimates
 states <- ssm.phyto$states
@@ -1253,6 +1261,12 @@ plot <- ggplot(data = states_long, aes(x = Date, y = fitted, group = state)) +
   scale_x_continuous(breaks = c(1980, 1983, 1986, 1989, 1992, 1995))
 plot
 ```
+
+This model of phytoplankton abundance as one underlying state will be used going forward in the dynamic factor analysis of zooplankton grazers. 
+
+#### Modeling grazing zooplankton
+
+With phytoplankton abundance estimates in hand, we now move on to the evaluation of zooplankton grazers using dynamic factor analysis. We begin by considering which number of underlying will best fit the model. We evealutate models with 1 to 5 underlying factors (as there are six time series of zooplankton grazers it is appropriate at most to consider one fewer factor). These initial models will include covariates describing temperature, pH, and phytoplankton abundance. One the best fit is determined in terms of underlying factors, these covariates will be additionally evaluated to determine whether they are all necessaty. 
 
 ```{r zp_modelbuild-zoo, echo=FALSE, warning=FALSE, message=FALSE}
 # get only zooplankton
@@ -1323,38 +1337,58 @@ aicc
 ssm <- readRDS(file=here::here("Lab-3", "Team-2", "data", "zoo_4.rds"))
 ```
 
+AICc determines that the model with four underlying factors is the best fit per the data. WE now move on to evaluating which set of covariates are best suited to improve model fit. All possible combinations of water temperature, pH levels, and phytoplankton abundance will be considered. Also, a seasonal covariate will be introduced and considered both on it's own and as part of other covariate combinations, yielding a total of 15 covariate structures to be considered.
+
 ```{r zp_modelcov-zoo, echo=FALSE, warning=FALSE, message=FALSE}
+# seasonality as sine/cosine waves
+cos_t <- cos(2 * pi * seq(120) / 12)
+sin_t <- sin(2 * pi * seq(120) / 12)
+
 # checking different levels of covariates
+d.all <- rbind(zoo.d, cos_t, sin_t)
 d.phyto <- t(as.matrix(zoo.d[1,]))
 d.temp <- t(as.matrix(zoo.d[2,]))
 d.ph <- t(as.matrix(zoo.d[3,]))
 d.phytemp <- as.matrix(zoo.d[1:2,])
 d.phyph <- as.matrix(zoo.d[c(1,3),])
 d.tempph <- as.matrix(zoo.d[2:3,])
-d.all <- zoo.d
+d.cov <- zoo.d
+d.S <- as.matrix(d.all[c(4:5),])
+d.phytoS <- as.matrix(d.all[c(1, 4:5),])
+d.tempS <- as.matrix(d.all[c(2, 4:5),])
+d.phS <- as.matrix(d.all[c(3, 4:5),])
+d.phytempS <- as.matrix(d.all[c(1:2, 4:5),])
+d.phyphS <- as.matrix(d.all[c(1,3:5),])
+d.tempphS <- as.matrix(d.all[2:5,])
 
 # lil lists
 covaicc_list <- list()
-cov_list <- list(d.phyto, d.temp, d.ph, d.phytemp, d.phyph, d.tempph, d.all)
+cov_list <- list(d.all, d.phyto, d.temp, d.ph, d.phytemp, d.phyph, d.tempph, d.cov, d.S, d.phytoS, d.tempS, d.phS, d.phytempS, d.phyphS, d.tempphS)
 
-# model
 mod_list = list(m = 4, R = "diagonal and unequal")
 for(i in 1:length(cov_list)){
-  if(!file.exists(here::here("Lab-3", "Team-2", "data", paste("cov_", i, ".rds", sep = "")))){
+  if(!file.exists(paste("Lab-3/Team-2/data/cov_", i, ".rds", sep = ""))){
     dfa <- MARSS(data_zoo, model = mod_list, form = "dfa", z.score = FALSE,
                     control = con_list, covariates = cov_list[[i]])
-    saveRDS(dfa, file=here::here("Lab-3", "Team-2", "data", paste("cov_", i, ".rds", sep = "")))
+    saveRDS(dfa, file=paste("Lab-3/Team-2/data/cov_", i, ".rds", sep = ""))
   }
   # load in ssm.phyto_climate
-  dfa <- readRDS(file=here::here("Lab-3", "Team-2", "data", paste("cov_", i, ".rds", sep = "")))
+  dfa <- readRDS(file=paste("Lab-3/Team-2/data/cov_", i, ".rds", sep = ""))
   covaicc_list[[i]] <- data.frame(Model = paste("cov_", i, sep = ""), AICc = dfa$AICc)
 }
 
 # Combine all into one dataframe
 covaicc <- do.call(rbind, covaicc_list)
 covaicc
-  # per AICc, the full model (all covariates) with 4 underlying factors displays the best fit
+  # per AICc, the model including phyoplankton abundance, pH levels, and a seasonal component with 4 underlying factors displays the best fit
+ssm <- readRDS(file="Lab-3/Team-2/data/cov_14.rds")
+
+covar_effects <- coef(ssm, type = "matrix")$D[, 1:2]
+colnames(covar_effects) <- list("Phytoplankton", "pH")
+covar_effects
 ```
+
+AICc finds that a model which allows for four underlying factors and includes phytoplankton abundance and pH levels as well as a seasonal component best describes the zooplankton grazer abundance data. The effects of phytoplankton abundance and pH levels on each species of grazer are reported in the table above.
 
 # Results
 
@@ -1364,18 +1398,22 @@ covaicc
 
 ## Grazer abundance, phytoplankton covariates
 
-```{r zp_exploration, echo=FALSE, warning=FALSE, message=FALSE}
+With a best fit model in hand, the next step is to determine a rotation matrix H that maximizes the difference between loadings in Z, to better understand what grazer zooplankton species abundances are being driven by which underlying factors.
+
+```{r zp_hmatrix, echo=FALSE, warning=FALSE, message=FALSE}
 # the ro-to
 Z_est <- coef(ssm, type = "matrix")$Z
 H_inv <- varimax(Z_est)$rotmat
 Z_rot <- Z_est %*% H_inv
 proc_rot <- solve(H_inv) %*% ssm$states
+H_inv
 Z_est
 Z_rot
+```
 
+
+```{r zp_factor loadings, echo=FALSE, warning=FALSE, message=FALSE}
 # plotting estimated factors and loadings (?)
-# getting into spaces where I don't intuitively understand exactly what's going on...
-
 ## plot labels
 ylbl <- zooplankton
 w_ts <- seq(dim(data_zoo)[2])
@@ -1418,14 +1456,11 @@ for(i in 1:nrow(proc_rot)) {
   } 
   mtext(paste("Factor loadings on state", i), side = 3, line = 0.5)
 }
+```
 
-# ccf plot
-## set up plotting area
-layout(1)
-par(mai = c(0.9,0.9,0.1,0.1))
-## plot CCF's
-ccf(proc_rot[1,],proc_rot[2,], lag.max = 12, main="")
+The above plot shows no clear pattern in species being driven by one trend or another. Perhaps cyclops and daphnia exhibit similar drivers and likewise with non-daphnid cladocerans and non-colonial rotifers. Also, despite including covariates to account for seasonal trends, there still appears to be some seasonality in states 1, 2, & 4.
 
+```{r zp_model fit, echo=FALSE, warning=FALSE, message=FALSE}
 # plotting data and model fit
 get_DFA_fits <- function(MLEobj, dd = NULL, alpha = 0.05) {
   ## empty list for results
@@ -1484,9 +1519,11 @@ for(i in 1:N_ts) {
   lines(w_ts, lo, col = "darkgray")
 }
 ```
+Finally, we compare model fit to the actual data for all six groupings of grazer zooplankton. Generally fit is good, with the model proving better at estimating abundances of certain species of zooplankton than others. Diaptomus, non-colonial rotifers, and conochilus estimates fit the data fairly well, while daphnia and to (maybe) a lesser extent non-daphnid cladocerans and cyclops estimates are less accurate predictions of the data observed.
 
 # Discussion
 
+Including phytoplankton abundance as a covariate in models describing the abundance of various grazing zooplaknton proved fruitful. A dynamic factor analysis revealed four underlying factors driving/predicting grazer abundance in Lake Washington. Phytoplaknton abundances were included in the model of best fit, along with pH levels and a seasonal component. While some species were modeled very effectively with this structure, others were not estimated as efficiently. A potential next step would be modeling each species of grazer separately in order to better capture the effects of phytoplankton abundance on each.
 
 # Team contributions
 

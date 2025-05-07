@@ -1,0 +1,1528 @@
+---
+title: Team 1 - Lab 1
+subtitle: Dynamic Factor Analysis (DFA) - Common trends in plankton data
+author: "Matheus de Barros, Tina Tao, Brian McGreal"
+date: May 6, 2025
+output: 
+  html_document:
+    code-folding: true
+    toc: true
+    toc_float: true
+---
+
+```{r setup, message=FALSE, warning=FALSE, echo=FALSE}
+options(dplyr.summarise.inform = FALSE)
+```
+
+# Data
+
+We selected the five primary producer from the phytoplankton group, which include
+
+* `Cryptomonas`: small brown or green algae (edible)  
+* `Diatoms`: small algae rich in silica (edible)  
+* `Greens`: general class of algae (edible)  
+* `Unicells`: very small algae (edible)  
+* `Other.algae`: generic catch-all for atypical species (edible)
+
+because there are too many missing values in `Bluegreens`. Likewise, the group `Neomysis` is excluded from the zooplankton data due to the high volume of missing observations, leaving the following classifications of zooplankton:
+
+* `Conochilus`: colonial form of rotifer (grazer)  
+* `Cyclops`: cyclopoid copepod (grazer) 
+* `Daphnia`: cladoceran (grazer) 
+* `Diaptomus`: calanoid copepod (grazer) 
+* `Epischura`: very large calanoid copepod (predator)
+* `Leptodora`: very large cladoceran (predator)  
+* `Non.daphnid.cladocerans`: catch-all for other cladocerans (grazers)
+* `Non.colonial.rotifers`: free-floating rotifers (grazers)
+
+For covariates, We selected environmental factors including
+* `Temp`: water temperature in degrees C  
+* `TP`: total phosphorous concentration in mg m<sup>-3</sup>  
+* `pH`: pH.
+
+Our analysis includes data from the year 1985 onward through the end of the dataset (December, 1994). These data are 'cleaned', meaning they are log-transformed and scaled.
+
+```{r load_data, echo=FALSE, warning=FALSE, message=FALSE}
+## load MARSS for data and analyses
+library(here)
+library(MARSS)
+library(panelr)
+library(tidyverse)
+library(zoo)
+
+here::i_am("Lab-3-Team2-FINAL.Rmd")
+
+## load the raw data (there are 3 datasets contained here)
+data(lakeWAplankton, package = "MARSS")
+
+## we want `lakeWAplanktonTrans`, which has been transformed
+## so the 0's are replaced with NA's and the data z-scored
+all_dat <- lakeWAplanktonTrans
+```
+
+```{r wrangle_data, echo=FALSE, warning=FALSE, message=FALSE}
+## use 10 years from 1985-1994
+yr_frst <- 1985
+yr_last <- 1994
+plank_dat <- all_dat[all_dat[, "Year"] >= yr_frst & 
+                     all_dat[, "Year"] <= yr_last,]
+
+## create vector of phytoplankton group names
+phytoplankton <- c("Cryptomonas", "Diatoms", "Greens",
+                   "Unicells", "Other.algae")
+
+## get only the phytoplankton
+dat_1985 <- plank_dat[, phytoplankton]
+
+## transpose data so time goes across columns
+dat_1985 <- t(dat_1985)
+
+## get number of time series
+N_ts <- dim(dat_1985)[1]
+
+## get length of time series
+TT <- dim(dat_1985)[2]
+
+## mean of each taxon
+y_bar <- apply(dat_1985, 1, mean, na.rm = TRUE)
+
+## de-mean the data - subtract the means
+dat <- dat_1985 - y_bar
+
+## assign new column names
+spp <- rownames(dat_1985)
+rownames(dat) <- spp
+```
+
+```{r plot_data, echo=FALSE, warning=FALSE, message=FALSE}
+## set plot colors for six groups
+clr <- c("blue", "darkgreen", "darkred", "purple", "orange")
+
+## initialize a counter
+cnt <- 1
+
+## set up plotting space for six time series
+par(mfrow = c(N_ts, 1), mai = c(0.5, 0.7, 0.1, 0.1), omi = c(0, 0, 0, 0))
+
+## loop through each phytoplankton group
+for(i in spp){
+  plot(dat[i,], bty = "L", xaxt = "n", pch = 16,
+       xlab = "",
+       ylab = "Abundance index", col = clr[cnt], type = "b")
+  axis(1, 12 * (0:dim(dat_1985)[2]) + 1, yr_frst + 0:dim(dat_1985)[2])
+  title(i)
+  cnt <- cnt + 1
+}
+```
+
+# Methods
+
+## Phytoplankton abundance
+
+We examined models that consider phytoplankton abundance being driven by three underlying state options: one, two, or three states. We also test three observation error matrices, diagonal and equal, diagonal and unequal, and equal variance and covariance. Our aim is to consider all combinations of three environmental covariates and how they relate to phytoplankton abundance.
+
+```{r model_params, echo=FALSE, warning=FALSE, message=FALSE}
+model.states <- 1:3
+names(model.states) <- c("one_state", "two_states","three_states")
+
+# testing different observation error matrices
+R.models <- c("diagonal and unequal","equalvarcov", "diagonal and equal")
+
+# covariates must be z-scored if the response variables are demeaned, and subset covariates to same time window and transpose
+cov_temp <- t(zscore(plank_dat[,"Temp", drop = FALSE]))
+cov_TP   <- t(zscore(plank_dat[,"TP", drop = FALSE]))
+cov_pH   <- t(zscore(plank_dat[,"pH", drop = FALSE]))
+cov_temp_TP   <- t(zscore(plank_dat[, c("Temp", "TP")]))
+cov_TP_pH     <- t(zscore(plank_dat[, c("TP", "pH")]))
+cov_temp_pH   <- t(zscore(plank_dat[, c("Temp", "pH")]))
+cov_all       <- t(zscore(plank_dat[, c("Temp", "TP", "pH")]))
+
+d.models <- list(
+  Temp            = cov_temp,
+  TP              = cov_TP,
+  pH              = cov_pH,
+  "Temp and TP"   = cov_temp_TP,
+  "TP and pH"     = cov_TP_pH,
+  "Temp and pH"   = cov_temp_pH,
+  "Temp,TP, and pH" = cov_all
+)
+
+# define model list 
+mod.list = list(
+  A = "zero", # this is set to zero because it is the offset/scaling
+  Q = "identity", # Q is set to the default value, the identify matrix, which can also be "diagonal and equal" or "diagonal and unequal"
+  x0 = "zero" # x0 can be also be set to "unconstrained" or "unequal" it might be useful to try these later
+)
+
+```
+
+
+
+```{r MARSS_models_fitting, echo=FALSE, warning=FALSE, message=FALSE}
+## Create a results list to store model fits and AICs
+model_fits <- list()
+model_AICs <- data.frame(
+  ModelID = character(),
+  NumStates = integer(),
+  R_Model = character(),
+  Covariates = character(),
+  AICc = numeric(),
+  stringsAsFactors = FALSE
+)
+
+# Check and handle NAs in covariates (assuming plank_dat is already subsetted)
+# Apply linear interpolation to covariates to fill NAs
+library(zoo)
+plank_df <- as.data.frame(plank_dat)
+plank_df$Temp <- na.approx(plank_df$Temp, na.rm = FALSE)
+plank_df$TP <- na.approx(plank_df$TP, na.rm = FALSE)
+plank_df$pH <- na.approx(plank_df$pH, na.rm = FALSE)
+
+# Recreate covariates with scaling after handling NAs
+cov_temp <- t(scale(plank_df[,"Temp", drop = FALSE]))
+cov_TP   <- t(scale(plank_df[,"TP", drop = FALSE]))
+cov_pH   <- t(scale(plank_df[,"pH", drop = FALSE]))
+cov_temp_TP   <- t(scale(plank_df[, c("Temp", "TP")]))
+cov_TP_pH     <- t(scale(plank_df[, c("TP", "pH")]))
+cov_temp_pH   <- t(scale(plank_df[, c("Temp", "pH")]))
+cov_all       <- t(scale(plank_df[, c("Temp", "TP", "pH")]))
+
+# Update d.models with corrected covariates
+d.models <- list(
+  Temp            = cov_temp,
+  TP              = cov_TP,
+  pH              = cov_pH,
+  "Temp and TP"   = cov_temp_TP,
+  "TP and pH"     = cov_TP_pH,
+  "Temp and pH"   = cov_temp_pH,
+  "Temp,TP, and pH" = cov_all
+)
+
+model_id <- 1
+for(n_state in model.states){
+  for(R_mod in R.models){
+    for(d_name in names(d.models)){
+      
+      # Define the Z matrix with correct dimensions
+      if(n_state == 1){
+        Z.model <- matrix("z", N_ts, n_state)  # All species load on single trend
+      } else {
+        Z.model <- matrix(0, N_ts, n_state)  # Start with zeros
+        param_count <- 1
+        for(i in 1:N_ts){
+          for(j in 1:n_state){
+            if(i < N_ts && j > i){
+              # upper-triangle for first m-1 rows stays zero
+              next
+            } else {
+              if(i == j){
+                Z.model[i, j] <- paste0("z", param_count, "+")  # diagonal: positive
+              } else {
+                Z.model[i, j] <- paste0("z", param_count)
+              }
+              param_count <- param_count + 1
+            }
+          }
+        }
+      }
+      
+      # Define model list with updated Z and correct dimensions
+      mod.list <- list(
+        Z = Z.model,
+        R = R_mod,
+        A = "zero",
+        Q = "identity",
+        x0 = "zero",
+        D = "unconstrained",
+        d = d.models[[d_name]]
+      )
+      
+      # Fit the model
+      fit <- tryCatch({
+        MARSS(dat, model = mod.list, silent = TRUE, control = list(maxit = 5000))
+      }, error = function(e) NULL)
+      
+      # Store results if successful
+      if(!is.null(fit) && !is.null(fit$AICc)){
+        model_fits[[paste0("model", model_id)]] <- fit
+        model_AICs <- rbind(model_AICs, data.frame(
+          ModelID = paste0("model", model_id),
+          NumStates = n_state,
+          R_Model = R_mod,
+          Covariates = d_name,
+          AICc = fit$AICc
+        ))
+      } else {
+        cat("Model", model_id, "failed or AICc missing\n")
+      }
+      
+      model_id <- model_id + 1
+    }
+  }
+}
+
+```
+
+```{r MARSS_models_comparison, echo=FALSE, warning=FALSE, message=FALSE}
+library(dplyr)
+model_AICs %>% 
+  arrange(AICc) %>% 
+  head(10)
+
+# Find the best model ID
+best_model_id <- model_AICs$ModelID[which.min(model_AICs$AICc)]
+
+# Get the best model object
+best_model <- model_fits[[best_model_id]]
+
+# View model summary
+summary(best_model)
+
+# View estimated parameters
+coef(best_model, type = "matrix")$Z  # Loadings
+coef(best_model, type = "matrix")$D  # Covariate effects
+```
+
+```{r best_model_diagnostics, echo=FALSE, warning=FALSE, message=FALSE}
+# Extract residuals from the best model
+resids <- MARSSresiduals(best_model)
+
+# Time series plot of model residuals (observation errors)
+model_res <- resids$model.residuals
+ts.plot(t(model_res), main = "Time Series of Model Residuals", ylab = "Residuals", xlab = "Time", col = 1:nrow(model_res))
+legend("topright", legend = rownames(model_res), col = 1:nrow(model_res), lty = 1)
+
+# Autocorrelation check for each time series
+par(mfrow = c(ceiling(nrow(model_res)/2), 2), mar = c(4, 4, 2, 1))  # layout for ACF plots
+for(i in 1:nrow(model_res)){
+  acf(model_res[i, ], na.action = na.pass, main = paste("ACF -", rownames(model_res)[i]))
+}
+par(mfrow = c(1,1))  # reset layout
+```
+
+```{r best_model_visualization, echo=FALSE, warning=FALSE, message=FALSE}
+# Plot the estimated trends
+library(ggplot2)
+trends <- data.frame(
+  Time = 1:TT,
+  Trend = as.vector(best_model$states),
+  SE = as.vector(best_model$states.se)
+)
+
+ggplot(trends, aes(x = Time, y = Trend)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = Trend - 1.96*SE, ymax = Trend + 1.96*SE), alpha = 0.2) +
+  labs(title = "Estimated Common Trends")
+
+# Get fitted values
+fitted_vals <- fitted(best_model)
+
+# Plot for each species
+ggplot(fitted_vals, aes(x = t, y = .fitted)) +
+  geom_line(color = "blue") +
+  geom_point(aes(y = y), color = "black", size = 1) +
+  facet_wrap(~.rownames, scales = "free_y") +
+  labs(x = "Time", y = "Abundance", title = "Model Fits vs Observations")
+
+# Get covariate coefficients
+covar_effects <- coef(best_model, type = "matrix")$D
+
+# Plot effects
+data.frame(
+  Species = rownames(dat),
+  covar_effects
+) %>% 
+  tidyr::pivot_longer(-Species, names_to = "Covariate", values_to = "Effect") %>% 
+  ggplot(aes(x = Covariate, y = Effect, color = Species)) +
+  geom_point(size = 3) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  coord_flip() +
+  theme_minimal()
+```
+
+## Zooplankton abundance
+
+This analysis includes model comparison to determine the optimal number of hidden states that drive zooplankton abundance. 
+
+Loading and wrangling data:
+```{r}
+library(MARSS)
+library(ggplot2)
+library(dplyr)
+library(ggpubr)
+
+data(lakeWAplankton, package = "MARSS")
+
+data = lakeWAplanktonTrans
+
+zooplankton = c("Conochilus", "Cyclops", "Daphnia", "Diaptomus", "Epischura",
+                "Leptodora", "Non.daphnid.cladocerans", "Non.colonial.rotifers") # I'm excluding 'Neomysis' since they dont have lots of data
+
+env_covars = c("Temp", "TP", "pH")
+
+time_vars = c("Year", "Month")
+
+combined = unique(c(zooplankton, env_covars, time_vars))
+
+# filter data
+data = lakeWAplanktonTrans[, colnames(lakeWAplanktonTrans) %in% combined, drop = FALSE]
+
+# select zooplankton only and de-mean data
+zoop_data = data[, colnames(data) %in% zooplankton, drop = FALSE]
+y_mean    = apply(zoop_data, 2, mean, na.rm = TRUE)
+zoop_data = zoop_data - y_mean
+
+# select last 10 years only
+zoop_data = zoop_data[120:dim(zoop_data)[2],]
+
+# transpose so time is columns 
+zoop_data = t(zoop_data)
+N_ts      = nrow(zoop_data)
+TT        = ncol(zoop_data)
+```
+
+Plotting:
+```{r}
+cnt = 1
+par(mfrow = c(4, 2), mai = c(0.5, 0.7, 0.15, 0.5), omi = c(0, 0, 0, 0))
+
+for (i in zooplankton) {
+  plot(zoop_data[cnt, ], type = "l", xlab = "Time", ylab = i,
+       main = paste("Time series of", i), ylim = c(-2, 2))
+  cnt = cnt + 1
+}
+```
+#### Model 1: 1 Hidden State
+
+##### The observation model
+
+$$
+\begin{bmatrix}
+Y_{1t} \\
+Y_{2t} \\
+Y_{3t} \\
+Y_{4t} \\
+Y_{5t} \\
+Y_{6t} \\
+Y_{7t} \\
+Y_{8t}
+\end{bmatrix}
+=
+\begin{bmatrix}
+z_{11} \\
+z_{21} \\
+z_{31} \\
+z_{41} \\
+z_{51} \\
+z_{61} \\
+z_{71} \\
+z_{81}
+\end{bmatrix}
+X_t
++
+\begin{bmatrix}
+0 \\
+0 \\
+0 \\
+0 \\
+0 \\
+0 \\
+0 \\
+0
+\end{bmatrix}
++
+\begin{bmatrix}
+0 \\
+0 \\
+0 \\
+0 \\
+0 \\
+0 \\
+0 \\
+0
+\end{bmatrix}
++
+\varepsilon_t
+$$
+Where:
+- \( \varepsilon_t \sim N(0, R) \)
+- The variance-covariance matrix \( R \) is:
+$$
+R = 
+\begin{bmatrix}
+\sigma_1^2 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & \sigma_2^2 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & \sigma_3^2 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & \sigma_4^2 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & \sigma_5^2 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & \sigma_6^2 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & \sigma_7^2 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & \sigma_8^2
+\end{bmatrix}
+$$
+
+$$
+X_t = 
+\begin{bmatrix}
+1
+\end{bmatrix}
+X_{t-1} +
+\begin{bmatrix}
+0
+\end{bmatrix}
++
+\begin{bmatrix}
+0
+\end{bmatrix}
++
+\eta_t
+$$
+
+Where:
+- \( \eta_t \sim N(0, Q) \)
+- The variance-covariance matrix \( Q \) is:
+$$
+Q = 
+\begin{bmatrix}
+1
+\end{bmatrix}
+$$
+
+
+```{r}
+###### Model 1: 1 Hidden State ######
+
+## 1. Observation model
+Z_vals_1 = list(  "z11"  ,  
+                  "z21",
+                  "z31",
+                  "z41",
+                  "z51",
+                  "z61",
+                  "z71",
+                  "z81" )
+
+ZZ_1 = matrix(Z_vals_1, nrow = N_ts, ncol = 1, byrow = TRUE)
+aa_1 = "zero"
+DD_1 = "zero"                 # no covariates
+dd_1 = "zero"
+RR_1 = "diagonal and unequal" # observation error variance-covariance matrix
+
+## 2. Process model
+mm_1 = 1           # number of hidden states
+BB_1 = "identity"  # diag(mm)
+uu_1 = "zero"      # process bias (i.e. growth rate)
+CC_1 = "zero"      # no covariates
+cc_1 = "zero"
+QQ_1 = "identity"  # process error variance-covariance matrix
+
+mod_list_1 = list(Z = ZZ_1, A = aa_1, D = DD_1, d = dd_1, R = RR_1,
+                  B = BB_1, U = uu_1, C = CC_1, c = cc_1, Q = QQ_1)
+
+init_list_1 = list(x0 = 0)
+
+con_list_1   = list(maxit = 1000, allow.degen = TRUE)
+dfa_1_hidden = MARSS(y = zoop_data, model = mod_list_1, inits = init_list_1, control = con_list_1)
+
+## Plot fits against data
+model_1_fits    = dfa_1_hidden$ytT
+model_1_fits_se = dfa_1_hidden$ytT.se
+
+par(mfrow = c(4, 2), mai = c(0.5, 0.7, 0.15, 0.5), omi = c(0, 0, 0, 0))
+cnt = 1
+for (i in zooplankton) {
+  plot(zoop_data[cnt, ], type = "p", xlab = "Time", ylab = i,
+       main = paste("Time series of", i), ylim = c(-2, 2))
+  lines(model_1_fits[cnt, ], col = "red")
+  lines(model_1_fits[cnt, ] + model_1_fits_se[cnt, ], col = "blue", lty = 2)
+  lines(model_1_fits[cnt, ] - model_1_fits_se[cnt, ], col = "blue", lty = 2)
+  cnt = cnt + 1
+}
+
+## Plot states and loadings
+Z_est_1 = coef(dfa_1_hidden, type = "matrix")$Z
+H_inv_1 = varimax(Z_est_1)
+
+states_1 = as.vector(dfa_1_hidden$states) 
+states_1 = data.frame(1:TT, states_1); names(states_1) = c("Time", "State")
+
+states_plot_1 = states_1 %>%
+  ggplot(aes(x = Time, y = State)) +
+  geom_line() +
+  theme_minimal()
+
+loadings_1 = as.vector(H_inv_1[,1])
+loadings_1 = data.frame(loadings_1, zooplankton)
+
+loadings_plot_1 = loadings_1 %>%
+  ggplot(aes(x = zooplankton, y = loadings_1)) +
+  geom_bar(stat = "identity", fill = "white", color = "black") +
+  theme_minimal() +
+  coord_flip() +
+  ylab("") +
+  xlab("Loadings")
+
+ggarrange(states_plot_1, loadings_plot_1)
+```
+
+#### Model 2: 2 Hidden States
+
+##### The observation model
+
+$$
+\begin{bmatrix}
+Y_{1t} \\
+Y_{2t} \\
+Y_{3t} \\
+Y_{4t} \\
+Y_{5t} \\
+Y_{6t} \\
+Y_{7t} \\
+Y_{8t}
+\end{bmatrix}
+=
+\begin{bmatrix}
+z_{11} & 0 \\
+z_{21} & z_{22} \\
+z_{31} & z_{32} \\
+z_{41} & z_{42} \\
+z_{51} & z_{52} \\
+z_{61} & z_{62} \\
+z_{71} & z_{72} \\
+z_{81} & z_{82}
+\end{bmatrix}
+\begin{bmatrix}
+X_{1t} \\
+X_{2t}
+\end{bmatrix}
++
+\begin{bmatrix}
+0 \\
+0 \\
+0 \\
+0 \\
+0 \\
+0 \\
+0 \\
+0
+\end{bmatrix}
++
+\begin{bmatrix}
+0 \\
+0 \\
+0 \\
+0 \\
+0 \\
+0 \\
+0 \\
+0
+\end{bmatrix}
++
+\varepsilon_t
+$$
+
+Where:
+- \( \varepsilon_t \sim N(0, R) \)
+- The variance-covariance matrix \( R \) is:
+$$
+R = 
+\begin{bmatrix}
+\sigma_1^2 & 0 & \cdots & 0 \\
+0 & \sigma_2^2 & \cdots & 0 \\
+\vdots & \vdots & \ddots & \vdots \\
+0 & 0 & \cdots & \sigma_8^2
+\end{bmatrix}
+$$
+
+
+##### The process model
+
+$$
+\begin{bmatrix}
+X_{1t} \\
+X_{2t}
+\end{bmatrix}
+=
+\begin{bmatrix}
+1 & 0 \\
+0 & 1
+\end{bmatrix}
+\begin{bmatrix}
+X_{1, t-1} \\
+X_{2, t-1}
+\end{bmatrix}
++
+\begin{bmatrix}
+0 \\
+0
+\end{bmatrix}
++
+\begin{bmatrix}
+0 \\
+0
+\end{bmatrix}
++
+\eta_t
+$$
+
+Where:
+- \( \eta_t \sim N(0, Q) \)
+- The variance-covariance matrix \( Q \) is:
+$$
+Q = 
+\begin{bmatrix}
+1 & 0 \\
+0 & 1
+\end{bmatrix}
+$$
+
+```{r}
+
+###### Model 2: 2 Hidden States ######
+
+## 1. Observation model
+Z_vals_2 = list(  0  , 0  ,
+                "z21", 0  ,
+                "z31","z32",
+                "z41","z42",
+                "z51","z52",
+                "z61","z62",
+                "z71","z72",
+                "z81","z82")
+ZZ_2 = matrix(Z_vals_2, nrow = N_ts, ncol = 2, byrow = TRUE)
+aa_2 = "zero"
+DD_2 = "zero"                 # no covariates
+dd_2 = "zero"
+RR_2 = "diagonal and unequal" # observation error variance-covariance matrix
+
+## 2. Process model
+mm_2 = 2           # number of hidden states
+BB_2 = "identity"  # diag(mm)
+uu_2 = "zero"      # process bias (i.e. growth rate)
+CC_2 = "zero"      # no covariates
+cc_2 = "zero"
+QQ_2 = "identity"  # process error variance-covariance matrix
+
+mod_list_2 = list(Z = ZZ_2, A = aa_2, D = DD_2, d = dd_2, R = RR_2,
+                  B = BB_2, U = uu_2, C = CC_2, c = cc_2, Q = QQ_2)
+
+init_list_2 = list(x0 = matrix(rep(0, mm_2), mm_2, 1))
+
+con_list_2 = list(maxit = 1000, allow.degen = TRUE)
+dfa_2_hidden = MARSS(y = zoop_data, model = mod_list_2, inits = init_list_2, control = con_list_2)
+
+## Plot fits against data
+model_2_fits    = dfa_2_hidden$ytT
+model_2_fits_se = dfa_2_hidden$ytT.se
+
+par(mfrow = c(4, 2), mai = c(0.5, 0.7, 0.15, 0.5), omi = c(0, 0, 0, 0))
+cnt = 1
+for (i in zooplankton) {
+  plot(zoop_data[cnt, ], type = "p", xlab = "Time", ylab = i,
+       main = paste("Time series of", i), ylim = c(-2, 2))
+  lines(model_2_fits[cnt, ], col = "red")
+  lines(model_2_fits[cnt, ] + model_2_fits_se[cnt, ], col = "blue", lty = 2)
+  lines(model_2_fits[cnt, ] - model_2_fits_se[cnt, ], col = "blue", lty = 2)
+  cnt = cnt + 1
+}
+
+## Plot states and loadings
+Z_est_2 = coef(dfa_2_hidden, type = "matrix")$Z
+#H_inv_2 = varimax(Z_est_2)$rotmat
+
+states_2 = as.data.frame(t(dfa_2_hidden$states))
+states_2 = data.frame(1:TT, states_2); names(states_2) = c("Time", "State 1", "State 2")
+
+states_plot_2 = states_2 %>%
+  ggplot(aes(x = Time)) +
+  geom_line(aes(y = `State 1`, color = "State 1")) +
+  geom_line(aes(y = `State 2`, color = "State 2")) +
+  theme_minimal() +
+  ylab("States") +
+  scale_color_manual(values = c("blue", "red")) +
+  theme(legend.title = element_blank(),
+        legend.position = "top")
+
+loadings_2 = as.data.frame(Z_est_2)
+loadings_2 = data.frame(loadings_2, zooplankton)
+loadings_plot_2 = loadings_2 %>%
+  ggplot(aes(x = zooplankton)) +
+  geom_bar(aes(y = X1), stat = "identity", fill = "blue", color = "black") +
+  geom_bar(aes(y = X2), stat = "identity", fill = "red", color = "black") +
+  theme_minimal() +
+  coord_flip() +
+  ylab("") +
+  xlab("Loadings")
+
+ggarrange(states_plot_2, loadings_plot_2)
+
+```
+
+#### Model 3: 3 Hidden States
+
+##### The observation model
+$$
+\begin{bmatrix}
+Y_{1t} \\
+Y_{2t} \\
+Y_{3t} \\
+Y_{4t} \\
+Y_{5t} \\
+Y_{6t} \\
+Y_{7t} \\
+Y_{8t}
+\end{bmatrix}
+=
+\begin{bmatrix}
+z_{11} & 0 & 0 \\
+z_{21} & z_{22} & 0 \\
+z_{31} & z_{32} & z_{33} \\
+z_{41} & z_{42} & z_{43} \\
+z_{51} & z_{52} & z_{53} \\
+z_{61} & z_{62} & z_{63} \\
+z_{71} & z_{72} & z_{73} \\
+z_{81} & z_{82} & z_{83}
+\end{bmatrix}
+\begin{bmatrix}
+X_{1t} \\
+X_{2t} \\
+X_{3t}
+\end{bmatrix}
++
+\begin{bmatrix}
+0 \\
+0 \\
+0 \\
+0 \\
+0 \\
+0 \\
+0 \\
+0
+\end{bmatrix}
++
+\begin{bmatrix}
+0 \\
+0 \\
+0 \\
+0 \\
+0 \\
+0 \\
+0 \\
+0
+\end{bmatrix}
++
+\varepsilon_t
+$$
+
+Where:
+- \( \varepsilon_t \sim N(0, R) \)
+- The variance-covariance matrix \( R \) is:
+$$
+R = 
+\begin{bmatrix}
+\sigma_1^2 & 0 & \cdots & 0 \\
+0 & \sigma_2^2 & \cdots & 0 \\
+\vdots & \vdots & \ddots & \vdots \\
+0 & 0 & \cdots & \sigma_8^2
+\end{bmatrix}
+$$
+##### The process model
+$$
+\begin{bmatrix}
+X_{1t} \\
+X_{2t} \\
+X_{3t}
+\end{bmatrix}
+=
+\begin{bmatrix}
+1 & 0 & 0 \\
+0 & 1 & 0 \\
+0 & 0 & 1
+\end{bmatrix}
+\begin{bmatrix}
+X_{1, t-1} \\
+X_{2, t-1} \\
+X_{3, t-1}
+\end{bmatrix}
++
+\begin{bmatrix}
+0 \\
+0 \\
+0
+\end{bmatrix}
++
+\begin{bmatrix}
+0 \\
+0 \\
+0
+\end{bmatrix}
++
+\eta_t
+$$
+
+Where:
+- \( \eta_t \sim N(0, Q) \)
+- The variance-covariance matrix \( Q \) is:
+$$
+Q = 
+\begin{bmatrix}
+1 & 0 & 0 \\
+0 & 1 & 0 \\
+0 & 0 & 1
+\end{bmatrix}
+$$
+
+```{r}
+###### Model 3: 3 Hidden States ######
+
+## 1. Observation model
+Z_vals_3 = list("z11",  0  ,  0  ,
+                "z21","z22",  0  ,
+                "z31","z32","z33",
+                "z41","z42","z43",
+                "z51","z52","z53",
+                "z61","z62","z63",
+                "z71","z72","z73",
+                "z81","z82","z83")
+ZZ_3 = matrix(Z_vals_3, nrow = N_ts, ncol = 3, byrow = TRUE)
+aa_3 = "zero"
+DD_3 = "zero"                 # no covariates
+dd_3 = "zero"
+RR_3 = "diagonal and unequal" # observation error variance-covariance matrix
+
+## 2. Process model
+mm_3 = 3           # number of hidden states
+BB_3 = "identity"  # diag(mm)
+uu_3 = "zero"      # process bias (i.e. growth rate)
+CC_3 = "zero"      # no covariates
+cc_3 = "zero"
+QQ_3 = "identity"  # process error variance-covariance matrix
+
+mod_list_3 = list(Z = ZZ_3, A = aa_3, D = DD_3, d = dd_3, R = RR_3,
+                  B = BB_3, U = uu_3, C = CC_3, c = cc_3, Q = QQ_3)
+
+init_list_3 = list(x0 = matrix(rep(0, mm_3), mm_3, 1))
+
+con_list_3 = list(maxit = 1000, allow.degen = TRUE)
+dfa_3_hidden = MARSS(y = zoop_data, model = mod_list_3, inits = init_list_3, control = con_list_3)
+
+## Plot fits against data
+model_3_fits    = dfa_3_hidden$ytT
+model_3_fits_se = dfa_3_hidden$ytT.se
+par(mfrow = c(4, 2), mai = c(0.5, 0.7, 0.15, 0.5), omi = c(0, 0, 0, 0))
+cnt = 1
+for (i in zooplankton) {
+  plot(zoop_data[cnt, ], type = "p", xlab = "Time", ylab = i,
+       main = paste("Time series of", i), ylim = c(-2, 2))
+  lines(model_3_fits[cnt, ], col = "red")
+  lines(model_3_fits[cnt, ] + model_3_fits_se[cnt, ], col = "blue", lty = 2)
+  lines(model_3_fits[cnt, ] - model_3_fits_se[cnt, ], col = "blue", lty = 2)
+  cnt = cnt + 1
+}
+
+## Plot states and loadings
+Z_est_3 = coef(dfa_3_hidden, type = "matrix")$Z
+H_inv_3 = varimax(Z_est_3)$rotmat
+
+states_3 = as.data.frame(t(dfa_3_hidden$states))
+states_3 = data.frame(1:TT, states_3); names(states_3) = c("Time", "State 1", "State 2", "State 3")
+states_plot_3 = states_3 %>%
+  ggplot(aes(x = Time)) +
+  geom_line(aes(y = `State 1`, color = "State 1")) +
+  geom_line(aes(y = `State 2`, color = "State 2")) +
+  geom_line(aes(y = `State 3`, color = "State 3")) +
+  theme_minimal() +
+  ylab("States") +
+  scale_color_manual(values = c("blue", "red", "green4")) +
+  theme(legend.title = element_blank(),
+        legend.position = "top")
+
+loadings_3 = as.data.frame(Z_est_3)
+loadings_3 = data.frame(loadings_3, zooplankton)
+loadings_plot_3 = loadings_3 %>%
+  ggplot(aes(x = zooplankton)) +
+  geom_bar(aes(y = X1), stat = "identity", fill = "blue", color = "black") +
+  geom_bar(aes(y = X2), stat = "identity", fill = "red", color = "black") +
+  geom_bar(aes(y = X3), stat = "identity", fill = "green4", color = "black") +
+  theme_minimal() +
+  coord_flip() +
+  ylab("") +
+  xlab("Loadings")
+
+ggarrange(states_plot_3, loadings_plot_3)
+
+```
+
+##### Comparing models
+
+According to the AICc values, the model with 3 hidden states is the best fit for the data, which showed a slightly better fit compared to the model with 2 hidden states. The model with 1 hidden state was the worst fit.
+
+```{r}
+### Make a model comparison table
+model_comparison = data.frame(
+  Model = c("Model 1", "Model 2", "Model 3"),
+  AIC = c(dfa_1_hidden$AIC, dfa_2_hidden$AIC, dfa_3_hidden$AIC)
+)
+model_comparison = model_comparison %>%
+  mutate(Delta_AIC = AIC - min(AIC),
+         Weight = exp(-0.5 * Delta_AIC) / sum(exp(-0.5 * Delta_AIC)))
+
+model_comparison
+```
+
+## Grazer abundance, phytoplankton covariates
+
+This final section of our analysis focuses on modeling grazing zooplankton, treating phytoplankton abundance as a covariate as grazers feed on phytoplankton. The dataset contains time series abundance data on six species of grazing zooplankton: conochilus, cyclops, daphnia, diaptomus, non-daphnid cladocerans, and non- colonial rotifers. The first stage of this process involves modeling phytoplankton using a traditional MARSS model and recording model estimates of the underlying state of phytoplankton in Lake Washington. The next stage utilizes a dynamica factor analysis framework to consider zooplankton grazer abundance.
+
+#### Modeling phytoplankton
+
+Modeling phytoplankton abundance with traditional MARSS models is necessary for two reasons. One, the dynamic factor analysis of zooplankton grazers will include phytoplankton abundance as covariates. Covariates included in DFA models must have no missing data, and the observed phytoplankton data contains some gaps in the time series. Using MARSS models, the underlying state of phytoplankton abundance can be estimated with no missing data points. These estimates will then be passed into the DFA model. The second reason is that treating time series of five distinct phytoplankton species as representative samples of one underlying state of phytoplankton abundance is likely all that is required to observe the impact of phytoplankton abundance on the abundance of grazing zooplankton. Unless grazers are very selective in their diets, the overall level of phytoplankton in a given time period will likely be more important than the abundances of five individual phtoplankton groupings. 
+
+```{r zp_datamanipulation, echo=FALSE, warning=FALSE, message=FALSE}
+## load the data (there are 3 datasets contained here)
+data(lakeWAplankton, package = "MARSS")
+all_dat <- as.data.frame(lakeWAplanktonTrans)
+
+# transform date
+all_dat$Date <- as.yearmon(paste(all_dat$Year, all_dat$Month), "%Y %m")
+
+# plot data
+# for ( i in seq(3,length( all_dat )-1,1) ) plot(all_dat[,i], x=all_dat$Date, ylab=names(all_dat[i]),type="l")
+
+# dropping years pre-1980 and critters with poor data
+yr_frst <- 1985
+data <- subset(all_dat, Year  >= yr_frst)
+data <- data[-c(9, 18)]
+
+# different lists of variables
+phytoclimate <- c("Temp", 
+                  "TP", 
+                  "pH")
+zooclimate <- c("Temp", 
+                "pH")
+phytoplankton <- c("Cryptomonas", 
+                   "Diatoms", 
+                   "Greens",
+                   "Unicells", 
+                   "Other.algae")
+zooplankton <- c("Conochilus", 
+                 "Cyclops", 
+                 "Daphnia",
+                 "Diaptomus", 
+                 "Non.daphnid.cladocerans",
+                 "Non.colonial.rotifers")
+  # only including grazers
+
+# get only the phytoplankton
+dates <- data$Date
+data_phyto <- t(data[, phytoplankton])
+colnames(data_phyto) <- dates
+
+# get phytoplankton climate covariates
+data_phytoclimate <- t(data[, phytoclimate])
+colnames(data_phytoclimate) <- dates
+
+# monthly factor covariate matrix
+month_cov <- matrix(0, 12, 120)
+month.abb <- unique(data$Month)
+monrow <- match(data$Month, month.abb)[1:120]
+month_cov[cbind(monrow,1:120)] <- 1
+
+# stack up the old covariate matrix
+phyto.c <- rbind(month_cov, data_phytoclimate)
+```
+
+This analysis begins by considering two models with different covariate structures: one which takes into account Lake Washington's temperature, pH level, and total phosphorous measures, and another which includes a matrix of ones and zeroes corresponding to each month in order captrue seasonal trends. Each model treats each category of phytoplankton as its own underlying state.
+
+```{r zp_modelbuild-phyto, echo=FALSE, warning=FALSE, message=FALSE}
+# build model - seasonal
+phyto_month.list <- list(
+  B = "identity",
+  U = "zero",
+  Q = "diagonal and unequal",
+  Z = "identity",
+  A = "zero",
+  R = "diagonal and equal",
+  c = month_cov,
+  C= "unconstrained",
+  x0 = "unequal",
+  V0 = "zero",
+  tinitx = 0
+)
+
+# build model - climate
+phyto_climate.list <- list(
+  B = "identity",
+  U = "zero",
+  Q = "diagonal and unequal",
+  Z = "identity",
+  A = "zero",
+  R = "diagonal and equal",
+  c = data_phytoclimate,
+  C= "unconstrained",
+  x0 = "unequal",
+  V0 = "zero",
+  tinitx = 0
+)
+
+# model control
+con_list <- list(maxit = 3000, allow.degen = TRUE)
+
+# modeling - seasonal
+if(!file.exists(here::here("Team2-data", "phyto_month.rds"))){
+  ssm.phyto_month <- MARSS(data_phyto, model = phyto_month.list, method = "kem", control = con_list)
+  saveRDS(ssm.phyto_month, file=here::here("Team2-data", "phyto_month.rds"))
+}
+# load in ssm.phyto_month
+ssm.phyto_month <- readRDS(file=here::here("Team2-data", "phyto_month.rds"))
+
+# modeling - climate
+if(!file.exists(here::here("Team2-data", "phyto_climate.rds"))){
+  ssm.phyto_climate <- MARSS(data_phyto, model = phyto_climate.list, method = "kem", control = con_list)
+  saveRDS(ssm.phyto_climate, file=here::here("Team2-data", "phyto_climate.rds"))
+}
+# load in ssm.phyto_climate
+ssm.phyto_climate <- readRDS(file=here::here("Team2-data", "phyto_climate.rds"))
+
+# model comparison
+# an empty list to collect outputs
+out_list <- list()
+
+# Add each model's name and AICc 
+out_list[[1]] <- data.frame(Model = "seasonal", AICc = ssm.phyto_month$AICc)
+out_list[[2]] <- data.frame(Model = "climate", AICc = ssm.phyto_climate$AICc)
+
+# Combine all into one dataframe
+out <- do.call(rbind, out_list)
+out
+  # seasonal model fits better than climate
+
+ssm.phyto <- ssm.phyto_month
+```
+
+Per AICc, the model including seasonal covariates (as opposed to lake temperature and chemical compsotion) is a better fit for phytoplankton data. Abundances are described in the figure below.
+
+```{r zp_plot-phyto, echo=FALSE, warning=FALSE, message=FALSE}
+# grabbing model estimates
+states <- ssm.phyto$states
+statesSE <- ssm.phyto$states.se
+
+states <- as.data.frame(states)
+statesSE <- as.data.frame(statesSE)
+
+states_long <- states %>% 
+  pivot_longer("V1":"V120", names_to="Date", values_to="fitted")
+states_long <- states_long %>% 
+  mutate(Date = rep(dates, 5))
+
+states_long <- states_long %>% 
+  mutate(state = c(rep(phytoplankton[1], 120),
+                   rep(phytoplankton[2], 120),
+                   rep(phytoplankton[3], 120),
+                   rep(phytoplankton[4], 120),
+                   rep(phytoplankton[5], 120)
+  ))
+
+statesSE_long <- statesSE %>% 
+  pivot_longer("V1":"V120", names_to="Date", values_to="se")
+
+states_long <- states_long %>% 
+  mutate(se = statesSE_long$se)
+
+states_long$lb <- states_long$fitted - states_long$se
+states_long$ub <- states_long$fitted + states_long$se
+
+# save long state estimates
+save(states_long, file=here::here("Team2-data", "ssm.phyto_long.Rda"))
+
+plot <- ggplot(data = states_long, aes(x = Date, y = fitted, group = state)) +
+  geom_line() +
+  labs(x = "", 
+       y="State Estimate",
+       title='State-space estimates of phyotplankton abundance in Lake Washington') +
+  geom_ribbon(aes(ymin=lb, ymax=ub, fill=state), alpha=0.35, linetype=0) +
+  theme_classic() +
+  theme(legend.position="bottom") + 
+  scale_x_discrete(breaks = c(1980, 1983, 1986, 1989, 1992, 1995))
+plot
+```
+
+Next we consider models which treat all five time series of phytoplankton groups as representative samples from one larger underlying state of phytoplankton abundance in Lake Washington. Once again, the two covariate structures described above will be evaluated for best fit. 
+
+```{r zp_modelbuild-phyto1s, echo=FALSE, warning=FALSE, message=FALSE}
+# build model - seasonal
+phyto_month.list <- list(
+  B = "identity",
+  U = "zero",
+  Q = "diagonal and unequal",
+  Z = matrix(rep(1, nrow(data_phyto))),
+  A = "zero",
+  R = "diagonal and equal",
+  c = month_cov,
+  C= "unconstrained",
+  x0 = "unequal",
+  V0 = "zero",
+  tinitx = 0
+)
+
+# build model - climate
+phyto_climate.list <- list(
+  B = "identity",
+  U = "zero",
+  Q = "diagonal and unequal",
+  Z = matrix(rep(1, nrow(data_phyto))),
+  A = "zero",
+  R = "diagonal and equal",
+  c = data_phytoclimate,
+  C= "unconstrained",
+  x0 = "unequal",
+  V0 = "zero",
+  tinitx = 0
+)
+
+# modeling - seasonal
+if(!file.exists(here::here("Team2-data", "phyto_month_1s.rds"))){
+  ssm.phyto_month <- MARSS(data_phyto, model = phyto_month.list, method = "kem", control = con_list)
+  saveRDS(ssm.phyto_month, file=here::here("Team2-data", "phyto_month_1s.rds"))
+}
+# load in ssm.phyto_month
+ssm.phyto_month <- readRDS(file=here::here("Team2-data", "phyto_month_1s.rds"))
+
+# modeling - climate
+if(!file.exists(here::here("Team2-data", "phyto_climate_1s.rds"))){
+  ssm.phyto_climate <- MARSS(data_phyto, model = phyto_climate.list, method = "kem", control = con_list)
+  saveRDS(ssm.phyto_climate, file=here::here("Team2-data", "phyto_climate_1s.rds"))
+}
+# load in ssm.phyto_climate
+ssm.phyto_climate <- readRDS(file=here::here("Team2-data", "phyto_climate_1s.rds"))
+
+# model comparison
+# an empty list to collect outputs
+out_list <- list()
+
+# Add each model's name and AICc 
+out_list[[1]] <- data.frame(Model = "seasonal", AICc = ssm.phyto_month$AICc)
+out_list[[2]] <- data.frame(Model = "climate", AICc = ssm.phyto_climate$AICc)
+
+# Combine all into one dataframe
+out <- do.call(rbind, out_list)
+out
+
+ssm.phyto <- ssm.phyto_month
+```
+
+As before, AICc finds that the model including seasonal covariates is a better fit for phytoplankton data. This overall abundance of phytoplankton is described in the figure below.
+
+```{r zp_plot-phyto1s, echo=FALSE, warning=FALSE, message=FALSE}
+# grabbing model estimates
+states <- ssm.phyto$states
+statesSE <- ssm.phyto$states.se
+
+states <- as.data.frame(states)
+statesSE <- as.data.frame(statesSE)
+
+states_long <- states %>% 
+  pivot_longer("V1":"V120", names_to="Date", values_to="fitted")
+states_long <- states_long %>% 
+  mutate(Date = dates)
+
+states_long <- states_long %>% 
+  mutate(state = c(rep(phytoplankton[1], 120)
+  ))
+
+statesSE_long <- statesSE %>% 
+  pivot_longer("V1":"V120", names_to="Date", values_to="se")
+
+states_long <- states_long %>% 
+  mutate(se = statesSE_long$se)
+
+states_long$lb <- states_long$fitted - states_long$se
+states_long$ub <- states_long$fitted + states_long$se
+
+# save long state estimates
+save(states_long, file=here::here("Team2-data", "ssm.phyto_long_1s.Rda"))
+
+plot <- ggplot(data = states_long, aes(x = Date, y = fitted, group = state)) +
+  geom_line() +
+  labs(x = "", 
+       y="State Estimate",
+       title='State-space estimates of phyotplankton abundance in Lake Washington') +
+  geom_ribbon(aes(ymin=lb, ymax=ub, fill=state), alpha=0.35, linetype=0) +
+  theme_classic() +
+  theme(legend.position="bottom") + 
+  scale_x_continuous(breaks = c(1980, 1983, 1986, 1989, 1992, 1995))
+plot
+```
+
+This model of phytoplankton abundance as one underlying state will be used going forward in the dynamic factor analysis of zooplankton grazers. 
+
+#### Modeling grazing zooplankton
+
+With phytoplankton abundance estimates in hand, we now move on to the evaluation of zooplankton grazers using dynamic factor analysis. We begin by considering which number of underlying will best fit the model. We evealutate models with 1 to 5 underlying factors (as there are six time series of zooplankton grazers it is appropriate at most to consider one fewer factor). These initial models will include covariates describing temperature, pH, and phytoplankton abundance. One the best fit is determined in terms of underlying factors, these covariates will be additionally evaluated to determine whether they are all necessaty. 
+
+```{r zp_modelbuild-zoo, echo=FALSE, warning=FALSE, message=FALSE}
+# get only zooplankton
+data_zoo <- t(data[, zooplankton])
+colnames(data_zoo) <- dates
+
+# get zooplankton climate covariates
+data_zooclimate <- t(data[, zooclimate])
+
+# stack up the old covariate matrix
+zoo.d <- rbind(states_long$fitted, data_zooclimate)
+rownames(zoo.d) <- c("Phyto", "Temp", "pH")
+# print(cor(t(zoo.d)))
+  # not super highly correlated
+
+# dynamic factor anaylsis - zooplankton
+
+# preparing to loop
+## empty lists
+# loadings <- list()
+aicc_list <- list()
+
+# looping
+for(i in 1:(nrow(data_zoo)-1)){
+  
+  ## loading matrices
+  NN <- nrow(data_zoo)
+  MM <- i
+  ZZ <- matrix(paste0("z", seq(NN*MM)), NN, MM)
+  ZZ[upper.tri(ZZ)] <- 0
+  # loadings[[i]] <- assign(paste0("ZZ", i), ZZ)
+
+
+  ## build model
+  zoo.list <- list(
+    B = "identity",
+    U = "zero",
+    Q = "identity",
+    # Z = loadings[[i]],
+    Z = ZZ,
+    A = "zero",
+    R = "diagonal and unequal",
+    d = zoo.d,
+    D = "unconstrained",
+    x0 = "equal",
+    V0 = "zero",
+    tinitx = 0
+  )
+
+  ## modeling
+  if(!file.exists(here::here("Team2-data", paste("zoo_", i, ".rds", sep = "")))){
+    ssm <- MARSS(data_zoo, model = zoo.list, method = "kem", control = con_list)
+    saveRDS(ssm, file=here::here("Team2-data", paste("zoo_", i, ".rds", sep = "")))
+  }
+  # load in ssm.phyto_climate
+  ssm <- readRDS(file=here::here("Team2-data", paste("zoo_", i, ".rds", sep = "")))
+  
+  ## model comparison
+  # Add each model's name and AICc 
+  aicc_list[[i]] <- data.frame(Model = paste("zoo_", i, sep = ""), AICc = ssm$AICc)
+}
+
+# Combine all into one dataframe
+aicc <- do.call(rbind, aicc_list)
+aicc
+  # per AICc, the model with 4 underlying factors displays the best fit
+
+ssm <- readRDS(file=here::here("Team2-data", "zoo_4.rds"))
+```
+
+AICc determines that the model with four underlying factors is the best fit per the data. WE now move on to evaluating which set of covariates are best suited to improve model fit. All possible combinations of water temperature, pH levels, and phytoplankton abundance will be considered. Also, a seasonal covariate will be introduced and considered both on it's own and as part of other covariate combinations, yielding a total of 15 covariate structures to be considered.
+
+```{r zp_modelcov-zoo, echo=FALSE, warning=FALSE, message=FALSE}
+# seasonality as sine/cosine waves
+cos_t <- cos(2 * pi * seq(120) / 12)
+sin_t <- sin(2 * pi * seq(120) / 12)
+
+# checking different levels of covariates
+d.all <- rbind(zoo.d, cos_t, sin_t)
+d.phyto <- t(as.matrix(zoo.d[1,]))
+d.temp <- t(as.matrix(zoo.d[2,]))
+d.ph <- t(as.matrix(zoo.d[3,]))
+d.phytemp <- as.matrix(zoo.d[1:2,])
+d.phyph <- as.matrix(zoo.d[c(1,3),])
+d.tempph <- as.matrix(zoo.d[2:3,])
+d.cov <- zoo.d
+d.S <- as.matrix(d.all[c(4:5),])
+d.phytoS <- as.matrix(d.all[c(1, 4:5),])
+d.tempS <- as.matrix(d.all[c(2, 4:5),])
+d.phS <- as.matrix(d.all[c(3, 4:5),])
+d.phytempS <- as.matrix(d.all[c(1:2, 4:5),])
+d.phyphS <- as.matrix(d.all[c(1,3:5),])
+d.tempphS <- as.matrix(d.all[2:5,])
+
+# lil lists
+covaicc_list <- list()
+cov_list <- list(d.all, d.phyto, d.temp, d.ph, d.phytemp, d.phyph, d.tempph, d.cov, d.S, d.phytoS, d.tempS, d.phS, d.phytempS, d.phyphS, d.tempphS)
+
+mod_list = list(m = 4, R = "diagonal and unequal")
+for(i in 1:length(cov_list)){
+  if(!file.exists(here("Team2-data", paste("cov_", i, ".rds", sep = "")))){
+    dfa <- MARSS(data_zoo, model = mod_list, form = "dfa", z.score = FALSE,
+                    control = con_list, covariates = cov_list[[i]])
+    saveRDS(dfa, file=here("Team2-data", paste("cov_", i, ".rds", sep = "")))
+  }
+  # load in ssm.phyto_climate
+  dfa <- readRDS(file=here("Team2-data", paste("cov_", i, ".rds", sep = "")))
+  covaicc_list[[i]] <- data.frame(Model = paste("cov_", i, sep = ""), AICc = dfa$AICc)
+}
+
+# Combine all into one dataframe
+covaicc <- do.call(rbind, covaicc_list)
+covaicc
+  # per AICc, the model including phyoplankton abundance, pH levels, and a seasonal component with 4 underlying factors displays the best fit
+ssm <- readRDS(file=here("Team2-data", "cov_14.rds"))
+
+covar_effects <- coef(ssm, type = "matrix")$D[, 1:2]
+colnames(covar_effects) <- list("Phytoplankton", "pH")
+covar_effects
+```
+
+AICc finds that a model which allows for four underlying factors and includes phytoplankton abundance and pH levels as well as a seasonal component best describes the zooplankton grazer abundance data. The effects of phytoplankton abundance and pH levels on each species of grazer are reported in the table above.
+
+# Results
+
+## Phytoplankton Abundance
+
+## Zooplankton Abundance
+
+The dynamic factor analysis (DFA) of zooplankton abundance tested three models with 1, 2, and 3 hidden states to identify the underlying latent factors driving the dynamics of eight zooplankton species. Using AICc values for model comparison, the model with 3 hidden states was identified as the best fit, indicating that three latent factors sufficiently explain the observed variability in zooplankton abundance. While distinct patterns in species associations with latent factors were observed, the results suggest that some zooplankton species share common drivers, while others may respond to unique ecological processes.
+
+## Grazer abundance, phytoplankton covariates
+
+With a best fit model in hand, the next step is to determine a rotation matrix H that maximizes the difference between loadings in Z, to better understand what grazer zooplankton species abundances are being driven by which underlying factors.
+
+```{r zp_hmatrix, echo=FALSE, warning=FALSE, message=FALSE}
+# the ro-to
+Z_est <- coef(ssm, type = "matrix")$Z
+H_inv <- varimax(Z_est)$rotmat
+Z_rot <- Z_est %*% H_inv
+proc_rot <- solve(H_inv) %*% ssm$states
+H_inv
+Z_est
+Z_rot
+```
+
+
+```{r zp_factor loadings, echo=FALSE, warning=FALSE, message=FALSE}
+# plotting estimated factors and loadings (?)
+## plot labels
+ylbl <- zooplankton
+w_ts <- seq(dim(data_zoo)[2])
+minZ <- 0
+N_ts <- dim(data_zoo)[1]
+clr <- c("brown2", "blue4", "darkgreen", "darkred", "purple", "gold", "orange3", "cyan3")
+
+## set up plot area
+layout(matrix(c(1:10), nrow(proc_rot), 2), widths = c(2,1))
+par(mai = c(0.5, 0.5, 0.5, 0.1), omi = c(0, 0, 0, 0))
+
+## plot the processes
+for(i in 1:nrow(proc_rot)) {
+  ylm <- c(-1, 1) * max(abs(proc_rot[i,]))
+  ## set up plot area
+  plot(w_ts,proc_rot[i,], type = "n", bty = "L",
+       ylim = ylm, xlab = "", ylab = "", xaxt = "n")
+  ## draw zero-line
+  abline(h = 0, col = "gray")
+  ## plot trend line
+  lines(w_ts, proc_rot[i,], lwd = 2)
+  lines(w_ts, proc_rot[i,], lwd = 2)
+  ## add panel labels
+  mtext(paste("State",i), side = 3, line = 0.5)
+  axis(1, 12 * (0:dim(data_zoo)[2]) + 1, yr_frst + 0:dim(data_zoo)[2])
+}
+
+## plot the loadings
+ylm <- c(-1, 1) * max(abs(Z_rot))
+for(i in 1:nrow(proc_rot)) {
+  plot(x = c(1:N_ts)[abs(Z_rot[,i])>minZ],
+       y = as.vector(Z_rot[abs(Z_rot[,i])>minZ,i]),
+       type = "h",
+       lwd = 2, xlab = "", ylab = "", xaxt = "n", ylim = ylm,
+       xlim = c(0.5, N_ts + 0.5), col = clr)
+  for(j in 1:N_ts) {
+    if(Z_rot[j,i] > minZ) {text(j, -0.03, ylbl[j], srt = 90, adj = 1, cex = 1.2, col = clr[j])}
+    if(Z_rot[j,i] < -minZ) {text(j, 0.03, ylbl[j], srt = 90, adj = 0, cex = 1.2, col = clr[j])}
+    abline(h = 0, lwd = 1.5, col = "gray")
+  } 
+  mtext(paste("Factor loadings on state", i), side = 3, line = 0.5)
+}
+```
+
+The above plot shows no clear pattern in species being driven by one trend or another. Perhaps cyclops and daphnia exhibit similar drivers and likewise with non-daphnid cladocerans and non-colonial rotifers. Also, despite including covariates to account for seasonal trends, there still appears to be some seasonality in states 1, 2, & 4.
+
+```{r zp_model fit, echo=FALSE, warning=FALSE, message=FALSE}
+# plotting data and model fit
+get_DFA_fits <- function(MLEobj, dd = NULL, alpha = 0.05) {
+  ## empty list for results
+  fits <- list()
+  ## extra stuff for var() calcs
+  Ey <- MARSS:::MARSShatyt(MLEobj)
+  ## model params
+  ZZ <- coef(MLEobj, type="matrix")$Z
+  ## number of obs ts
+  nn <- dim(Ey$ytT)[1]
+  ## number of time steps
+  TT <- dim(Ey$ytT)[2]
+  ## get the inverse of the rotation matrix
+  H_inv <- varimax(ZZ)$rotmat
+  ## check for covars
+  if(!is.null(dd)) {
+    DD <- coef(MLEobj, type = "matrix")$D
+    ## model expectation
+    fits$ex <- ZZ %*% H_inv %*% MLEobj$states + DD %*% dd
+  } else {
+    ## model expectation
+    fits$ex <- ZZ %*% H_inv %*% MLEobj$states
+  }
+  ## Var in model fits
+  VtT <- MARSSkfss(MLEobj)$VtT
+  VV <- NULL
+  for(tt in 1:TT) {
+    RZVZ <- coef(MLEobj, type = "matrix")$R - ZZ %*% VtT[,,tt] %*% t(ZZ)
+    SS <- Ey$yxtT[,,tt] - Ey$ytT[,tt,drop = FALSE] %*% t(MLEobj$states[,tt,drop = FALSE])
+    VV <- cbind(VV, diag(RZVZ + SS %*% t(ZZ) + ZZ %*% t(SS)))
+  }
+  SE <- sqrt(VV)
+  ## upper & lower (1-alpha)% CI
+  fits$up <- qnorm(1-alpha/2)*SE + fits$ex
+  fits$lo <- qnorm(alpha/2)*SE + fits$ex
+  return(fits)
+}
+## get model fits & CI's
+mod_fit <- get_DFA_fits(ssm)
+
+## set up plotting area
+par(mfrow = c(N_ts, 1), mai = c(0.5, 0.7, 0.1, 0.1), omi = c(0, 0, 0, 0))
+
+## plot the fits
+for(i in 1:N_ts) {
+  up <- mod_fit$up[i,]
+  mn <- mod_fit$ex[i,]
+  lo <- mod_fit$lo[i,]
+  plot(w_ts, mn, type = "n", ylim = c(min(lo), max(up)),
+       cex.lab = 1.2,
+       xlab = "", ylab = ylbl[i], xaxt = "n")
+  axis(1, 12 * (0:dim(data_zoo)[2]) + 1, yr_frst + 0:dim(data_zoo)[2])
+  points(w_ts,data_zoo[i,], pch = 16, col = clr[i])
+  lines(w_ts, up, col = "darkgray")
+  lines(w_ts, mn, col = "black", lwd = 2)
+  lines(w_ts, lo, col = "darkgray")
+}
+```
+
+Finally, we compare model fit to the actual data for all six groupings of grazer zooplankton. Generally fit is good, with the model proving better at estimating abundances of certain species of zooplankton than others. Diaptomus, non-colonial rotifers, and conochilus estimates fit the data fairly well, while daphnia and to (maybe) a lesser extent non-daphnid cladocerans and cyclops estimates are less accurate predictions of the data observed.
+
+# Discussion
+
+While the models applied to zooplankton abundance identified three latent factors as the most parsimonious model, some seasonality remains evident in the time series of hidden states. This suggests that seasonal patterns, even without explicit covariates, may play a significant role in shaping zooplankton abundance. Further exploration of seasonal trends or interactions between drivers could improve the model's explanatory power.
+
+Including phytoplankton abundance as a covariate in models describing the abundance of various grazing zooplaknton proved fruitful. A dynamic factor analysis revealed four underlying factors driving/predicting grazer abundance in Lake Washington. Phytoplaknton abundances were included in the model of best fit, along with pH levels and a seasonal component. While some species were modeled very effectively with this structure, others were not estimated as efficiently. A potential next step would be modeling each species of grazer separately in order to better capture the effects of phytoplankton abundance on each.
+
+# Team contributions
+
+Each team member contributed to a specific analysis. Tina modeled phytoplankton, Matheus modeled zooplankton, and Brian modeled zooplankton grazers with phytoplankton as covariates.
+

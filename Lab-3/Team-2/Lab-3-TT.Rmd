@@ -1388,6 +1388,8 @@ AICc finds that a model which allows for four underlying factors and includes ph
 
 ## Zooplankton Abundance
 
+The dynamic factor analysis (DFA) of zooplankton abundance tested three models with 1, 2, and 3 hidden states to identify the underlying latent factors driving the dynamics of eight zooplankton species. Using AICc values for model comparison, the model with 3 hidden states was identified as the best fit, indicating that three latent factors sufficiently explain the observed variability in zooplankton abundance. While distinct patterns in species associations with latent factors were observed, the results suggest that some zooplankton species share common drivers, while others may respond to unique ecological processes.
+
 ## Grazer abundance, phytoplankton covariates
 
 With a best fit model in hand, the next step is to determine a rotation matrix H that maximizes the difference between loadings in Z, to better understand what grazer zooplankton species abundances are being driven by which underlying factors.
@@ -1515,6 +1517,8 @@ for(i in 1:N_ts) {
 Finally, we compare model fit to the actual data for all six groupings of grazer zooplankton. Generally fit is good, with the model proving better at estimating abundances of certain species of zooplankton than others. Diaptomus, non-colonial rotifers, and conochilus estimates fit the data fairly well, while daphnia and to (maybe) a lesser extent non-daphnid cladocerans and cyclops estimates are less accurate predictions of the data observed.
 
 # Discussion
+
+While the models applied to zooplankton abundance identified three latent factors as the most parsimonious model, some seasonality remains evident in the time series of hidden states. This suggests that seasonal patterns, even without explicit covariates, may play a significant role in shaping zooplankton abundance. Further exploration of seasonal trends or interactions between drivers could improve the model's explanatory power.
 
 Including phytoplankton abundance as a covariate in models describing the abundance of various grazing zooplaknton proved fruitful. A dynamic factor analysis revealed four underlying factors driving/predicting grazer abundance in Lake Washington. Phytoplaknton abundances were included in the model of best fit, along with pH levels and a seasonal component. While some species were modeled very effectively with this structure, others were not estimated as efficiently. A potential next step would be modeling each species of grazer separately in order to better capture the effects of phytoplankton abundance on each.
 

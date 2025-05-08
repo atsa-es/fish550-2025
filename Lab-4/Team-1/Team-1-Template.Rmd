@@ -30,7 +30,11 @@ options(dplyr.summarise.inform = FALSE)
 Make sure to label your final write-up with "final" in the title so we know which one is the final one.
 
 # Data
-
+```{r}
+library(dplyr)
+library(rsoi)
+pdo <- rsoi::download_pdo()
+```
 As part of the California Current Integrated Ecosystem Report, NOAA
 scientists do annual updates of [stoplight charts for ecosystem
 indicators](https://www.fisheries.noaa.gov/west-coast/science-data/ocean-conditions-indicators-trends).
@@ -51,6 +55,14 @@ columns divides indicators into groups (e.g. Local Physical, Local
 Biological, etc). 
 
 ```{r load_data}
+pdo <- rsoi::download_pdo()
+pdo$Year[which(pdo$Month%in%c("Oct","Nov","Dec"))] <- pdo$Year[which(pdo$Month%in%c("Oct","Nov","Dec"))] + 1
+pdo <- dplyr::group_by(pdo, Year) %>%
+  dplyr::summarize(winter_pdo = mean(pdo[which(pdo$Month %in% c("Oct","Nov","Dec","Jan","Feb"))])) %>% 
+  dplyr::select(winter_pdo, Year)
+# The first year will be missing Oct-Dec
+pdo <- pdo[-1,]
+
 stoplight <- read.csv(here::here("Lab-4", "stoplight.csv"))
 ```
 

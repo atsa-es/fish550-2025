@@ -1,5 +1,6 @@
 # libaries
 library(dplyr)
+library(here)
 library(hmmTMB)
 
 # read pdo data
@@ -78,6 +79,6 @@ for(i in 1:iter){
   }
 }
 
-pdo$est_state <- factor(paste0("State", best_model$viterbi()))
-ggplot(pdo, aes(Year, winter_pdo, col = est_state)) + 
-  geom_point() + ylab("PDO state?") + theme_bw()
+## PART 2 ###############################################################################################
+
+stopl <- read.csv(here("Lab-4", "stoplight.csv"))

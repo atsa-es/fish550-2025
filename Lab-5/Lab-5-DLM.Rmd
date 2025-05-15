@@ -79,13 +79,12 @@ knitr::include_graphics("images/BB_sockeye_rivers_inset.png")
 ```
 
 
-These data are in the **atsalibrary** package on GitHub. If needed, install using the **devtools** package.
+These data are in the **atsalibrary** package on GitHub. If needed, install the package.
 
 ```{r dlm-load-atsa, eval=FALSE}
-## library(devtools)
 ## Windows users will likely need to set this
 ## Sys.setenv("R_REMOTES_NO_ERRORS_FROM_WARNINGS" = "true")
-devtools::install_github("nwfsc-timeseries/atsalibrary")
+install.packages('atsalibrary', repos = c('https://atsa-es.r-universe.dev', 'https://cloud.r-project.org'))
 ```
 
 Load the data.

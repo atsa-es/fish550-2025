@@ -1,7 +1,7 @@
 ---
 title: "Lab 5 - Dynamic Linear Models"
 author: "Mark Scheuerell"
-date: "Due May X, 2025"
+date: "Due May 27, 2025"
 output: 
  html_document:
   code-folding: true
@@ -15,13 +15,13 @@ options(dplyr.summarise.inform = FALSE)
 
 ## Teams
 
-1) Liz Elmstrom (SAFS), Dylan Hubl (SEFS), Maria Kuruvilla (QERM)
+1) 
 
-2) Terrance Wang (SAFS), Zoe Rand (QERM) 
+2)  
 
-3) Eric French (CEE), Madison Shipley (SAFS), Karl Veggerby (SAFS)
+3) 
 
-4) Nick Chambers (SAFS), Emma Timmins-Schiffman (Genome Sci), Miranda Mudge (Molecular & Cellular)
+4) 
 
 
 ## Background {#sec-dlm-homework}

@@ -1,0 +1,274 @@
+---
+title: "Team-1-Lab4"
+subtitle: Hidden Markov Models
+author: "Tina Tao"
+date: "2025-05-16"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+---
+title: Team 1 - Lab 4
+subtitle: Hidden Markov Models
+author: "Name 1, Name 2, Name 3"
+date: May XX, 2025
+output: 
+  html_document:
+    code-folding: true
+    toc: true
+    toc_float: true
+---
+
+
+
+```{r setup, include = FALSE}
+options(dplyr.summarise.inform = FALSE)
+```
+
+# Load Packages
+
+```{r setup, include = FALSE}
+library(dplyr)
+#install.packages("rsoi")
+#install.packages("depmixS4")
+library(rsoi)
+library(depmixS4)
+library(ggplot2)
+```
+
+As part of the California Current Integrated Ecosystem Report, NOAA
+scientists do annual updates of [stoplight charts for ecosystem
+indicators](https://www.fisheries.noaa.gov/west-coast/science-data/ocean-conditions-indicators-trends).
+
+We have included the `stoplight.csv` dataset for this week. One of the
+columns divides indicators into groups (e.g. Local Physical, Local
+Biological, etc). Please pick a type of indicators, and develop a 2- or
+3-state multivariate HMM. A few tips:
+
+Describe what plankton groups and covariates you used and indicate any temporal 
+subsetting you chose. Also describe any standardization, centering or scaling 
+that was used.
+
+# Load Data
+
+One of the
+columns divides indicators into groups (e.g. Local Physical, Local
+Biological, etc). 
+
+```{r load_data}
+pdo <- rsoi::download_pdo()
+stoplight <- read.csv("stoplight.csv")
+```
+
+# Data Processing
+
+```{r data_processing}
+# Look at the winter PDO only, need to shift the year for Oct-Dec by 1 since Oct-Feb spans 2 calendar years
+pdo$Year[which(pdo$Month%in%c("Oct","Nov","Dec"))] <- pdo$Year[which(pdo$Month%in%c("Oct","Nov","Dec"))] + 1
+pdo <- dplyr::group_by(pdo, Year) %>%
+  dplyr::summarize(winter_pdo = mean(PDO[which(Month %in% c("Oct","Nov","Dec","Jan","Feb"))])) %>% 
+  dplyr::select(winter_pdo, Year)
+
+# The first year will be missing Oct-Dec
+pdo <- pdo[-1,]
+```
+
+# Data Visualization
+
+```{r data_visualization}
+pdo_plot <- ggplot(pdo, aes(x = Year, y = winter_pdo)) +
+  geom_line() +
+  labs(title = "Winter PDO Trend", x = "Year", y = "Winter PDO") +
+  theme_minimal()
+
+pdo_plot
+```
+
+### General Tasks
+
+## Question 1.
+Fit a 2-state HMM to the annual indices of winter PDO. Assume Gaussian errors (default).
+```{r}
+# Prepare data for depmixS4
+winter_pdo <- data.frame(winter_pdo = pdo$winter_pdo)
+
+# Define HMM with 2 hidden states and Gaussian distribution
+pdo_hmm_model <- depmix(response = winter_pdo ~ 1, 
+                    data = winter_pdo, 
+                    nstates = 2, 
+                    family = gaussian())
+
+# Fit the model
+pdo_hmm_fit <- fit(pdo_hmm_model, verbose = TRUE)
+
+# Summary of the fitted HMM
+summary(pdo_hmm_fit)
+```
+
+## Question 2.
+Try fitting the model 10-20 times. Does the likelihood seem reasonably stable?
+```{r}
+# Yes, the likelihood is stable. The values of the log-likelihood are similar across multiple fits.
+```
+
+## Question 3.
+What is the transition matrix for the best model? What are the persistence probabilities (e.g. probabilities of staying in the same state from step 𝑡 to 𝑡+1)?
+```{r}
+# Find best model (try 1-2 states)
+model_list <- list()
+fit_list <- list()
+aic_values <- numeric(2)
+
+for (k in 1:2) {
+  set.seed(550)
+  model <- depmix(response = winter_pdo ~ 1, 
+                  data = winter_pdo, 
+                  nstates = k, 
+                  family = gaussian())
+  fit_model <- fit(model, verbose = FALSE)
+  model_list[[k]] <- model
+  fit_list[[k]] <- fit_model
+  aic_values[k] <- AIC(fit_model)
+}
+
+aic_table <- data.frame(States = 1:2, AIC = aic_values)
+print(aic_table)
+best_k <- which.min(aic_values)
+pdo_hmm_best_fit <- fit_list[[best_k]]
+
+# Extract transition matrix from best model (if k > 1)
+if (best_k > 1) {
+  best_fit <- fit_list[[best_k]]
+  trans_mat <- matrix(NA, best_k, best_k)
+
+  for (i in 1:best_k) {
+    coefs <- best_fit@transition[[i]]@parameters$coefficients
+    exp_coefs <- exp(coefs)
+    trans_mat[i, ] <- exp_coefs / sum(exp_coefs)
+  }
+
+  rownames(trans_mat) <- paste0("fromState", 1:best_k)
+  colnames(trans_mat) <- paste0("toState", 1:best_k)
+
+  cat("\nTransition Matrix:\n")
+  print(trans_mat)
+
+  # Persistence probabilities (diagonal)
+  persistence <- diag(trans_mat)
+  cat("\nPersistence Probabilities:\n")
+  print(persistence)
+} else {
+  cat("No transition matrix for 1-state model (no state switching).\n")
+}
+```
+
+## Question 4.
+Plot the predicted values versus year.
+```{r}
+predicted_states <- posterior(pdo_hmm_best_fit)
+winter_pdo$predicted_state <- predicted_states$state
+winter_pdo$Year <- pdo$Year
+winter_pdo$Year <- as.numeric(winter_pdo$Year)
+winter_pdo$predicted_state <- as.factor(winter_pdo$predicted_state)
+winter_pdo_plot <- ggplot(winter_pdo, aes(x = Year, y = winter_pdo, color = predicted_state)) +
+  geom_line() +
+  labs(title = "Predicted States of Winter PDO", x = "Year", y = "Winter PDO") +
+  theme_minimal()
+winter_pdo_plot
+```
+
+## Question 5.
+Plot the posterior probability of being in the various states from your best model (e.g. probability of being in state 1 over time)
+
+```{r}
+posterior_probs <- posterior(pdo_hmm_best_fit)
+winter_pdo$posterior_prob_state1 <- posterior_probs$S1
+winter_pdo$posterior_prob_state2 <- posterior_probs$S2
+winter_pdo_plot_posterior <- ggplot(winter_pdo, aes(x = Year)) +
+  geom_line(aes(y = posterior_prob_state1, color = "State 1")) +
+  geom_line(aes(y = posterior_prob_state2, color = "State 2")) +
+  labs(title = "Posterior Probabilities of States", x = "Year", y = "Posterior Probability") +
+  scale_color_manual(values = c("State 1" = "blue", "State 2" = "red")) +
+  theme_minimal()
+winter_pdo_plot_posterior
+```
+
+## Question 6.
+What is the long-run probability that the PDO is in state 1 versus state 2? You can calculate this from the transition matrix. There is an analytical solution for this (a bit of googling will find it). Or you can run a for loop to find it. Let 𝑝1 be the probability that PDO is in state 1 and 𝑝2 be the probability that PDO is in state 2. Note 𝑝1+𝑝2=1.
+```{r}
+eig <- eigen(t(trans_mat))
+stat_dist <- Re(eig$vectors[,1])
+stat_dist <- stat_dist / sum(stat_dist)
+
+cat("Transition matrix:\n")
+print(trans_mat)
+
+cat("\nLong‐run (stationary) probabilities:\n")
+stat_df <- data.frame(
+  State = paste0("State", 1:k),
+  StationaryProb = stat_dist
+)
+print(stat_df)
+```
+
+## Question 7.
+If you include time varying parameters (e.g. year) in the means of each state, or state transition probabilities, does the model do any better?
+```{r}
+# Time‐varying means only
+set.seed(550)
+model_tv_means <- depmix(
+  response = winter_pdo ~ Year,
+  data     = winter_pdo,
+  nstates  = 2,
+  family   = gaussian()
+)
+fit_tv_means <- fit(model_tv_means, verbose = FALSE)
+
+# Time‐varying transitions only
+set.seed(550)
+model_tv_trans <- depmix(
+  response   = winter_pdo ~ 1,
+  transition = ~ Year,
+  data       = winter_pdo,
+  nstates    = 2,
+  family     = gaussian()
+)
+fit_tv_trans <- fit(model_tv_trans, verbose = FALSE)
+
+# Both time‐varying means and transitions
+set.seed(550)
+model_tv_both <- depmix(
+  response   = winter_pdo ~ Year,
+  transition = ~ Year,
+  data       = winter_pdo,
+  nstates    = 2,
+  family     = gaussian()
+)
+fit_tv_both <- fit(model_tv_both, verbose = FALSE)
+
+# Compare AIC and BIC
+comparison <- data.frame(
+  Model = c("constant", "means~Year", "trans~Year", "both~Year"),
+  AIC   = c(AIC(pdo_hmm_best_fit),
+            AIC(fit_tv_means),
+            AIC(fit_tv_trans),
+            AIC(fit_tv_both)),
+  BIC   = c(BIC(pdo_hmm_best_fit),
+            BIC(fit_tv_means),
+            BIC(fit_tv_trans),
+            BIC(fit_tv_both))
+)
+print(comparison)
+
+summary(fit_tv_means)
+summary(fit_tv_trans)
+summary(fit_tv_both)
+# The means~Year model shows a marginal improvement in AIC, hinting at a slight temporal trend in state means. Neither allowing transitions to vary with time nor combining both kinds of time‐variation improves AIC. BIC prefers the constant model, indicating that the data do not strongly support adding time–varying parameters.
+```
+
+# Team contributions
+
+Example: "All team members helped decide on the goal and ran the analyses for the individual regions. Team members 2 & 3 wrote most of the code for the analysis. Team member 1 worked on the plotting section of the report using and adapting code that team member 3 wrote. All team members helped edit the report and wrote the discussion together."

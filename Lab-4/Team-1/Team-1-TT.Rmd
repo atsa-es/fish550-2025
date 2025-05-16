@@ -10,27 +10,9 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
----
-title: Team 1 - Lab 4
-subtitle: Hidden Markov Models
-author: "Name 1, Name 2, Name 3"
-date: May XX, 2025
-output: 
-  html_document:
-    code-folding: true
-    toc: true
-    toc_float: true
----
-
-
-
-```{r setup, include = FALSE}
-options(dplyr.summarise.inform = FALSE)
-```
-
 # Load Packages
 
-```{r setup, include = FALSE}
+```{r load_packages}
 library(dplyr)
 #install.packages("rsoi")
 #install.packages("depmixS4")
@@ -202,11 +184,6 @@ What is the long-run probability that the PDO is in state 1 versus state 2? You 
 eig <- eigen(t(trans_mat))
 stat_dist <- Re(eig$vectors[,1])
 stat_dist <- stat_dist / sum(stat_dist)
-
-cat("Transition matrix:\n")
-print(trans_mat)
-
-cat("\nLong‐run (stationary) probabilities:\n")
 stat_df <- data.frame(
   State = paste0("State", 1:k),
   StationaryProb = stat_dist

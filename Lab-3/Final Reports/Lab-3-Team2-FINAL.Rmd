@@ -50,7 +50,7 @@ library(panelr)
 library(tidyverse)
 library(zoo)
 
-here::i_am("Lab-3-TT.Rmd")
+here::i_am("Lab-3-Team2-FINAL.Rmd")
 
 ## load the raw data (there are 3 datasets contained here)
 data(lakeWAplankton, package = "MARSS")
@@ -1069,20 +1069,20 @@ phyto_climate.list <- list(
 con_list <- list(maxit = 3000, allow.degen = TRUE)
 
 # modeling - seasonal
-if(!file.exists(here::here("data", "phyto_month.rds"))){
+if(!file.exists(here::here("Team2-data", "phyto_month.rds"))){
   ssm.phyto_month <- MARSS(data_phyto, model = phyto_month.list, method = "kem", control = con_list)
-  saveRDS(ssm.phyto_month, file=here::here("data", "phyto_month.rds"))
+  saveRDS(ssm.phyto_month, file=here::here("Team2-data", "phyto_month.rds"))
 }
 # load in ssm.phyto_month
-ssm.phyto_month <- readRDS(file=here::here("data", "phyto_month.rds"))
+ssm.phyto_month <- readRDS(file=here::here("Team2-data", "phyto_month.rds"))
 
 # modeling - climate
-if(!file.exists(here::here("data", "phyto_climate.rds"))){
+if(!file.exists(here::here("Team2-data", "phyto_climate.rds"))){
   ssm.phyto_climate <- MARSS(data_phyto, model = phyto_climate.list, method = "kem", control = con_list)
-  saveRDS(ssm.phyto_climate, file=here::here("data", "phyto_climate.rds"))
+  saveRDS(ssm.phyto_climate, file=here::here("Team2-data", "phyto_climate.rds"))
 }
 # load in ssm.phyto_climate
-ssm.phyto_climate <- readRDS(file=here::here("data", "phyto_climate.rds"))
+ssm.phyto_climate <- readRDS(file=here::here("Team2-data", "phyto_climate.rds"))
 
 # model comparison
 # an empty list to collect outputs
@@ -1133,7 +1133,7 @@ states_long$lb <- states_long$fitted - states_long$se
 states_long$ub <- states_long$fitted + states_long$se
 
 # save long state estimates
-save(states_long, file=here::here("data", "ssm.phyto_long.Rda"))
+save(states_long, file=here::here("Team2-data", "ssm.phyto_long.Rda"))
 
 plot <- ggplot(data = states_long, aes(x = Date, y = fitted, group = state)) +
   geom_line() +
@@ -1181,20 +1181,20 @@ phyto_climate.list <- list(
 )
 
 # modeling - seasonal
-if(!file.exists(here::here("data", "phyto_month_1s.rds"))){
+if(!file.exists(here::here("Team2-data", "phyto_month_1s.rds"))){
   ssm.phyto_month <- MARSS(data_phyto, model = phyto_month.list, method = "kem", control = con_list)
-  saveRDS(ssm.phyto_month, file="Lab-3/Team-2/data/phyto_month_1s.rds")
+  saveRDS(ssm.phyto_month, file=here::here("Team2-data", "phyto_month_1s.rds"))
 }
 # load in ssm.phyto_month
-ssm.phyto_month <- readRDS(file=here::here("data", "phyto_month_1s.rds"))
+ssm.phyto_month <- readRDS(file=here::here("Team2-data", "phyto_month_1s.rds"))
 
 # modeling - climate
-if(!file.exists(here::here("data", "phyto_climate_1s.rds"))){
+if(!file.exists(here::here("Team2-data", "phyto_climate_1s.rds"))){
   ssm.phyto_climate <- MARSS(data_phyto, model = phyto_climate.list, method = "kem", control = con_list)
-  saveRDS(ssm.phyto_climate, file=here::here("data", "phyto_climate_1s.rds"))
+  saveRDS(ssm.phyto_climate, file=here::here("Team2-data", "phyto_climate_1s.rds"))
 }
 # load in ssm.phyto_climate
-ssm.phyto_climate <- readRDS(file=here::here("data", "phyto_climate_1s.rds"))
+ssm.phyto_climate <- readRDS(file=here::here("Team2-data", "phyto_climate_1s.rds"))
 
 # model comparison
 # an empty list to collect outputs
@@ -1240,7 +1240,7 @@ states_long$lb <- states_long$fitted - states_long$se
 states_long$ub <- states_long$fitted + states_long$se
 
 # save long state estimates
-save(states_long, file=here::here("data", "ssm.phyto_long_1s.Rda"))
+save(states_long, file=here::here("Team2-data", "ssm.phyto_long_1s.Rda"))
 
 plot <- ggplot(data = states_long, aes(x = Date, y = fitted, group = state)) +
   geom_line() +
@@ -1309,12 +1309,12 @@ for(i in 1:(nrow(data_zoo)-1)){
   )
 
   ## modeling
-  if(!file.exists(here::here("data", paste("zoo_", i, ".rds", sep = "")))){
+  if(!file.exists(here::here("Team2-data", paste("zoo_", i, ".rds", sep = "")))){
     ssm <- MARSS(data_zoo, model = zoo.list, method = "kem", control = con_list)
-    saveRDS(ssm, file=here::here("data", paste("zoo_", i, ".rds", sep = "")))
+    saveRDS(ssm, file=here::here("Team2-data", paste("zoo_", i, ".rds", sep = "")))
   }
   # load in ssm.phyto_climate
-  ssm <- readRDS(file=here::here("data", paste("zoo_", i, ".rds", sep = "")))
+  ssm <- readRDS(file=here::here("Team2-data", paste("zoo_", i, ".rds", sep = "")))
   
   ## model comparison
   # Add each model's name and AICc 
@@ -1326,7 +1326,7 @@ aicc <- do.call(rbind, aicc_list)
 aicc
   # per AICc, the model with 4 underlying factors displays the best fit
 
-ssm <- readRDS(file=here::here("data", "zoo_4.rds"))
+ssm <- readRDS(file=here::here("Team2-data", "zoo_4.rds"))
 ```
 
 AICc determines that the model with four underlying factors is the best fit per the data. WE now move on to evaluating which set of covariates are best suited to improve model fit. All possible combinations of water temperature, pH levels, and phytoplankton abundance will be considered. Also, a seasonal covariate will be introduced and considered both on it's own and as part of other covariate combinations, yielding a total of 15 covariate structures to be considered.
@@ -1359,13 +1359,13 @@ cov_list <- list(d.all, d.phyto, d.temp, d.ph, d.phytemp, d.phyph, d.tempph, d.c
 
 mod_list = list(m = 4, R = "diagonal and unequal")
 for(i in 1:length(cov_list)){
-  if(!file.exists(here("data", paste("cov_", i, ".rds", sep = "")))){
+  if(!file.exists(here("Team2-data", paste("cov_", i, ".rds", sep = "")))){
     dfa <- MARSS(data_zoo, model = mod_list, form = "dfa", z.score = FALSE,
                     control = con_list, covariates = cov_list[[i]])
-    saveRDS(dfa, file=here("data", paste("cov_", i, ".rds", sep = "")))
+    saveRDS(dfa, file=here("Team2-data", paste("cov_", i, ".rds", sep = "")))
   }
   # load in ssm.phyto_climate
-  dfa <- readRDS(file=here("data", paste("cov_", i, ".rds", sep = "")))
+  dfa <- readRDS(file=here("Team2-data", paste("cov_", i, ".rds", sep = "")))
   covaicc_list[[i]] <- data.frame(Model = paste("cov_", i, sep = ""), AICc = dfa$AICc)
 }
 
@@ -1373,7 +1373,7 @@ for(i in 1:length(cov_list)){
 covaicc <- do.call(rbind, covaicc_list)
 covaicc
   # per AICc, the model including phyoplankton abundance, pH levels, and a seasonal component with 4 underlying factors displays the best fit
-ssm <- readRDS(file=here("data", "cov_14.rds"))
+ssm <- readRDS(file=here("Team2-data", "cov_14.rds"))
 
 covar_effects <- coef(ssm, type = "matrix")$D[, 1:2]
 colnames(covar_effects) <- list("Phytoplankton", "pH")

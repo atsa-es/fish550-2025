@@ -13,7 +13,7 @@ library(MARSS)
 
 This lab used a monthly data set of plankton concentrations in Lake Washington from 1962-1994. We had data on 15 different plankton groups, both grazers and primary producers. The data set also contained three covariates:
 
-### **Environmental dat**
+### **Environmental data**
 
 -   `Temp`: water temperature in degrees C
 
@@ -69,13 +69,15 @@ Based on the general lab instructions and some of our own questions, we chose to
 
 4)  Describe the effects of environmental or dummy variables on (possibly seasonal) patterns in the data.
 
-Using this, we formulated three main questions:
+Using this, we formulated a few main questions:
 
 1.  How do grazers and phytoplankton trends vary? Can the same/opposite factors be detected for both predators and prey? (we would expect opposite trends)
 
-2.  How do different model error structures alter our results
+2.  How do different model error structures alter our results?
 
 3.  How does peeling back time periods alter model results?
+
+4.  Is using 1, 2 , or 3 trends in the DFA a better fit?
 
 ### Data Wrangling & Data Selection
 
@@ -83,9 +85,7 @@ For our analysis, we needed our data to be cleaned up and transformed for the MA
 
 -   Which plankton taxa did you choose and how did you choose them?
 
-    Edible phytoplankton species and grazers to examine trends.
-
-    Greens didn't have continuous data.
+    In order to answer the question to our first and second question, we subset the data to include only the phytoplankton: Cryptomonas, Diatoms, Greens, Unicells, and Other Algae. This was done to be able to open the possibility of also exploring the relationships between the edible phytoplankton and the grazers.
 
 -   What time period(s) did you examine and why?
 
@@ -93,7 +93,7 @@ We subset our data to 10 year block from 1980-1989.
 
 -   What environmental or dummy variables did you include and why?
 
-    Phosphorus, Temperature and sin/cosine dummy.
+    For environmental covariates, we explored model alternatives with Temperature, Phosphorus, and a combination of Temperature and Phosphorus. To model scenarios without the presence of covariates, we also used cos and sin seasonal trends to compare.
 
 ```{r}
 
@@ -240,9 +240,61 @@ dfa_1 <- MARSS(y = dat, model = mod_list, inits = init_list, control = con_list)
 
 #### Model Diagnostics
 
+```{r}
+resids <- MARSSresiduals(dfa_1, type = "tt1")
+std_resids <- resids$standardized.residuals
+str(std_resids)
+dfa_1$convergence 
+resids <- MARSSresiduals(dfa_1, type = "tt1")
+str(resids)
+
+std_resids_mat <- resids$std.residuals
+
+# Set plotting layout: 4 rows, 2 columns (adjust as needed)
+par(mfrow = c(ceiling(nrow(std_resids_mat) / 2), 2))
+
+# Plot for each time series
+for (i in 1:nrow(std_resids_mat)) {
+  plot(std_resids_mat[i, ], type = "h",
+       main = rownames(std_resids_mat)[i],
+       xlab = "Time", ylab = "Standardized Residual",
+       col = "steelblue", lwd = 2)
+  abline(h = 0, lty = 2)
+  abline(h = c(-2, 2), col = "red", lty = 3)
+}
+```
+
 #### Alternate Error Structures
 
-For this base model, we explored the impact of alterring our assumptions about error structure and comparing model performance. We explored three types of error matrices
+For this base model, we explored the impact of altering our assumptions about error structure and comparing model performance.
+
+```{r}
+# Step 1: Use same Z matrix and model list as before, but change R structure
+Z_equal <- matrix(list(), nrow = 5, ncol = 2)  # assuming you're comparing to your 2-trend model
+rownames(Z_equal) <- rownames(dat)
+for(i in 1:5){
+  Z_equal[i,1] <- paste0("z", i)
+  Z_equal[i,2] <- paste0("z", i+5)
+}
+
+# Step 2: Define new model with equal error variance
+model.equalvar <- list(
+  Z = Z_equal,
+  R = "diagonal and equal",  
+  B = "identity",
+  U = "zero",
+  Q = "identity",
+  x0 = "zero",
+  V0 = "zero",
+  A = "zero"
+)
+
+# Step 3: Fit the model
+fit_equalvar <- MARSS(dat, model = model.equalvar, control = list(maxit = 5000))
+
+# Step 4: View results
+summary(fit_equalvar)
+```
 
 #### Alternate Model Forms
 
@@ -250,15 +302,13 @@ Scenario 1: Edible Phytoplankton Only (Base Scenario Above)
 
 This served as our null or reference scenario.
 
-Scenario 2: Grazers and Edible Phytoplankton
-
-Observation and Process equations remain the same. Only required changes are to the Z matrix?
+Observation and Process equations remain the same. Only required changes are to the Z matrix.
 
 $\mathbf{Z} = \begin{bmatrix} z_{11} & 0 & 0 \\ z_{21} & z_{22} & 0 \\ z_{31} & z_{32} & z_{33} \\ z_{41} & z_{42} & z_{43} \\ z_{51} & z_{52} & z_{53} \end{bmatrix}$
 
 $\mathbf{d} = \begin{bmatrix} 0 \\ 0 \end{bmatrix}$
 
-Scenario 3: Grazers and Edible Phytoplankton and Phosphorus covariate
+Scenario 3: Edible Phytoplankton and Phosphorus covariate
 
 Adding covariates required altering model structure:
 
@@ -276,17 +326,14 @@ $\mathbf{Z} = \begin{bmatrix} z_{11} & z_{12} & z_{13} \\ z_{21} & z_{22} & z_{2
 $\mathbf{d} = \begin{bmatrix} d_{1,Phosphorus} \\ d_{2,Phosphorus} \end{bmatrix} \text{Phosphorus}_t$
 
 ```{r}
-#Model Fitting
-
-
-## get temperature and phosphorus covariates
+# Adding the temperature and phosphorus covariates
 temp <- t(plank_dat[,"Temp", drop = FALSE])
 TP <- t(plank_dat[,"TP", drop = FALSE])
 
 
 ```
 
-Scenario 4: Grazers and Edible Phytoplankton with Phosphorus and Temperature covariates $$
+Scenario 4: Edible Phytoplankton with Phosphorus and Temperature covariates $$
 \begin{aligned}
 \mathbf{y}_t &= \mathbf{Z}\mathbf{x}_t + \mathbf{a} + \mathbf{D}_1\mathbf{d}_{1t} + \mathbf{D}_2\mathbf{d}_{2t} + \mathbf{v}_t, \quad \text{where} \quad \mathbf{v}_t \sim \text{MVN}(\mathbf{0}, \mathbf{R}) \\
 \mathbf{x}_t &= \mathbf{x}_{t-1} + \mathbf{w}_t, \quad \text{where} \quad \mathbf{w}_t \sim \text{MVN}(\mathbf{0}, \mathbf{Q})
@@ -303,28 +350,173 @@ $\mathbf{d} = \begin{bmatrix} d_{1,Temperature} \\ d_{2,Temperature} \end{bmatri
 
 Scenario 5: Dummy variables
 
-Sometimes, if we do not have covariates available, we may choose to imitate seasonal cycles to explore the explanatory power of the trend. This yields the following model structure:
-
-And resulting code:
+Sometimes, if we do not have covariates available, we may choose to imitate seasonal cycles to explore the explanatory power of the trend. This yields the following code:
 
 ```{r}
-
-mod_list = list(m = 3, R = "diagonal and unequal")
-
 cos_t <- cos(2 * pi * seq(TT) / 12)
 sin_t <- sin(2 * pi * seq(TT) / 12)
-
 dd <- rbind(cos_t,sin_t)
+## list with specifications for model vectors/matrices
 
-dfa_seas <- MARSS(dat, model = mod_list, form = "dfa", z.score = FALSE,
-                  control = con_list, covariates = dd)
+mod_list_seas <- list(m = 3)  # Only specify the number of trends
+
+dfa_seas <- MARSS(dat, model = mod_list_seas, form = "dfa", 
+                  z.score = FALSE, control = con_list, covariates = dd)
 dfa_seas$AICc
+```
+
+Scenario 6: Comparing 1, 2, and 3 trends in the DFA
+
+```{r}
+#1 Trend
+# Step 1: Create Z matrix for 1-trend model
+Z <- matrix(list(), nrow = 5, ncol = 1)
+rownames(Z) <- rownames(dat)
+for(i in 1:5) {
+  Z[i, 1] <- paste0("z", i)
+}
+
+# Step 2: Define DFA model structure
+model.list <- list(
+  Z = Z,
+  R = "diagonal and unequal",
+  B = "identity",
+  U = "zero",
+  Q = "identity",
+  x0 = "zero",
+  V0 = "zero",
+  A = "zero"
+)
+
+# Step 3: Fit the model
+fit_1trend <- MARSS(dat, model = model.list, control = list(maxit = 5000))
+
+
+# Step 4: View results
+summary(fit_1trend)
+
+# Step 5: Extract the estimated trend (state variable X) from the model
+dfa_trend <- fit_1trend$states[1, ]  # Since we only have 1 trend
+
+# Step 6: Create a time variable that matches the 199-month window
+# You originally subset rows 173:371, so the corresponding months are:
+time_index <- 1:ncol(dat) 
+
+# Step 7: Plot the trend
+
+if (all(is.finite(dfa_trend))) {
+  plot(time_index, dfa_trend, type = "l",
+       lwd = 2, col = "darkblue",
+       xlab = "Time (monthly index)",
+       ylab = "Estimated latent trend",
+       main = "Latent Temporal Trend Shared by 5 Plankton Taxa")
+  abline(h = 0, lty = 2, col = "gray")
+} else {
+  warning("Trend contains non-finite values. Cannot plot.")
+}
+
+#2 Trends
+# Step 1: Create Z matrix for 2-trend model
+Z2 <- matrix(list(), nrow = 5, ncol = 2)
+rownames(Z2) <- rownames(dat)
+for(i in 1:5) {
+  Z2[i, 1] <- paste0("z", (2*i - 1))
+  Z2[i, 2] <- paste0("z", (2*i))
+}
+
+# Step 2: Define DFA model structure with 2 trends
+model.list2 <- list(
+  Z = Z2,
+  R = "diagonal and unequal",
+  B = "identity",
+  U = "zero",
+  Q = "identity",   # or "equalvarcov" if you want trends to covary
+  x0 = "zero",
+  V0 = "zero",
+  A = "zero"
+)
+
+# Step 3: Fit the model
+fit_2trend <- MARSS(dat, model = model.list2, control = list(maxit = 5000))
+
+# Step 4: View results
+summary(fit_2trend)
+
+# Step 5: Extract the latent trends from the fitted model
+trend_ts <- fit_2trend$states
+
+# Step 6: Plot each trend separately
+par(mfrow = c(2, 1))  # 2 rows, 1 column layout
+plot(trend_ts[1, ], type = "l", col = "blue", lwd = 2,
+     main = "Latent Trend 1 (X1)", ylab = "Value", xlab = "Time (months)")
+plot(trend_ts[2, ], type = "l", col = "darkgreen", lwd = 2,
+     main = "Latent Trend 2 (X2)", ylab = "Value", xlab = "Time (months)")
+
+# Reset layout
+par(mfrow = c(1, 1))
+
+# Step 7: Plot the Z matrix loadings
+Z_est <- coef(fit_2trend, type = "matrix")$Z
+barplot(Z_est, beside = TRUE, col = c("blue", "darkgreen"),
+        legend = c("Trend 1", "Trend 2"),
+        main = "Taxon Loadings on Each Trend",
+        ylab = "Loading Strength")
+
+#3 Trend
+# Step 1: Create Z matrix for 3-trend model
+Z3 <- matrix(list(), nrow = 5, ncol = 3)
+rownames(Z3) <- rownames(dat)
+for(i in 1:5) {
+  for(j in 1:3) {
+    Z3[i, j] <- paste0("z", i, j)
+  }
+}
+
+# Step 2: Define the model list
+model.list3 <- list(
+  Z = Z3,
+  R = "diagonal and unequal",
+  B = "identity",
+  U = "zero",
+  Q = "identity",
+  x0 = "zero",
+  V0 = "zero",
+  A = "zero"
+)
+
+# Step 3: Fit the model (set higher maxit just in case)
+fit_3trend <- MARSS(dat, model = model.list3, control = list(maxit = 5000))
+
+# Step 4: View results
+summary(fit_3trend)
+
+# Step 5: Extract the estimated trends (states)
+states_3trend <- fit_3trend$states
+
+# Step 6: Plot the trends over time
+ts.plot(t(states_3trend), col = 1:3, lty = 1, xlab = "Time", ylab = "Trend value", main = "Estimated DFA Trends (3-Trend Model)")
+
+
+# Step 6: Plot trends using base R
+matplot(t(states_3trend), type = "l", lty = 1, col = 1:3,
+        xlab = "Time", ylab = "Trend value", main = "Estimated DFA Trends (3-Trend Model)")
+
+# Add legend
+#legend("topright", legend = paste("Trend", 1:3), col = 1:3, lty = 1)
+
+# Step 7: Plot the loadings (Z matrix values)
+Z_estimates <- coef(fit_3trend, type = "matrix")$Z
+barplot(Z_estimates, beside = TRUE, col = 1:3,
+        legend.text = paste("Trend", 1:3),
+        args.legend = list(x = "topright", bty = "n"),
+        main = "Factor Loadings (Z matrix)", ylab = "Loading strength", las = 2)
 ```
 
 ### Model Comparison
 
 ```{r}
 # For models with similar structures, we used AIC to compare model performance
+#Here we are comparing the inclusion of covariates:
 
 mod_list = list(m = 3, R = "diagonal and unequal")
 
@@ -344,6 +536,25 @@ print(cbind(model = c("no covars", "Temp", "TP", "Temp & TP", "Dummy"),
                      dfa_both$AICc,
                      dfa_seas$AICc))),
       quote = FALSE)
+
+#Here we are comparing the models with 1,2, or 3 trends, and then comparing the alterations to the R Matix Error Structure
+# Compare AICc values of equal vs unequal variance
+cbind(
+  model = c("2-trend unequal R", "2-trend equal R"),
+  AICc = c(fit_2trend$AICc, fit_equalvar$AICc)
+)
+# Compare AICc values across all fitted models
+aic_table <- data.frame(
+  Model = c("1-Trend", "2-Trend", "3-Trend", "2-Trend Equal Error"),
+  AICc = c(
+    fit_1trend$AICc,
+    fit_2trend$AICc,
+    fit_3trend$AICc,
+    fit_equalvar$AICc
+  )
+)
+
+print(aic_table)
 ```
 
 ### Peeling Away Years
@@ -353,20 +564,22 @@ An interesting idea mentioned in lecture was exploring the impact of peeling awa
 We made a function which fits our most simple model:
 
 ```{r}
+#PEELING AWAY YEARS
+
 # inputs are data in the correct structure (here dat), a MARSS model structure as a list, and a vector specifying which years to drop
 run_dfa <- function(data, model, remove_years = NULL) {
-
- 
+  
+  
   # Remove years if NULL is replaced with a vector to remove
   if (!is.null(remove_years)) {
     #Expanding to months
     remove_cols <- unlist(lapply(remove_years, function(y) ((y - 1) * 12 + 1):(y * 12)))
-
+    
     use_years <- !(1:ncol(data) %in% remove_cols)
     data <- data[, use_years, drop = FALSE] #drop = FALSE to maintain matrix structure
   }
   
-    
+  
   # Model specification (basic DFA)
   
   model <- model
@@ -380,10 +593,10 @@ run_dfa <- function(data, model, remove_years = NULL) {
   #   A = "zero",
   #   R = "diagonal"
   # )
-
+  
   # Fit the model
   dfa_mod <- MARSS(data, model = model,  silent = TRUE) # set silent = TRUE to suppress output
-
+  
   # Extract AIC, number of states, and number of years
   num_years = ncol(data)
   AIC = dfa_mod$AIC
@@ -396,11 +609,14 @@ run_dfa <- function(data, model, remove_years = NULL) {
   return(list(AIC = AIC, num_years = num_years/12, loadings = Z_matrix))
 }
 
+
+
 ```
 
 Now we can experiment and see what the effects of different windows and window sizes are on the results:
 
 ```{r}
+#FUNCTION CHUNK
 
 results <- list()
 
@@ -461,7 +677,7 @@ QQ <- "identity"  # diag(mm)
 
 ## list with specifications for model vectors/matrices
 window_list <- list(Z = ZZ, A = aa, D = DD, d = dd, R = RR,
-                 B = BB, U = uu, C = CC, c = cc, Q = QQ)
+                    B = BB, U = uu, C = CC, c = cc, Q = QQ)
 ## list with model inits
 init_list <- list(x0 = matrix(rep(0, mm), mm, 1))
 ## list with model control parameters
@@ -472,9 +688,9 @@ count <- 1 #make a counter
 
 
 for (i in 1:length(years_to_remove)) {
-    results[[count]] <- run_dfa(window_dat_done, window_list, years_to_remove[[i]])
-    count <- count + 1
-  }
+  results[[count]] <- run_dfa(window_dat_done, window_list, years_to_remove[[i]])
+  count <- count + 1
+}
 
 
 results
@@ -494,25 +710,26 @@ summary_df <- do.call(rbind, lapply(seq_along(results), function(i) {
 }))
 
 summary_df
-
 ```
 
-# Results
+# Results and Discussion
 
 ### Model Performance for Different Scenarios
 
-The comparison of model performance showed that the dummy variable performed the best of all models. This suggests that while the combination of temperature (2nd best performing model) explains a lot of the variance, there are other seasonal factors that further impact the abundance of plankton as a sinusoidal trend is capable of explaining more. This may be a factor such as amount of sunlight or day length. As a result, this may be a variable that is strongly collinear with temperature as you would expect sunlight to warm the water. This is further reinforced by the joint Temperature and Phosphorus model performing slightly worse than just temperature, suggesting that changes in phosphorus may be linked to plankton abundance but are not a driving factor of trends.
+Using the AIC values to compare among our models here (number of trends and error structure, and covariate inclusion), the models that best fit the phytoplankton taxa here are 2-Trend with Unequal Variance and the temperature-alone covariate model. Interestingly, the Dummy variable model performed better than the TP-alone model, and equally as well as the Temp and TP model. This suggests that while the combination of temperature (best performing model) explains a lot of the variance, there are other seasonal factors that further impact the abundance of plankton as a sinusoidal trend is capable of explaining more. This may be a factor such as amount of sunlight or day length. As a result, this may be a variable that is strongly collinear with temperature as you would expect sunlight to warm the water. This is further reinforced by the joint Temperature and Phosphorus model performing slightly worse than just temperature, suggesting that changes in phosphorus may be linked to plankton abundance but are not a driving factor of trends.
+
+After fitting DFA models with 1, 2, and 3 latent trends, we compared their performance using AIC and AICc values. The 2-trend model had the lowest AICc, suggesting it provides the best fit to the observed plankton time series. Each trend represents an underlying pattern in community dynamics over time, and the factor loadings reveal how each taxon aligns with these trends. While all models reached only abstol convergence, the consistent incline in AICc across models supports the lower complexity of the 2-trend solution.
 
 ### Error Structure Impacts
 
+We compared several Dynamic Factor Analysis models using AICc to evaluate their performance. The 2-trend model had the lowest AICc value, indicating the best fit to the data despite only reaching abstol convergence. The incline in AICc with increasing trends suggests that plankton dynamics in Lake Washington are best captured by a small few latent processes rather than a single common pattern. Additionally, when testing an alternative error structure using equal observation error variance, model fit worsened, reinforcing that allowing unequal error variance across taxa better reflects their unique variability. While the models did not fully converge, the AICc differences support using the 2-trend, unequal error variance model as the most parsimonious choice for interpreting system-wide trends.
+
 ### Peeling Away Years
 
-Peeling away years and exploring DFA performance was a final step inspired by our curiosity to better understand the method. The results were confusing and suggest that perhaps the experiment was not properly set up. Given the quick and simple set up, there are factors such as which years were selected and what species of plankton that could have played a role in the performance of the model. There are also different ways to drop windows - for example, given the strong seasonal trend, we could have done DFA only on winter or summer abundances to try to find more subtle trends.
+Peeling away years and exploring DFA performance was a final step inspired by our curiosity to better understand the method. The results were confusing and suggest that perhaps the experiment was not properly set up. Given the quick and simple set up, there are factors such as which years were selected and what species of plankton that could have played a role in the performance of the model. There are also different ways to drop windows - for example, given the strong seasonal trend, we could have done DFA only on winter or summer abundances to try to find more subtle trends. 
 
 The model with the least years performed best while a model with all years performed the most poorly. This seems improbable and incorrect and may be due to an overfitting issue. Another idea was the impacts of NAs on the ability of dfa to fir properly. However, all models have the same structure and should comparable as a result.
 
-# Discussion
-
 ### Member Contributions
 
-All team members participated in all steps of the lab. Following initial data exploration, we each took a different approach to each task and then checked in with our respective results (one member looked only at phytoplankton while another tried predators and edible phytoplankton models, etc) . Following a discussion, we then took on combining our results in to a coherent lab report. For smaller task we split our work (plotting, error structure, or peeling away years) and then shared results with the rest of the team.
+All team members participated in all steps of the lab. Following initial data exploration, we each took a different approach to each task and then checked in with our respective results . Following a discussion, we then took on combining our results in to a coherent lab report. For smaller tasks we split our work (plotting, error structure, or peeling away years) and then shared results with the rest of the team. 

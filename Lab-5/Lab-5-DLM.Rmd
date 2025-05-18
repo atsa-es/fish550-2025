@@ -1,7 +1,7 @@
 ---
 title: "Lab 5 - Dynamic Linear Models"
 author: "Mark Scheuerell"
-date: "Due May X, 2025"
+date: "Due May 27, 2025"
 output: 
  html_document:
   code-folding: true
@@ -15,13 +15,17 @@ options(dplyr.summarise.inform = FALSE)
 
 ## Teams
 
-1) Liz Elmstrom (SAFS), Dylan Hubl (SEFS), Maria Kuruvilla (QERM)
-
-2) Terrance Wang (SAFS), Zoe Rand (QERM) 
-
-3) Eric French (CEE), Madison Shipley (SAFS), Karl Veggerby (SAFS)
-
-4) Nick Chambers (SAFS), Emma Timmins-Schiffman (Genome Sci), Miranda Mudge (Molecular & Cellular)
+```{r, results = "asis", echo=FALSE}
+# Set up names and shuffle
+set.seed(20250515)
+names_str <- "Anna, Brian, Nicole, Matheus, Lilac, Mary, Ben, Emma, Tina"
+names <- strsplit(names_str, ",\\s*")[[1]]
+shuffled <- sample(names)
+teams <- split(shuffled, ceiling(seq_along(shuffled) / 3))
+for (i in seq_along(teams)) {
+  cat(sprintf("- **Team %d**: %s  \n", i, paste(teams[[i]], collapse = ", ")))
+}
+```
 
 
 ## Background {#sec-dlm-homework}
@@ -75,13 +79,12 @@ knitr::include_graphics("images/BB_sockeye_rivers_inset.png")
 ```
 
 
-These data are in the **atsalibrary** package on GitHub. If needed, install using the **devtools** package.
+These data are in the **atsalibrary** package on GitHub. If needed, install the package.
 
 ```{r dlm-load-atsa, eval=FALSE}
-## library(devtools)
 ## Windows users will likely need to set this
 ## Sys.setenv("R_REMOTES_NO_ERRORS_FROM_WARNINGS" = "true")
-devtools::install_github("nwfsc-timeseries/atsalibrary")
+install.packages('atsalibrary', repos = c('https://atsa-es.r-universe.dev', 'https://cloud.r-project.org'))
 ```
 
 Load the data.

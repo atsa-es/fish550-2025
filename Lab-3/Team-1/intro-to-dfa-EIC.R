@@ -315,7 +315,16 @@ dat_zoop <- dat_zoop - y_bar
 
 #Q2 DFA and 10 year increments
 
-#Q3 is Error structure of one candiate model
+#Q3 is Error structure of one candiate model - Temp
+
+dfa_temp <- MARSS(dat, model = mod_list, form = "dfa", z.score = FALSE,
+                  control = con_list, covariates = temp)
+Methods-
+ # Using the candiddate model with the lowest AICc value, we can alter the R matrix to see how changes may affect the outcume
+R1- diagonal and uneaqual 
+R2- diagonal and equal
+R3- varcovar
+
 #Could alter the R matrix to diagonal and equal vs diagonal and unequal
 
 

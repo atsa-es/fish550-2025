@@ -1,0 +1,225 @@
+---
+title: Team 1 - Lab 5
+subtitle: Dynamic Linear Models (DLMs) - Time-varying productivity of salmon
+author: "Nicole, Tina, Lilac"
+date: May 20, 2025
+output: 
+  html_document:
+    code-folding: true
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include = FALSE}
+options(dplyr.summarise.inform = FALSE)
+library(MARSS)
+library(ggplot2)
+library(atsalibrary)
+library(dplyr)
+```
+
+
+# Data
+The data are a dataframe with columns for brood year (`brood_year`), number of spawners (`spawners`), number of recruits (`recruits`) and PDO at year $t-2$ in summer (`pdo_summer_t2`) and in winter (`pdo_winter_t2`). 
+
+```{r dlm-load-atsa, echo=FALSE}
+## get data
+data(KvichakSockeye, package="atsalibrary")
+SR_data <- KvichakSockeye
+```
+
+```{r wrangle_data, echo=FALSE}
+#remove the na's at beginning and end of data set
+SR_na.rm<-SR_data[SR_data$"brood_year"%in%1956:1998,]
+#observation and covariates for first two marss models
+ricker_obs<-matrix(log(SR_na.rm$recruits/SR_na.rm$spawners), nrow=1)
+log_spawners<-matrix(log(SR_na.rm$spawners), nrow=1)
+```
+
+
+# General tasks
+
+Use the information and data in the previous section to answer the following questions. Note that if any model is not converging, then you will need to increase the `maxit` parameter in the `control` argument/list that gets passed to `MARSS()`. For example, you might try `control=list(maxit=2000)`.
+
+### Question 1: Reduced Ricker Model
+\begin{align*}
+\text{log}(R_t) &= \alpha_t + \text{log}(S_t) + v_t \\
+\text{log}(R_t/S_t) &= \alpha_t + v_t
+\end{align*}
+
+This model assumes no density-dependent survival in that the number of recruits is an ascending function of spawners. Plot the ts of $\alpha_t$ and note the AICc for this model. Also plot appropriate model diagnostics.
+
+```{r, include=FALSE}
+mod.list <- list(
+  B = matrix(1),        # alpha_t = alpha_{t-1} + w_t (random walk)
+  U = matrix(0),        # no drift
+  Q = "unconstrained",  # allow process variance
+  Z = matrix(1),        # y_t = alpha_t + v_t
+  A = matrix(0),        # no fixed intercept
+  R = "unconstrained",  # estimate observation variance
+  x0 = "unconstrained"  # estimate initial state
+)
+
+reducedricker<-MARSS(ricker_obs,mod.list)
+```
+
+```{r model diagnostics, echo=FALSE}
+# extract alpha_t values from fit model
+alpha<-reducedricker$states[1,]
+ts.plot(alpha, main="alpha_t")
+#print AIC
+print(c("Reduced Ricker AIC=",reducedricker$AICc))
+
+#plot diagnostics
+pdf("marss_reducedricker_plot.pdf", width = 7, height = 6)
+plot(reducedricker, silent = TRUE)
+dev.off()
+```
+![](marss_reducedricker_plot.pdf). 
+
+The model diagnostics look fine. There doesn't appear to be any patterns in the residual plots, autocorrelation in the ACF plots, and the QQ-plot shows some deviation from the line but not enough to be very concerned.
+
+### Question 2: Full Ricker Model
+Fit the full Ricker model with a time-varying intercept and a static effect of spawners. For this model, obtain the time series of $\alpha_t$, which is an estimate of the stock productivity in the absence of density-dependent effects. How do these estimates of productivity compare to those from the previous question? Plot the ts of $\alpha_t$ and note the AICc for this model. Also plot appropriate model diagnostics. ($Hint$: If you don't want a parameter to vary with time, what does that say about its process variance?)
+
+\begin{align*}
+\text{log}(R_t/S_t) &= \alpha_t + \beta_t*\text{log}(S_t) + v_t \\
+\end{align*}
+```{r, include=FALSE}
+mod.list.2 <- list(
+  B = matrix(1),        # alpha_t = alpha_{t-1} + w_t
+  U = matrix(0),
+  Q = "unconstrained",  # alpha_t has process error
+  Z = matrix(1),        # observation = alpha_t + beta*covariate + v_t
+  A = matrix(0),
+  R = "unconstrained",
+  x0 = "unconstrained",
+  C = matrix(1),        # coefficient of covariate beta
+  c = log_spawners         # covariate matrix of logged spawner counts
+)
+fullricker<-MARSS(ricker_obs, mod.list.2, control=list(maxit=2000))
+```
+```{r model diagnostics 2}
+alphafull<-fullricker$states[1,]
+ts.plot(alphafull, main="alpha_t")
+lines(alpha, col="blue")
+legend("topright", legend=c("Full Ricker", "Reduced Ricker"), col=c("black", "blue"), lty=1)
+
+#print AIC
+reducedaicc<-reducedricker$AICc
+fullaicc<-fullricker$AICc
+AICc<-cbind(model=c("Full Ricker", "Reduced Ricker"), AICc=c(fullaicc, reducedaicc))
+print(AICc)
+
+#plot diagnostics
+pdf("marss_fullricker_plot.pdf", width = 7, height = 6)
+plot(fullricker, silent = TRUE)
+dev.off()
+
+```
+![](marss_fullricker_plot.pdf). 
+
+In the full Ricker model diagnostic plots, the observation and standardized residuals are all negative. The reduced Ricker model is also a better fit to the data (delta AICc~197). In comparing the alpha_t values between the full and reduced Ricker models, the reduced model's estimates are smoother than the full model's alpha estimates. This suggests the full model's estimated beta value is biased because it is over-predicting alpha values. This data does not support density dependence. We can try to explain the data using environmental covariates that could be driving the relationship between spawners and recuits instead of density dependence.
+
+### Question 3: Summer PDO 
+Fit the expanded model that includes the summer PDO index as the covariate (`pdo_summer_t2`). What is the mean level of productivity? Plot the ts of $\delta_t$ and note the AICc for this model. Also plot appropriate model diagnostics.
+
+### Question 4: Winter PDO
+Fit the expanded model that includes the winter PDO index as the covariate (`pdo_winter_t2`). What is the mean level of productivity? Plot the ts of $\delta_t$ and note the AICc for this model. Also plot appropriate model diagnostics.
+
+### Question 5: PDO Covariate Comparison
+Based on AICc, which of the models above is the most parsimonious? Is it well behaved (i.e., are the model assumptions met)? Plot the model forecasts for the best model. Is this a good forecast model?
+
+
+### Question 6: Alternative co-variates
+Consider other environmental factors that could influence the time-varying intrinsic productivity of these salmon. For example, are there other large-scale indices of ocean conditions (e.g., sea-surface temperature, El Niño Southern Oscillation)? You could also consider the possible influence of other salmon stocks such as those we examined in Lab 1.
+
+We will fit a model to the Kvichak sockeye data that considers annual abundance of chinook stocks from lab 1 as a covariate. 
+```{r, include=FALSE}
+### Data wrangling for Chinook (lab 1)
+data(chinook)
+chinook.year<-chinook.year %>%
+  filter(!State %in% c("Michigan", "Pennsylvania")) %>%
+  mutate(metric.tons = exp(log.metric.tons)) %>%  # undo the log
+  group_by(Year) %>%
+  summarise(
+    total.metric.tons = sum(metric.tons, na.rm = TRUE),
+    log.total.metric.tons = log(total.metric.tons)
+  )
+chinook.year<-chinook.year[chinook.year$Year%in%1956:1998,]
+chinook_z <- scale(chinook.year$log.total.metric.tons)
+cov_mat <- t(as.matrix(chinook_z))
+
+mod.list <- list(
+  B = "identity",
+  U = "zero",
+  Q = "diagonal and equal",
+  Z = "identity",
+  A = "zero",
+  R = "diagonal and equal",
+  x0 = "zero",
+  c = cov_mat,     #  chinook covariate matrix
+  C = "unconstrained" 
+)
+
+chinookcov <- MARSS(ricker_obs, model = mod.list)
+
+chinook_z_lag1 <- dplyr::lag(chinook_z, 1)
+cov_mat_lag <- t(as.matrix(chinook_z_lag1))
+mod.list <- list(
+  B = "identity",
+  U = "zero",
+  Q = "diagonal and equal",
+  Z = "identity",
+  A = "zero",
+  R = "diagonal and equal",
+  x0 = "zero",
+  c = cov_mat_lag,     #  chinook covariate matrix
+  C = "unconstrained" 
+)
+
+chinookcovlag <- MARSS(ricker_obs, model = mod.list)
+```
+```{r, echo=FALSE}
+alphachinook<-chinookcov$states[1,]
+ts.plot(alphachinook, main="alpha_t")
+lines(alpha, col="blue")
+legend("topright", legend=c("Chinook Covariate", "Reduced Ricker"), col=c("black", "blue"), lty=1)
+
+#print AIC
+chinookcovaicc<-chinookcov$AICc
+chinooklagaicc<-chinookcovlag$AICc
+AICc<-cbind(model=c("Chinook covariate", "Chinook lag", "Reduced Ricker"), AICc=c(chinookcovaicc, chinooklagaicc, reducedaicc))
+print(AICc)
+
+#plot diagnostics
+pdf("marss_chinookcov_plot.pdf", width = 7, height = 6)
+plot(chinookcov, silent = TRUE)
+dev.off()
+
+```
+![](marss_chinookcov_plot.pdf). 
+
+The model that includes chinook as a covariate performs about the same as the reduced Ricker model. Including a lag does not improve model performance.
+
+# Methods
+# We can probably address these model and results questions throughout the sections above and just have a separate discussion section.
+Please address the following in your methods:
+
+* What environmental or dummy variables did you include and why?
+
+* What forms of models did you fit (ie, write them out in matrix form)?
+
+* What sort of model diagnostics did you use to examine model assumptions?
+
+
+# Results
+
+
+# Discussion
+
+
+# Team contributions
+
+Example: Nicole fit and interpreted the reduced and full Ricker models in questions 1 and 2.
+

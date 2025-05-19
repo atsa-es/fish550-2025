@@ -246,6 +246,108 @@ summary(fit_tv_both)
 # The means~Year model shows a marginal improvement in AIC, hinting at a slight temporal trend in state means. Neither allowing transitions to vary with time nor combining both kinds of time‐variation improves AIC. BIC prefers the constant model, indicating that the data do not strongly support adding time–varying parameters.
 ```
 
+## Finding the optimal number of states
+
+In this exercise, we fitted a total of four different models with both time-varying means and transition matrices to the winter PDO data while specifying different number of states (1 - 4). When comparing the different model fits using AIC, the 2-state model appears as the most parsimonious (lower AIC).
+
+```{r}
+set.seed(550) # same seed as before
+
+# redefine data
+winter_pdo      = data.frame(winter_pdo = pdo$winter_pdo)
+winter_pdo$Year = pdo$Year
+
+models = list()
+fits   = list()
+
+# fit models
+for (k in 2:4) {
+  
+    models[[1]] = depmix(
+    
+    response   = winter_pdo ~ Year,
+    data       = winter_pdo,
+    nstates    = 1, 
+    family     = gaussian() 
+    
+    ) # need to do this because the 'transition' argument cannot be used if 'nstates' = 1
+  
+  models[[k]] = depmix(
+    
+    response   = winter_pdo ~ Year,
+    transition = ~ Year,
+    data       = winter_pdo,
+    nstates    = k, 
+    family     = gaussian() 
+    
+    )
+  
+  fits[[1]] = fit(models[[1]], verbose = FALSE)
+  fits[[k]] = fit(models[[k]], verbose = FALSE)  
+    
+}
+
+AICs = rep(NA, 4)
+for (k in 1:4) AICs[[k]] = AIC(fits[[k]])
+
+k_comps = data.frame(
+  k   = c("1 state", "2 states", "3 states", "4 states"),
+  AIC = AICs
+); names(k_comps) = c("Number of states", "AIC")
+
+print(k_comps)
+
+
+```
+
+```{r}
+
+posteriors = list()
+for (k in 1:4) {
+  posteriors[[k]] = posterior(fits[[k]], type = "global")
+}
+
+winter_pdo$one_state    = posteriors[[1]]
+winter_pdo$two_states   = posteriors[[2]]
+winter_pdo$three_states = posteriors[[3]]
+winter_pdo$four_states  = posteriors[[4]]
+
+winter_pdo =
+winter_pdo %>%
+  pivot_longer(cols = 3:6,
+               names_to = "Model",
+               values_to = "Predicted state") %>%
+  mutate(Model = recode(Model,
+                        
+    one_state    = "1 state",
+    two_states   = "2 states",
+    three_states = "3 states",
+    four_states  = "4 states"
+    
+  ))
+
+winter_pdo %>%  
+  ggplot(aes(x = Year, y = winter_pdo, color = as.factor(`Predicted state`))) +
+  geom_line() +
+  facet_wrap(~Model) +
+  theme_minimal() +
+  labs(color = "Predicted State") +
+  ylab("Winter PDO")
+
+```
+
+
 # Team contributions
 
 Example: "All team members helped decide on the goal and ran the analyses for the individual regions. Team members 2 & 3 wrote most of the code for the analysis. Team member 1 worked on the plotting section of the report using and adapting code that team member 3 wrote. All team members helped edit the report and wrote the discussion together."
+
+
+
+
+
+
+
+
+
+
+

@@ -221,5 +221,5 @@ Please address the following in your methods:
 
 # Team contributions
 
-Example: Nicole fit and interpreted the reduced and full Ricker models in questions 1 and 2.
+Example: Nicole fit and interpreted the reduced and full Ricker models in questions 1 and 2, and the chinook covariate models in question 6.
 

@@ -1,7 +1,9 @@
 # libaries
+library(data.table)
 library(dplyr)
 library(here)
 library(hmmTMB)
+library(tidyverse)
 
 # read pdo data
 pdo <- rsoi::download_pdo()
@@ -49,36 +51,76 @@ pdo$est_state <- factor(paste0("State", hmm$viterbi()))
 ggplot(pdo, aes(Year, winter_pdo, col = est_state)) + 
   geom_point() + ylab("PDO state?") + theme_bw()
 
-# try different seeds
-best = 1.0e10
-best_model = NA
-iter = 20
-for(i in 1:iter){
-  set.seed(i)
-  sig <- runif(1, 0.01, (1.5*sd(pdo$winter_pdo)))
-  
-  hidden <- MarkovChain$new(data = pdo, n_states=2)  
-  
-  dists <- list(winter_pdo = "norm") 
-  
-  par0 <- list(winter_pdo = list(mean = c((mean(pdo$winter_pdo) - sig), (mean(pdo$winter_pdo) + sig)), sd = c(sig, sig)))
-  
-  obs_model <- Observation$new(data = pdo,
-                               dists = dists,
-                               n_states = 2,
-                               par = par0)
-  
-  hmm <- HMM$new(obs = obs_model,
-                 hid = hidden)
-  
-  hmm$fit(silent=TRUE)
-  
-  if(hmm$AIC_conditional() < best) {
-    best_model = hmm
-    best = hmm$AIC_conditional()
-  }
-}
+# # try different seeds
+# best = 1.0e10
+# best_model = NA
+# iter = 20
+# for(i in 1:iter){
+#   set.seed(i)
+#   sig <- runif(1, 0.01, (1.5*sd(pdo$winter_pdo)))
+#   
+#   hidden <- MarkovChain$new(data = pdo, n_states=2)  
+#   
+#   dists <- list(winter_pdo = "norm") 
+#   
+#   par0 <- list(winter_pdo = list(mean = c((mean(pdo$winter_pdo) - sig), (mean(pdo$winter_pdo) + sig)), sd = c(sig, sig)))
+#   
+#   obs_model <- Observation$new(data = pdo,
+#                                dists = dists,
+#                                n_states = 2,
+#                                par = par0)
+#   
+#   hmm <- HMM$new(obs = obs_model,
+#                  hid = hidden)
+#   
+#   hmm$fit(silent=TRUE)
+#   
+#   if(hmm$AIC_conditional() < best) {
+#     best_model = hmm
+#     best = hmm$AIC_conditional()
+#   }
+# }
 
 ## PART 2 ###############################################################################################
 
 stopl <- read.csv(here("Lab-4", "stoplight.csv"))
+stopl_bioo <- subset(stopl, Type == "Local Biological")
+stopl_bioo <- stopl_bioo[,-c(2)]
+
+stopl_bio <- melt(setDT(stopl_bioo), id.vars = c("Ecosystem.Indicators"), variable.name = "year")
+stopl_bio$year <- substring(stopl_bio$year, 2)
+
+stopl_bio <- stopl_bio %>% 
+  group_by(Ecosystem.Indicators) %>% 
+    mutate(value = scale(value))
+
+ggplot(stopl_bio, aes(year, value, color = Ecosystem.Indicators)) + 
+  geom_point() + ylab("PDO") + theme_bw()
+
+## fit HMM
+# hidden state model
+hidden <- MarkovChain$new(data = stopl_bio, n_states=3)
+# begin by defining two states - warm and cool
+
+# observation model
+# options for other families in vignette
+dists <- list(winter_pdo = "norm") 
+# named list of starting values -- varies by family
+par0 <- list(winter_pdo = list(mean = c((mean(pdo$winter_pdo) - sd(pdo$winter_pdo)),(mean(pdo$winter_pdo) + sd(pdo$winter_pdo))), sd = c(0.985, 0.985)))
+# create observation model
+obs_model <- Observation$new(data = pdo,
+                             dists = dists,
+                             n_states = 2,
+                             par = par0)
+
+# construct HMM
+hmm <- HMM$new(obs = obs_model,
+               hid = hidden)
+
+hmm$fit(silent=TRUE)
+hmm
+
+pdo$est_state <- factor(paste0("State", hmm$viterbi()))
+
+ggplot(pdo, aes(Year, winter_pdo, col = est_state)) + 
+  geom_point() + ylab("PDO state?") + theme_bw()

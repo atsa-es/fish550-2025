@@ -47,6 +47,7 @@ library(dplyr)
 ## Wrangle the data
 
 ```{r wrangle_data}
+library(dplyr)
 #Read in the data
 stoplight <- read.csv("stoplight.csv")
 

@@ -1,8 +1,8 @@
 ---
 title: Team 3 - Lab 4
 subtitle: Hidden Markov Models
-author: "Brian McGreal, Ben Makhlouf, Anna Sulc"
-date: May XX, 2025
+author: "Ben Makhlouf, Brian McGreal, Anna Sulc"
+date: May 20, 2025
 output: 
   html_document:
     code-folding: true
@@ -10,9 +10,8 @@ output:
     toc_float: true
 ---
 
-
-
 ```{r setup, include = FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
 options(dplyr.summarise.inform = FALSE)
 ```
 
@@ -32,15 +31,13 @@ options(dplyr.summarise.inform = FALSE)
 <!-- subsetting you chose. Also describe any standardization, centering or scaling  -->
 <!-- that was used.  -->
 
-
-We chose to work with the PDO variable for the initial hidden markov model. We worked on a yearly scale and focused on the winter month period to ensure data were aligned on a temporal scale. 
+We chose to work with the PDO variable for the univariate hidden markov model. We worked on a yearly scale and focused on the winter month period to ensure data were aligned on a temporal scale. 
 
 For the Stoplight data set, we chose to focus on local biological variables as we thought it may be interesting to see whether all biological data followed the same trends or if there were opposite trends occuring for different parts of the system. We were interested in how this affected models with different states. 
 
+<!-- Load the data -->
 
-## Load the data
-
-```{r load_data and packages}
+```{r load_data and packages, include=FALSE}
 library(ggplot2)
 library(dplyr)
 library(tidyr)
@@ -53,16 +50,13 @@ stoplight <- read.csv(here::here("Lab-4", "stoplight.csv"))
 # Select only the local biological 
 biological <- stoplight %>%
   filter(Type == "Local Biological")
-
-
 ```
 
 ## Wrangle the data
 
 For the biological variables, we chose to normalize data as scales varied largely (copepod abundance vs salmon). Additionally, we used log(abundance/counts) in our model to ensure we kept our variables in a positive space. As data was normalized, we replaced any zeros with very small numbers to avoid -INF or NaNs in the data rather than dropping that information entirely. 
 
-```{r wrangle_data}
-
+```{r wrangle_data, include=FALSE}
 
 ### Adjust the data for PDO 
 pdo$Year[which(pdo$Month%in%c("Oct","Nov","Dec"))] <- pdo$Year[which(pdo$Month%in%c("Oct","Nov","Dec"))] + 1
@@ -76,7 +70,7 @@ pdo <- pdo[-1,]
 plot <- ggplot(pdo, aes(x = Year, y = winter_pdo)) +
   geom_line() +
   labs(title = "Winter PDO vs Year", x = "Year", y = "Winter PDO") +
-  theme_minimal()
+  theme_classic()
 
 plot
 
@@ -109,7 +103,7 @@ ggplot(biological_long, aes(x = Year, y = Value, group = 1)) +
        x = "Year", 
        y = "Normalized Value",
        subtitle = "Each indicator normalized to range from 0 to 1") +
-  theme_minimal() +
+  theme_classic() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
         strip.text = element_text(size = 10),
         plot.title = element_text(size = 14))
@@ -119,11 +113,13 @@ ggplot(biological_long, aes(x = Year, y = Value, group = 1)) +
 
 # Methods
 
+## Univariate - PDO
+
 We assumed all responses are Gaussian in our models. We chose to fit a simple model with no covariates in both instances and instead and instead focused on the impacts of assuming different numbers of states and exploring model diagnostics and performance. 
 
 
 Here we fit a two state HMM to the annual indices of PDO 
-```{r}
+```{r, echo=FALSE}
 
 library(hmmTMB)
 
@@ -156,25 +152,25 @@ hmm$fit(silent = TRUE)
 ```
     
 Examine the model output 
-```{r}
+```{r, echo=FALSE}
 hmm
 
 hmm$par()
+```
 
+```{r plot, echo=FALSE}
 pdo$est_state <- factor(paste0("State", hmm$viterbi()))
 
 ggplot(pdo, aes(time, winter_pdo, col = est_state)) + 
-  geom_line(aes(group = 1), color = "black") + 
   geom_point(size = 2) + # This line will connect all the points
-  ylab("Rained?") + 
-  theme_bw()
-
-
+  ylab("Warm or Cold?") + 
+  xlab("") + 
+  theme_classic()
 ```
 
 We fit the model 20 times and explored the likelihood. Plotting the likelihood demonstrated that is was quite stable and remained in a similar range across all 20 iterations. This may be one way to check convergence - if we were located in a local minimum, running a couple hundred iterations might show a likelihod that jumps between two significantly different values. 
-```{r}
 
+```{r, echo=FALSE}
 # Placeholder for storing models and log-likelihoods
 models <- vector("list", 20)
 log_liks <- numeric(20)
@@ -207,21 +203,19 @@ loglik_df <- data.frame(Iteration = 1:20, LogLikelihood = log_liks)
 
 # Plot log-likelihoods
 ggplot(loglik_df, aes(x = Iteration, y = LogLikelihood)) +
-  geom_line() +
   geom_point() +
-  theme_minimal() +
+  theme_classic() +
   labs(title = "Log-Likelihood Across HMM Fits", y = "Log-Likelihood", x = "Iteration")
 
 # Identify best model
 best_index <- which.max(log_liks)
 best_model <- models[[best_index]]
 cat("Best model is at iteration", best_index, "with log-likelihood", log_liks[best_index], "\n")
-
-
 ```
 
 **Plot the posterior probability of being in the various states from your best model (e.g. probability of being in state 1 over time)**
-```{r}
+
+```{r, echo=FALSE}
 
 # Extract the state probabilities 
 state_probs<-best_model$state_probs()
@@ -229,12 +223,13 @@ state_probs<-best_model$state_probs()
 # plot each of these 
 library(ggplot2)
 
-
 ggplot(pdo, aes(x = time)) +
   geom_line(aes(y = state_probs[,1], col = "State 1")) +
+  geom_point(aes(y = state_probs[,1], col = "State 1")) +
   geom_line(aes(y = state_probs[,2], col = "State 2")) +
+  geom_point(aes(y = state_probs[,2], col = "State 2")) +
   labs(title = "Posterior Probability of States", x = "Year", y = "Probability") +
-  theme_minimal() +
+  theme_classic() +
   scale_color_manual(values = c("State 1" = "blue", "State 2" = "red")) +
   theme(legend.title = element_blank())
 
@@ -243,8 +238,9 @@ ggplot(pdo, aes(x = time)) +
 
 **What is the long-run probability that the PDO is in state 1 versus state 2?**
 
-The long-run probabilities represent the proportion of time the PDO is expected to be in each state over a very long period. This can be calculated using the eigenvalues of the transition matrix. Our results show that we will be in State 1 approximately 2/3s of the time in a long term future. 
-```{r}
+The long-run probabilities represent the proportion of time the PDO is expected to be in each state over a very long period. This can be calculated using the eigenvalues of the transition matrix. Our results show that we will be in State 1 approximately 2/3s of the time in a long term future.
+
+```{r, echo=FALSE}
 
 trans_mat <- as.data.frame(best_model$par()$tpm)
 
@@ -337,8 +333,9 @@ This matrix represents the probabilities of transitioning between two hidden sta
 
 
 
-## For this section we switched to the stoplight data
-```{r}
+## Multivariate - "Stoplight" Indicator Data
+
+```{r, echo=FALSE}
 
 
 biological_reshaped <- biological_normalized %>%
@@ -357,12 +354,12 @@ print(head(biological_reshaped))
 
 ```
 
-## Using the stoplight dataset to experiment with a  2 and 3 state multivariate HMM with the local biological data
+## 2 state vs. 3 state HMMs
 
-```{r}
+#### 2 states
+```{r, echo=FALSE}
 
 set.seed(666)
-
 
 #For all models
 # Define distributions for each indicator
@@ -409,36 +406,36 @@ obs_model2 <- Observation$new(data = biological_reshaped,
 hmm2 <- HMM$new(obs = obs_model, 
                hid = hidden2)
 
-# # Fit the model
-# #hmm2$fit(silent = TRUE)
-# 
-# # Print results
-# print("Model fitting completed")
-# print(hmm2)
-# 
-# 
-# # Collect the state estimates 
-# 
-# biological_reshaped$est_state <- factor(paste0("State", hmm$viterbi()))
-# 
-# hmm2_series <- biological_reshaped
+# Fit the model
+hmm2$fit(silent = TRUE)
+ 
+# Print results
+print("Model fitting completed")
+print(hmm2)
+ 
+ 
+# Collect the state estimates 
 
-# ggplot(hmm2_series, aes(Year, as.numeric(est_state), col = est_state)) + 
-#   geom_line(aes(group = 1), color = "black") + 
-#   geom_point(size = 3) +
-#   scale_y_continuous(breaks = c(1, 2), labels = c("State 1", "State 2")) +
-#   labs(title = "HMM State Changes Over Time",
-#        x = "Year", 
-#        y = "State",
-#        color = "Est. State") + 
-#   theme_bw()
+biological_reshaped$est_state <- factor(paste0("State", hmm$viterbi()))
+ 
+hmm2_series <- biological_reshaped
+
+ggplot(hmm2_series, aes(Year, as.numeric(est_state), col = est_state)) + 
+   geom_line(aes(group = 1), color = "black") + 
+   geom_point(size = 3) +
+   scale_y_continuous(breaks = c(1, 2), labels = c("State 1", "State 2")) +
+   labs(title = "HMM State Changes Over Time",
+        x = "Year", 
+        y = "State",
+        color = "Est. State") + 
+   theme_classic()
 
 #########################################################################
 
 ```
 
-## Same as above, but with three states 
-```{r}
+#### 3 states
+```{r, echo=FALSE}
 
 # 3 state HMM model
 set.seed(123)
@@ -488,28 +485,22 @@ hmm <- HMM$new(obs = obs_model3,
 
 # Fit the model
 print("Fitting 3-state HMM model...")
-# hmm$fit(silent = TRUE)
-# 
-# # Collect the state estimates 
-# 
-# biological_reshaped$est_state <- factor(paste0("State", hmm$viterbi()))
-# 
-# hmm3_series <- biological_reshaped
+hmm$fit(silent = TRUE)
 
-# ggplot(hmm3_series, aes(Year, as.numeric(est_state), col = est_state)) + 
-#   geom_line(aes(group = 1), color = "black") + 
-#   geom_point(size = 3) +
-#   scale_y_continuous(breaks = c(1, 2), labels = c("State 1", "State 2")) +
-#   labs(title = "HMM State Changes Over Time",
-#        x = "Year", 
-#        y = "State",
-#        color = "Est. State") + 
-#   theme_bw()
+# Collect the state estimates
 
+biological_reshaped$est_state <- factor(paste0("State", hmm$viterbi()))
+hmm3_series <- biological_reshaped
 
-
-
-
+ggplot(hmm3_series, aes(Year, as.numeric(est_state), col = est_state)) +
+   geom_line(aes(group = 1), color = "black") +
+   geom_point(size = 3) +
+   scale_y_continuous(breaks = c(1, 2), labels = c("State 1", "State 2")) +
+   labs(title = "HMM State Changes Over Time",
+        x = "Year",
+        y = "State",
+        color = "Est. State") +
+   theme_classic()
 ```
 # Results
 
@@ -519,9 +510,9 @@ In the second part of the lab, we experimented with a 1, 2 and 3 state model for
 
 The following section summarizes the outputs of our analysis.
 
-### -   Does it converge?
+### Convergence
 
-```{r}
+```{r, echo=FALSE}
 
 
 #For initial hmm
@@ -548,10 +539,10 @@ best_model$AIC_conditional()
 
 ```
 
-### -   How many states seem to be most supported?
+### States
 
 
-```{r}
+```{r, echo=FALSE}
 
 
 
@@ -562,7 +553,7 @@ best_model$AIC_conditional()
 
 In the case of the PDO model, we seem to be in the second state more than the first. This is consistent with the estimates of long term probabilities where we spend 2/3s of the time in one state and 1/3 in the other. 
 
-```{r}
+```{r, echo=FALSE}
 
 pdo$est_state <- factor(paste0("State", best_model$viterbi()))
 
@@ -570,16 +561,12 @@ ggplot(pdo, aes(time, winter_pdo, col = est_state)) +
   geom_line(aes(group = 1), color = "black") + 
   geom_point(size = 2) + # This line will connect all the points
   ylab("Rained?") + 
-  theme_bw()
-
-
-
-
+  theme_classic()
 ```
 
-### -   What are the transition probabilities?
+### Transition Probabilities
 
-```{r}
+```{r, echo=FALSE}
 
 trans_mat
 

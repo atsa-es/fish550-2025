@@ -235,45 +235,135 @@ stoplight <- read.csv(here::here("Lab-4", "stoplight.csv"))
 ## Wrangle the data
 
 ```{r wrangle_data}
-## add some code here
+library(dplyr)
+#Read in the data
+stoplight <- read.csv("stoplight.csv")
+
+#Going to model Nearshore ichthyoplankton and juvenile chinook as two biological indicators
+#Subset the data to only include rows 13 and 15
+
+dat <- stoplight %>%  filter(!row_number() %in% c(1:12,14, 16:23))
+
+#Need to convert from wide to long 
+library(tidyr)
+library(atsalibrary)
+library(ggplot2)
+#install.packages("hmmTMB")
+library(hmmTMB)
+#install.packages("depmixS4")
+library(depmixS4)
+dat_long <- dat %>% 
+  pivot_longer(cols = -c("Ecosystem Indicators", "Type"), names_to = "year", values_to = "vals")
+
+#Remove the first digit in the year column
+dat_long$year <- gsub("X", "", dat_long$year)
+
+#Convert to the correct wide
+dat_wide <- dat_long %>%
+  dplyr::select(-Type) %>%
+  tidyr::pivot_wider(names_from = `Ecosystem Indicators`, values_from = vals)
+
+dat_wide$time <- dat_wide$year
+dat_wide$time <- as.numeric(dat_wide$time)
+dat_wide$year <- NULL 
+dat_wide$Nearshore_Ichthyoplankton <- as.numeric(dat_wide$Nearshore_Ichthyoplankton)
+dat_wide$Chinook_salmon_juv <- as.numeric(dat_wide$Chinook_salmon_juv)
+
 ```
 
 
-# General tasks
+## General tasks
 
-Each group has the same general tasks, but you will adapt them as you work on the data.
+We have decided to use the juvenile chinook data and the nearshore icthyoplankton data. This should be an interesting comparison because of the potential links as predator/prey in the nearshore environment during the outmigration of salmon. In addition to potentially preying on nearshore ichthyoplankton, juvenile chinook may also be preying on other species, which could complicate the relationship. 
 
-Please pick a type of indicators, and develop a 2- or 3-state multivariate HMM. 
+## Methods
 
-# Methods
+Using the nearshore ichthyoplankton and juvenile chinook data, we fit a 2- state HMM model. After analyzing the fit of the 2 state multivariate HMM, we will either run a 3- state HMM on the same species, or use a univariate HMM on the data if there is a complication or no convergence on states.
 
-A few tips:
 
--   Assume all responses are Gaussian.
+```{r fit_hmm_model}
 
--   You're welcome to include covariates (year? Climate variables?) --
-    but fitting a simple model without covariates is also totally fine
+# Fit a 2-state model to the ichthyoplankton and juvenile chinook data
+set.seed(123)
+hidden2 <- MarkovChain$new(data = dat_wide, n_states = 2)
+dists <- list(Nearshore_Ichthyoplankton = "norm", Chinook_salmon_juv = "norm") 
+par0 <- list(Nearshore_Ichthyoplankton = list(mean = c(0,2), sd = c(0.5, 0.5)),
+             Chinook_salmon_juv = list(mean = c(0,1), sd = c(0.1, 0.1)))
+obs_model2s <- Observation$new(data = dat_wide,
+                             dists = dists,
+                             n_states = 2,
+                             par = par0)
+hmm2s <- HMM$new(obs = obs_model2s, 
+               hid = hidden2)
+hmm2s$fit(silent=TRUE)
 
-# Results
 
-Summarize the model you've created. Specifically,
+#Check the fit
+states2s <- hmm2s$viterbi()
+dat_wide$state <- states2s
 
--   Does it converge?
+dat_wide$state <- factor(paste0("State", hmm2s$viterbi()))
+# Ensure 'state' is treated as a factor for color mapping
+dat_wide$state <- factor(dat_wide$state)
 
--   How many states seem to be most supported?
+# Reshape to long format
+dat_long2s <- dat_wide %>%
+  pivot_longer(cols = c(Nearshore_Ichthyoplankton, Chinook_salmon_juv),
+               names_to = "species",
+               values_to = "abundance")
 
--   Plot the time series of estimated states. What does this mean?
+# Plot with facets
+ggplot(dat_long2s, aes(x = time, y = abundance, col = state)) +
+  geom_point() +
+  facet_wrap(~species, scales = "free_y") +
+  ylab("Abundance") +
+  xlab("Year") +
+  theme_bw()
 
--   What are the transition probabilities?
 
--   If included, what are the covariate effects? What do these mean?
 
--   Anything else interesting that you've discovered?
+#2 state doesn't identify any particular trend, however visually it appears as though the nearshore ichys may have a second state that is not resolved in the model. Going to run a univariate to attempt to inestigate.
 
-# Discussion
+# Fit a 2-state univariate HMM for Nearshore Ichthyoplankton
+set.seed(123)
 
+# Create hidden Markov chain with 2 states
+hidden2NI <- MarkovChain$new(data = dat_wide, n_states = 2)
+
+# Specify distribution for the single variable
+dists <- list(Nearshore_Ichthyoplankton = "norm")
+par0 <- list(Nearshore_Ichthyoplankton = list(mean = c(0, 2), sd = c(0.5, 0.5)))
+
+obs_model2sNI <- Observation$new(data = dat_wide,
+                               dists = dists,
+                               n_states = 2,
+                               par = par0)
+
+hmm2sNI <- HMM$new(obs = obs_model2sNI, hid = hidden2NI)
+hmm2sNI$fit(silent = TRUE)
+
+dat_wide$state <- factor(paste0("State", hmm2sNI$viterbi()))
+
+# Plot results
+ggplot(dat_wide, aes(x = time, y = Nearshore_Ichthyoplankton, col = state)) +
+  geom_point() +
+  ylab("Abundance (Nearshore Ichthyoplankton)") +
+  xlab("Year") +
+  theme_bw() +
+  scale_color_brewer(palette = "Set1")
+
+
+```
+
+## Results
+Running a 2-state multivariate HMM on the ichthyoplankton and juvenile chinook converged on only one state between the two species. When plotted, the juvenile salmon appeared to have only one state, however when viewing the  nearshore ichthyoplankton data, it appears as though there may be a second state that is not
+fully resolved in the model. Upon use of a univariate 2 state HMM, the nearshore ichthyoplankton data converged on two states successfully. 
+
+
+## Discussion
+The interesting findings of the multivariate HMM and the convergence on 2 states when investigating only the nearshore ichthyoplankton data suggest that there may be a relationship between the two species that is not fully captured in the multivariate model. The juvenile chinook salmon may be responding to the nearshore ichthyoplankton data, but the relationship may not be strong enough to resolve two states in the multivariate model. This is somewhat what we would expect ecologically, as juvenile chinook may act as a predator of nearshore ichthyoplankton during the salmon outmigration, and thus they may reflect (to some degree) the dynamics of the nearshore ichythoplankton, but there are likely other prey items involved that complicate this simple analysis.
 
 # Team contributions
 
-Lilac completed the code and interpretation in Part 1.
+Lilac completed the code and interpretation in Part 1. Emma completed the analysis, coding, and writing for Part 2.
 

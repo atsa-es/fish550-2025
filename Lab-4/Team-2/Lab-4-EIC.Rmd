@@ -49,9 +49,9 @@ library(dplyr)
 ```{r wrangle_data}
 library(dplyr)
 #Read in the data
-stoplight <- read.csv("stoplight.csv")
+stoplight <- read_csv("stoplight.csv")
 
-#Going to model Nearshore icthyoplankton and juvenile chinook as two biological indicators
+#Going to model Nearshore ichthyoplankton and juvenile chinook as two biological indicators
 #Subset the data to only include rows 13 and 15
 
 dat <- stoplight %>%  filter(!row_number() %in% c(1:12,14, 16:23))
@@ -65,15 +65,15 @@ library(hmmTMB)
 #install.packages("depmixS4")
 library(depmixS4)
 dat_long <- dat %>% 
-  pivot_longer(cols = -c(Ecosystem.Indicators, Type), names_to = "year", values_to = "vals")
+  pivot_longer(cols = -c("Ecosystem Indicators", "Type"), names_to = "year", values_to = "vals")
 
 #Remove the first digit in the year column
 dat_long$year <- gsub("X", "", dat_long$year)
 
 #Convert to the correct wide
 dat_wide <- dat_long %>%
-  select(-Type) %>%  # If 'Type' is not needed; keep it if relevant
-  pivot_wider(names_from = Ecosystem.Indicators, values_from = vals)
+  dplyr::select(-Type) %>%
+  tidyr::pivot_wider(names_from = `Ecosystem Indicators`, values_from = vals)
 
 dat_wide$time <- dat_wide$year
 dat_wide$time <- as.numeric(dat_wide$time)
@@ -123,23 +123,10 @@ hmm$fit(silent=TRUE)
 states <- hmm$viterbi()
 dat_wide$state <- states  # attach to data
 
-ggplot(dat_wide, aes(x = time, y = Nearshore_Ichthyoplankton, color = factor(state))) +
-  geom_line() +
-  labs(color = "State")
 
-ggplot(dat_wide, aes(x = time, y = Chinook_salmon_juv, color = factor(state))) +
-  geom_line() +
-  labs(color = "State")
 
-#plot both states on the same plot
-ggplot(dat_wide, aes(x = time)) +
-  geom_line(aes(y = Nearshore_Ichthyoplankton, color = "Nearshore Ichthyoplankton")) +
-  geom_line(aes(y = Chinook_salmon_juv, color = "Chinook Salmon Juv")) +
-  labs(color = "State") +
-  scale_color_manual(values = c("blue", "red")) +
-  theme(legend.position = "bottom") +
-  ylab("Values") +
-  xlab("Year")
+
+
 
 
 

@@ -135,7 +135,40 @@ stoplight <- read.csv(here::here("Lab-4", "stoplight.csv"))
 ## Wrangle the data
 
 ```{r wrangle_data}
-## add some code here
+library(dplyr)
+#Read in the data
+stoplight <- read_csv("stoplight.csv")
+
+#Going to model Nearshore ichthyoplankton and juvenile chinook as two biological indicators
+#Subset the data to only include rows 13 and 15
+
+dat <- stoplight %>%  filter(!row_number() %in% c(1:12,14, 16:23))
+
+#Need to convert from wide to long 
+library(tidyr)
+library(atsalibrary)
+library(ggplot2)
+#install.packages("hmmTMB")
+library(hmmTMB)
+#install.packages("depmixS4")
+library(depmixS4)
+dat_long <- dat %>% 
+  pivot_longer(cols = -c("Ecosystem Indicators", "Type"), names_to = "year", values_to = "vals")
+
+#Remove the first digit in the year column
+dat_long$year <- gsub("X", "", dat_long$year)
+
+#Convert to the correct wide
+dat_wide <- dat_long %>%
+  dplyr::select(-Type) %>%
+  tidyr::pivot_wider(names_from = `Ecosystem Indicators`, values_from = vals)
+
+dat_wide$time <- dat_wide$year
+dat_wide$time <- as.numeric(dat_wide$time)
+dat_wide$year <- NULL 
+dat_wide$Nearshore_Ichthyoplankton <- as.numeric(dat_wide$Nearshore_Ichthyoplankton)
+dat_wide$Chinook_salmon_juv <- as.numeric(dat_wide$Chinook_salmon_juv)
+
 ```
 
 
@@ -145,6 +178,8 @@ Each group has the same general tasks, but you will adapt them as you work on th
 
 Please pick a type of indicators, and develop a 2- or 3-state multivariate HMM. 
 
+We have decided to use the juvenile chinook data and the nearshore icthyoplankton data. This should be an interesting comparison because of the potential links as predator/prey.
+
 # Methods
 
 A few tips:
@@ -153,6 +188,30 @@ A few tips:
 
 -   You're welcome to include covariates (year? Climate variables?) --
     but fitting a simple model without covariates is also totally fine
+
+```{r fit_hmm_model}
+
+# Fit a 2-state model to the icthyoplankton and juvenile chinook data
+set.seed(123)
+hidden <- MarkovChain$new(data = dat_wide, n_states = 2)
+dists <- list(Nearshore_Ichthyoplankton = "norm", Chinook_salmon_juv = "norm") 
+par0 <- list(Nearshore_Ichthyoplankton = list(mean = c(0,3), sd = c(0.1, 0.1)),
+             Chinook_salmon_juv = list(mean = c(0,3), sd = c(0.1, 0.1)))
+obs_model <- Observation$new(data = dat_wide,
+                             dists = dists,
+                             n_states = 2,
+                             par = par0)
+hmm <- HMM$new(obs = obs_model, 
+               hid = hidden)
+hmm$fit(silent=TRUE)
+
+#Check the fit
+states <- hmm$viterbi()
+dat_wide$state <- states  # attach to data
+
+
+```
+
 
 # Results
 

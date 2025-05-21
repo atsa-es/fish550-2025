@@ -357,150 +357,177 @@ print(head(biological_reshaped))
 ## 2 state vs. 3 state HMMs
 
 #### 2 states
-```{r, echo=FALSE}
+```{r 2state, echo=FALSE}
+library(data.table)
+stoplight <- read.csv(here::here("Lab-4", "stoplight.csv"))
 
-set.seed(666)
+# Select only the local biological 
+data <- stoplight %>%
+  filter(Type == "Local Biological")
 
-#For all models
-# Define distributions for each indicator
-dists <- list(
- Copepod_richness = "norm", 
- N_copepod = "norm", 
- S_copepod = "norm",
- Biological_transition = "norm", 
- Nearshore_Ichthyoplankton = "norm",
- Ichthy_community_index = "norm",
- Chinook_salmon_juv = "norm",
- Coho_salmon_juv = "norm"
-)
+data <- data[-c(2)]
+years <- colnames(data[2:length(data)])
+species <- c(data$Ecosystem.Indicators)
+data <- data[-c(1)]
+data <- transpose(data)
+colnames(data) <- species
+cor(data)
+data$year <- years
+data$year <- substring(data$year, 2)
 
-# Define initial parameters for each indicator
-# Need to match the names in dists, not par0
-par0 <- list(
-  Copepod_richness = list(mean = log(c(0.3, 0.7)), sd = c(0.2, 0.2)),
-  N_copepod = list(mean = log(c(0.3, 0.7)), sd = c(0.2, 0.2)),
-  S_copepod = list(mean = log(c(0.3, 0.7)), sd = c(0.2, 0.2)),
-  Biological_transition = list(mean = log(c(0.3, 0.7)), sd = c(0.2, 0.2)),
-  Nearshore_Ichthyoplankton = list(mean = log(c(0.3, 0.7)), sd = c(0.2, 0.2)),
-  Ichthy_community_index = list(mean = log(c(0.3, 0.7)), sd = c(0.2, 0.2)),
-  Chinook_salmon_juv = list(mean = log(c(0.3, 0.7)), sd = c(0.2, 0.2)),
-  Coho_salmon_juv = list(mean = log(c(0.3, 0.7)), sd = c(0.2, 0.2))
-)
+# specify markov model
 
+set.seed(1)
 
-#########################################################################
-# 2 state 
-
-# Create hidden Markov chain
-hidden2 <- MarkovChain$new(data = biological_reshaped, n_states = 2)
-
-
-# Create observation model using the correct data
-# Should use biological_normalized,
-obs_model2 <- Observation$new(data = biological_reshaped,
-                            dists = dists,
-                            n_states = 2,
-                            par = par0)
-
-# Create HMM
-hmm2 <- HMM$new(obs = obs_model, 
+# 2 state model
+hidden2 <- MarkovChain$new(data = data, n_states = 2)
+dists2 <- list(Copepod_richness = "norm",
+              N_copepod = "norm",
+              S_copepod = "norm",
+              Biological_transition = "norm",
+              Nearshore_Ichthyoplankton = "norm",
+              Ichthy_community_index = "norm",
+              Chinook_salmon_juv = "norm",
+              Coho_salmon_juv = "norm")
+par02 <- list(Copepod_richness = list(mean=c(mean(data$Copepod_richness)+sd(data$Copepod_richness),
+                                             mean(data$Copepod_richness)-sd(data$Copepod_richness)), 
+                                      sd=c(sd(data$Copepod_richness),
+                                           sd(data$Copepod_richness))),
+             N_copepod = list(mean=c(mean(data$N_copepod)+sd(data$N_copepod),
+                                     mean(data$N_copepod)-sd(data$N_copepod)), 
+                              sd=c(sd(data$N_copepod),
+                                   sd(data$N_copepod))),
+             S_copepod = list(mean=c(mean(data$S_copepod)+sd(data$S_copepod),
+                                     mean(data$S_copepod)-sd(data$S_copepod)), 
+                              sd=c(sd(data$S_copepod),
+                                   sd(data$S_copepod))),
+             Biological_transition = list(mean=c(mean(data$Biological_transition)+sd(data$Biological_transition),
+                                                 mean(data$Biological_transition)-sd(data$Biological_transition)), 
+                                          sd=c(sd(data$Biological_transition),
+                                               sd(data$Biological_transition))),
+             Nearshore_Ichthyoplankton = list(mean=c(mean(data$Nearshore_Ichthyoplankton)+sd(data$Nearshore_Ichthyoplankton),
+                                                     mean(data$Nearshore_Ichthyoplankton)-sd(data$Nearshore_Ichthyoplankton)), 
+                                              sd=c(sd(data$Nearshore_Ichthyoplankton),
+                                                   sd(data$Nearshore_Ichthyoplankton))),
+             Ichthy_community_index = list(mean=c(mean(data$Ichthy_community_index)+sd(data$Ichthy_community_index),
+                                                  mean(data$Ichthy_community_index)-sd(data$Ichthy_community_index)), 
+                                           sd=c(sd(data$Ichthy_community_index),
+                                                sd(data$Ichthy_community_index))),
+             Chinook_salmon_juv = list(mean=c(mean(data$Chinook_salmon_juv)+sd(data$Chinook_salmon_juv),
+                                              mean(data$Chinook_salmon_juv)-sd(data$Chinook_salmon_juv)), 
+                                       sd=c(sd(data$Chinook_salmon_juv),
+                                            sd(data$Chinook_salmon_juv))),
+             Coho_salmon_juv = list(mean=c(mean(data$Coho_salmon_juv)+sd(data$Coho_salmon_juv),
+                                           mean(data$Coho_salmon_juv)-sd(data$Coho_salmon_juv)), 
+                                    sd=c(sd(data$Coho_salmon_juv),
+                                         sd(data$Coho_salmon_juv)))             
+             )
+obs_model2 <- Observation$new(data = data,
+                             dists = dists2,
+                             n_states = 2,
+                             par = par02)
+hmm2 <- HMM$new(obs = obs_model2,
                hid = hidden2)
+hmm2$fit(silent=FALSE)
+hmm2
 
-# Fit the model
-hmm2$fit(silent = TRUE)
- 
-# Print results
-print("Model fitting completed")
-print(hmm2)
- 
- 
-# Collect the state estimates 
+data$est_state2 <- factor(paste0("State", hmm2$viterbi()))
 
-biological_reshaped$est_state <- factor(paste0("State", hmm$viterbi()))
- 
-hmm2_series <- biological_reshaped
-
-ggplot(hmm2_series, aes(Year, as.numeric(est_state), col = est_state)) + 
-   geom_line(aes(group = 1), color = "black") + 
-   geom_point(size = 3) +
-   scale_y_continuous(breaks = c(1, 2), labels = c("State 1", "State 2")) +
-   labs(title = "HMM State Changes Over Time",
-        x = "Year", 
-        y = "State",
-        color = "Est. State") + 
-   theme_classic()
-
-#########################################################################
-
+ggplot(data, aes(x=year, y=est_state2, col = est_state2)) + 
+  geom_point() + 
+  ylab("2 state") + 
+  xlab("")+
+  theme_classic()
 ```
 
 #### 3 states
-```{r, echo=FALSE}
+```{r 3state, echo=FALSE}
 
-# 3 state HMM model
-set.seed(123)
-
-# First, ensure data is prepared correctly (exclude Year from model)
-data_for_hmm <- biological_reshaped %>% select(-Year)
-
-# Create hidden Markov chain
-hidden3 <- MarkovChain$new(data = data_for_hmm, n_states = 3)
-
-# Define distributions for each indicator
-dists <- list(
-  Copepod_richness = "norm", 
-  N_copepod = "norm", 
-  S_copepod = "norm",
-  Biological_transition = "norm", 
-  Nearshore_Ichthyoplankton = "norm",
-  Ichthy_community_index = "norm",
-  Chinook_salmon_juv = "norm",
-  Coho_salmon_juv = "norm"
-)
-
-# Define initial parameters for 3 states
-# State 1: Low values (mean ≈ 0.2)
-# State 2: Medium values (mean ≈ 0.5)
-# State 3: High values (mean ≈ 0.8)
-par0 <- list(
-  Copepod_richness = list(mean = c(0.2, 0.5, 0.8), sd = c(0.15, 0.15, 0.15)),
-  N_copepod = list(mean = c(0.2, 0.5, 0.8), sd = c(0.15, 0.15, 0.15)),
-  S_copepod = list(mean = c(0.2, 0.5, 0.8), sd = c(0.15, 0.15, 0.15)),
-  Biological_transition = list(mean = c(0.2, 0.5, 0.8), sd = c(0.15, 0.15, 0.15)),
-  Nearshore_Ichthyoplankton = list(mean = c(0.2, 0.5, 0.8), sd = c(0.15, 0.15, 0.15)),
-  Ichthy_community_index = list(mean = c(0.2, 0.5, 0.8), sd = c(0.15, 0.15, 0.15)),
-  Chinook_salmon_juv = list(mean = c(0.2, 0.5, 0.8), sd = c(0.15, 0.15, 0.15)),
-  Coho_salmon_juv = list(mean = c(0.2, 0.5, 0.8), sd = c(0.15, 0.15, 0.15))
-)
-
-# Create observation model
-obs_model3 <- Observation$new(data = data_for_hmm,
-                            dists = dists,
-                            n_states = 3,
-                            par = par0)
-
-# Create HMM
-hmm <- HMM$new(obs = obs_model3, 
+# 3 state model
+hidden3 <- MarkovChain$new(data = data, n_states = 3)
+dists3 <- list(Copepod_richness = "norm",
+              N_copepod = "norm",
+              S_copepod = "norm",
+              Biological_transition = "norm",
+              Nearshore_Ichthyoplankton = "norm",
+              Ichthy_community_index = "norm",
+              Chinook_salmon_juv = "norm",
+              Coho_salmon_juv = "norm")
+par03 <- list(Copepod_richness = list(mean=c(mean(data$Copepod_richness)+1.5*sd(data$Copepod_richness),
+                                             mean(data$Copepod_richness),
+                                             mean(data$Copepod_richness)-1.5*sd(data$Copepod_richness)),
+                                      sd=c(sd(data$Copepod_richness),
+                                           sd(data$Copepod_richness),
+                                           sd(data$Copepod_richness))),
+             N_copepod = list(mean=c(mean(data$N_copepod)+1.5*sd(data$N_copepod),
+                                     mean(data$N_copepod),
+                                     mean(data$N_copepod)-1.5*sd(data$N_copepod)), 
+                              sd=c(sd(data$N_copepod),
+                                   sd(data$N_copepod),
+                                   sd(data$N_copepod))),
+             S_copepod = list(mean=c(mean(data$S_copepod)+1.5*sd(data$S_copepod),
+                                     mean(data$S_copepod),
+                                     mean(data$S_copepod)-1.5*sd(data$S_copepod)), 
+                              sd=c(sd(data$S_copepod),
+                                   sd(data$S_copepod),
+                                   sd(data$S_copepod))),
+             Biological_transition = list(mean=c(mean(data$Biological_transition)+1.5*sd(data$Biological_transition),
+                                                 mean(data$Biological_transition),
+                                                 mean(data$Biological_transition)-1.5*sd(data$Biological_transition)), 
+                                          sd=c(sd(data$Biological_transition),
+                                               sd(data$Biological_transition),
+                                               sd(data$Biological_transition))),
+             Nearshore_Ichthyoplankton = list(mean=c(mean(data$Nearshore_Ichthyoplankton)+1.5*sd(data$Nearshore_Ichthyoplankton),
+                                                     mean(data$Nearshore_Ichthyoplankton),
+                                                     mean(data$Nearshore_Ichthyoplankton)-1.5*sd(data$Nearshore_Ichthyoplankton)), 
+                                              sd=c(sd(data$Nearshore_Ichthyoplankton),
+                                                   sd(data$Nearshore_Ichthyoplankton),
+                                                   sd(data$Nearshore_Ichthyoplankton))),
+             Ichthy_community_index = list(mean=c(mean(data$Ichthy_community_index)+1.5*sd(data$Ichthy_community_index),
+                                                  mean(data$Ichthy_community_index),
+                                                  mean(data$Ichthy_community_index)-1.5*sd(data$Ichthy_community_index)), 
+                                           sd=c(sd(data$Ichthy_community_index),
+                                                sd(data$Ichthy_community_index),
+                                                sd(data$Ichthy_community_index))),
+             Chinook_salmon_juv = list(mean=c(mean(data$Chinook_salmon_juv)+1.5*sd(data$Chinook_salmon_juv),
+                                              mean(data$Chinook_salmon_juv),
+                                              mean(data$Chinook_salmon_juv)-1.5*sd(data$Chinook_salmon_juv)), 
+                                       sd=c(sd(data$Chinook_salmon_juv),
+                                            sd(data$Chinook_salmon_juv),
+                                            sd(data$Chinook_salmon_juv))),
+             Coho_salmon_juv = list(mean=c(mean(data$Coho_salmon_juv)+1.5*sd(data$Coho_salmon_juv),
+                                           mean(data$Coho_salmon_juv),
+                                           mean(data$Coho_salmon_juv)-1.5*sd(data$Coho_salmon_juv)), 
+                                    sd=c(sd(data$Coho_salmon_juv),
+                                         sd(data$Coho_salmon_juv),
+                                         sd(data$Coho_salmon_juv)))             
+             )
+obs_model3 <- Observation$new(data = data,
+                             dists = dists3,
+                             n_states = 3,
+                             par = par03)
+hmm3 <- HMM$new(obs = obs_model3,
                hid = hidden3)
+hmm3$fit(silent=FALSE)
+hmm3
 
-# Fit the model
-print("Fitting 3-state HMM model...")
-hmm$fit(silent = TRUE)
+data$est_state3 <- factor(paste0("State", hmm3$viterbi()))
 
-# Collect the state estimates
+ggplot(data, aes(x=year, est_state3, col = est_state3)) + 
+  geom_point() + 
+  ylab("3 state") + 
+  xlab("")+
+  theme_classic()
 
-biological_reshaped$est_state <- factor(paste0("State", hmm$viterbi()))
-hmm3_series <- biological_reshaped
-
-ggplot(hmm3_series, aes(Year, as.numeric(est_state), col = est_state)) +
-   geom_line(aes(group = 1), color = "black") +
-   geom_point(size = 3) +
-   scale_y_continuous(breaks = c(1, 2), labels = c("State 1", "State 2")) +
-   labs(title = "HMM State Changes Over Time",
-        x = "Year",
-        y = "State",
-        color = "Est. State") +
-   theme_classic()
+# ggplot(hmm3_series, aes(Year, as.numeric(est_state), col = est_state)) +
+#    geom_line(aes(group = 1), color = "black") +
+#    geom_point(size = 3) +
+#    scale_y_continuous(breaks = c(1, 2), labels = c("State 1", "State 2")) +
+#    labs(title = "HMM State Changes Over Time",
+#         x = "Year",
+#         y = "State",
+#         color = "Est. State") +
+#    theme_classic()
 ```
 # Results
 

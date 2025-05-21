@@ -1,0 +1,567 @@
+---
+title: Team 3 - Lab 4
+subtitle: Hidden Markov Models
+author: "Ben Makhlouf, Brian McGreal, Anna Sulc"
+date: May 20, 2025
+output: 
+  html_document:
+    code-folding: true
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+options(dplyr.summarise.inform = FALSE)
+```
+
+
+# Data
+
+<!-- As part of the California Current Integrated Ecosystem Report, NOAA -->
+<!-- scientists do annual updates of [stoplight charts for ecosystem -->
+<!-- indicators](https://www.fisheries.noaa.gov/west-coast/science-data/ocean-conditions-indicators-trends). -->
+
+<!-- We have included the `stoplight.csv` dataset for this week. One of the -->
+<!-- columns divides indicators into groups (e.g. Local Physical, Local -->
+<!-- Biological, etc). Please pick a type of indicators, and develop a 2- or -->
+<!-- 3-state multivariate HMM. A few tips: -->
+
+<!-- Describe what plankton groups and covariates you used and indicate any temporal  -->
+<!-- subsetting you chose. Also describe any standardization, centering or scaling  -->
+<!-- that was used.  -->
+
+We chose to work with the PDO variable for the univariate hidden markov model. We worked on a yearly scale and focused on the winter month period to ensure data were aligned on a temporal scale. 
+
+For the Stoplight data set, we chose to focus on local biological variables as we thought it may be interesting to see whether all biological data followed the same trends or if there were opposite trends occuring for different parts of the system. We were interested in how this affected models with different states. 
+
+<!-- Load the data -->
+
+```{r load_data and packages, include=FALSE}
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(hmmTMB)
+
+#install.packages("rsoi")
+pdo <- rsoi::download_pdo()
+stoplight <- read.csv(here::here("Lab-4", "stoplight.csv"))
+
+# Select only the local biological 
+biological <- stoplight %>%
+  filter(Type == "Local Biological")
+```
+
+
+```{r wrangle_data, include=FALSE}
+
+### Adjust the data for PDO 
+pdo$Year[which(pdo$Month%in%c("Oct","Nov","Dec"))] <- pdo$Year[which(pdo$Month%in%c("Oct","Nov","Dec"))] + 1
+pdo <- dplyr::group_by(pdo, Year) %>%
+  dplyr::summarize(winter_pdo = mean(PDO[which(Month %in% c("Oct","Nov","Dec","Jan","Feb"))])) %>% 
+  dplyr::select(winter_pdo, Year)
+# The first year will be missing Oct-Dec
+pdo <- pdo[-1,]
+
+
+plot <- ggplot(pdo, aes(x = Year, y = winter_pdo)) +
+  geom_line() +
+  labs(title = "Winter PDO vs Year", x = "Year", y = "Winter PDO") +
+  theme_classic()
+
+plot
+
+
+# Normalize each row to range from 0 to 1
+biological_normalized <- biological
+biological_normalized[, -(1:2)] <- t(apply(biological[, -(1:2)], 1, function(x) {
+  (x - min(x, na.rm = TRUE)) / (max(x, na.rm = TRUE) - min(x, na.rm = TRUE))
+}))
+
+
+
+# log transform the results 
+biological_normalized[, -(1:2)] <- log(pmax(biological_normalized[, -(1:2)], 1e-6))
+# Check the results
+print("Normalized data (first few rows):")
+print(biological_normalized[1:3, 1:6])
+
+
+# Pivot the data to long format for plotting
+biological_long <- biological_normalized %>%
+  pivot_longer(cols = -(1:2), names_to = "Year", values_to = "Value")
+
+# Create the plot faceted by Ecosystem.Indicators
+ggplot(biological_long, aes(x = Year, y = Value, group = 1)) +
+  geom_line(color = "blue", alpha = 0.7) +
+  geom_point(color = "darkblue", size = 0.8) +
+  facet_wrap(~ Ecosystem.Indicators, scales = "free_x") +
+  labs(title = "Normalized Biological Indicators (0-1 Scale)",
+       x = "Year", 
+       y = "Normalized Value",
+       subtitle = "Each indicator normalized to range from 0 to 1") +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        strip.text = element_text(size = 10),
+        plot.title = element_text(size = 14))
+
+
+```
+
+# Methods
+
+## Univariate - PDO
+
+We assumed all responses are Gaussian in our models. We chose to fit a simple model with no covariates in both instances and instead and instead focused on the impacts of assuming different numbers of states and exploring model diagnostics and performance. 
+
+
+Here we fit a two state HMM to the annual indices of PDO 
+```{r, echo=FALSE}
+
+library(hmmTMB)
+
+pdo <- data.frame(
+  ID = 1,
+  time = pdo$Year,  # Use actual years as time
+  winter_pdo = pdo$winter_pdo
+)
+
+# Set up hidden states (2 states for different PDO regimes)
+hidden <- MarkovChain$new(data = pdo, n_states = 2)
+
+# Use normal distribution for continuous PDO values
+dists <- list(winter_pdo = "norm")
+
+# Initial parameters for normal distribution (mean and sd for each state)
+par0 <- list(winter_pdo = list(mean = c(-0.5, 0.5),    # Different means for each state
+                               sd = c(0.8, 0.8)))      # Standard deviations
+
+# Create observation model
+obs_model <- Observation$new(data = pdo,
+                             dists = dists,
+                             n_states = 2,
+                             par = par0)
+
+# Fit the HMM
+hmm <- HMM$new(obs = obs_model, hid = hidden)
+hmm$fit(silent = TRUE)
+
+```
+
+```{r, echo=FALSE}
+hmm
+
+hmm$par()
+```
+
+We fit the model 20 times and explored the likelihood. Plotting the likelihood demonstrated that is was quite stable and remained in a similar range across all 20 iterations. This may be one way to check convergence - if we were located in a local minimum, running a couple hundred iterations might show a likelihod that jumps between two significantly different values. 
+
+```{r, echo=FALSE}
+# Placeholder for storing models and log-likelihoods
+models <- vector("list", 20)
+log_liks <- numeric(20)
+
+# Run 20 iterations
+for (i in 1:20) {
+  
+  # Optionally randomize initial parameters slightly
+  par0 <- list(winter_pdo = list(
+    mean = rnorm(2, mean = c(-0.5, 0.5), sd = 0.2),  # jittered means
+    sd = runif(2, min = 0.5, max = 1.2)              # jittered sds
+  ))
+  
+  # Set up models
+  hidden <- MarkovChain$new(data = pdo, n_states = 2)
+  obs_model <- Observation$new(data = pdo, dists = list(winter_pdo = "norm"),
+                               n_states = 2, par = par0)
+  
+  # Fit the model
+  hmm <- HMM$new(obs = obs_model, hid = hidden)
+  hmm$fit(silent = TRUE)
+  
+  # Store the model and log-likelihood
+  models[[i]] <- hmm
+  log_liks[i] <- logLik(hmm)
+}
+
+# Create a data frame for plotting
+loglik_df <- data.frame(Iteration = 1:20, LogLikelihood = log_liks)
+
+# Plot log-likelihoods
+ggplot(loglik_df, aes(x = Iteration, y = LogLikelihood)) +
+  geom_point() +
+  theme_classic() +
+  labs(title = "Log-Likelihood Across HMM Fits", y = "Log-Likelihood", x = "Iteration")
+
+# Identify best model
+best_index <- which.max(log_liks)
+best_model <- models[[best_index]]
+cat("Best model is at iteration", best_index, "with log-likelihood", log_liks[best_index], "\n")
+```
+
+**Plot the posterior probability of being in the various states from your best model (e.g. probability of being in state 1 over time)**
+
+```{r, echo=FALSE}
+
+# Extract the state probabilities 
+state_probs<-best_model$state_probs()
+
+# plot each of these 
+library(ggplot2)
+
+ggplot(pdo, aes(x = time)) +
+  geom_line(aes(y = state_probs[,1], col = "State 1")) +
+  geom_point(aes(y = state_probs[,1], col = "State 1")) +
+  geom_line(aes(y = state_probs[,2], col = "State 2")) +
+  geom_point(aes(y = state_probs[,2], col = "State 2")) +
+  labs(title = "Posterior Probability of States", x = "Year", y = "Probability") +
+  theme_classic() +
+  scale_color_manual(values = c("State 1" = "blue", "State 2" = "red")) +
+  theme(legend.title = element_blank())
+
+
+```
+
+**What is the long-run probability that the PDO is in state 1 versus state 2?**
+
+The long-run probabilities represent the proportion of time the PDO is expected to be in each state over a very long period. This can be calculated using the eigenvalues of the transition matrix. Our results show that we will be in State 1 approximately 2/3s of the time in a long term future.
+
+```{r, echo=FALSE}
+
+trans_mat <- as.data.frame(best_model$par()$tpm)
+
+#Can also get it this way but can't get df
+#best_model$print_tpm()
+
+calculate_stationary_distribution <- function(P) { # must be a square matrix
+
+  eigen_analysis <- eigen(t(P)) # Transpose the matrix
+  eigenvalues <- eigen_analysis$values
+  eigenvectors <- eigen_analysis$vectors
+
+  # Find the eigenvalue closest to 1
+  target_eigenvalue_index <- which.min(abs(eigenvalues - 1))
+  target_eigenvector <- eigenvectors[, target_eigenvalue_index]
+
+  # Normalize the eigenvector to sum to 1
+  stationary_distribution <- target_eigenvector / sum(target_eigenvector)
+
+  # Check that probabilities are real and positive
+  if(any(Im(stationary_distribution) != 0) || any(Re(stationary_distribution) < 0)){
+    n_states <- nrow(P)
+    initial_distribution <- rep(1/n_states, n_states) # Start with equal probabilities
+    for (i in 1:1000) {  # Iterate until convergence (adjust as needed)
+      initial_distribution <- initial_distribution %*% P
+    }
+    stationary_distribution <- as.vector(initial_distribution)
+  } else {
+    stationary_distribution <- Re(stationary_distribution)
+  }
+  return(stationary_distribution)
+}
+
+# Calculate the stationary distribution
+long_run_probs <- calculate_stationary_distribution(trans_mat)
+
+# Print the probs
+cat("Long-run probability of being in State 1:", long_run_probs[1], "\n")
+cat("Long-run probability of being in State 2:", long_run_probs[2], "\n")
+
+cat("The PDO is predicted to be in State 1 approximately", round(long_run_probs[1]*100,2), "% of the time, and in State 2 approximately", round(long_run_probs[2]*100,2), "% of the time.\n")
+
+
+```
+
+**Using slide 15 of the HMM lecture as a template and the matrix in Q3, write out your fitted HMM model as equations.**
+
+Our PDO model has two states and assumes a gaussian distribution
+
+1. Hidden State Process (Markov Chain)
+
+Let \( z_t \in \{1, 2\} \) denote the hidden state at time \( t \). The hidden states follow a first-order Markov chain:
+
+\[
+\Pr(z_1 = i) = \pi_i, \quad i \in \{1, 2\}
+\]
+
+\[
+\Pr(z_t = j \mid z_{t-1} = i) = a_{ij}, \quad i,j \in \{1, 2\}
+\]
+
+where \( \pi_i \) are the initial state probabilities and \( a_{ij} \) are the elements of the transition probability matrix \( A \).
+
+2. Observation Model 
+
+Let \( y_t \) be the observed PDO value at time \( t \). Conditional on the hidden state \( z_t = k \), the observation is normally distributed:
+
+\[
+y_t \mid z_t = k \sim \mathcal{N}(\mu_k, \sigma_k^2)
+\]
+
+for \( k \in \{1, 2\} \), where \( \mu_k \) and \( \sigma_k^2 \) are the state-specific mean and variance of the normal distribution.
+
+
+The transition matrix \( A \) for the model:
+
+\[
+A = 
+\begin{pmatrix}
+0.8316750 & 0.1683250 \\
+0.2928184 & 0.7071816
+\end{pmatrix}
+\]
+
+This matrix represents the probabilities of transitioning between two hidden states, **State 1** and **State 2**. In other words: 
+
+- From **State 1**, the probability of remaining in **State 1** is \( 0.8316750 \), and the probability of transitioning to **State 2** is \( 0.1683250 \).
+- From **State 2**, the probability of transitioning to **State 1** is \( 0.2928184 \), and the probability of remaining in **State 2** is \( 0.7071816 \).
+
+## Multivariate - "Stoplight" Indicator Data
+
+We chose to focus on the eight biological indicators included in the "stoplight" dataset to assess whether there are underlying regimes of survival and mortality for biota being sampled. We begin by reshaping data to suit HMM requirements before proceeding to fit 2-state and 3-state HMMs and compare.
+
+```{r, echo=FALSE}
+library(data.table)
+stoplight <- read.csv(here::here("Lab-4", "stoplight.csv"))
+
+# Select only the local biological 
+data <- stoplight %>%
+  filter(Type == "Local Biological")
+
+data <- data[-c(2)]
+years <- colnames(data[2:length(data)])
+species <- c(data$Ecosystem.Indicators)
+data <- data[-c(1)]
+data <- transpose(data)
+colnames(data) <- species
+# cor(data)
+data$year <- years
+data$year <- substring(data$year, 2)
+
+# Print the first few rows to check
+print("Reshaped data (first few rows):")
+print(head(data))
+```
+
+## 2 state vs. 3 state HMMs
+
+#### 2 states
+
+Here we fit a two state HMM to the set of eight biological indicators
+```{r 2state, echo=FALSE}
+# specify markov model
+
+set.seed(1)
+
+# 2 state model
+hidden2 <- MarkovChain$new(data = data, n_states = 2)
+dists2 <- list(Copepod_richness = "norm",
+              N_copepod = "norm",
+              S_copepod = "norm",
+              Biological_transition = "norm",
+              Nearshore_Ichthyoplankton = "norm",
+              Ichthy_community_index = "norm",
+              Chinook_salmon_juv = "norm",
+              Coho_salmon_juv = "norm")
+par02 <- list(Copepod_richness = list(mean=c(mean(data$Copepod_richness)+sd(data$Copepod_richness),
+                                             mean(data$Copepod_richness)-sd(data$Copepod_richness)), 
+                                      sd=c(sd(data$Copepod_richness),
+                                           sd(data$Copepod_richness))),
+             N_copepod = list(mean=c(mean(data$N_copepod)+sd(data$N_copepod),
+                                     mean(data$N_copepod)-sd(data$N_copepod)), 
+                              sd=c(sd(data$N_copepod),
+                                   sd(data$N_copepod))),
+             S_copepod = list(mean=c(mean(data$S_copepod)+sd(data$S_copepod),
+                                     mean(data$S_copepod)-sd(data$S_copepod)), 
+                              sd=c(sd(data$S_copepod),
+                                   sd(data$S_copepod))),
+             Biological_transition = list(mean=c(mean(data$Biological_transition)+sd(data$Biological_transition),
+                                                 mean(data$Biological_transition)-sd(data$Biological_transition)), 
+                                          sd=c(sd(data$Biological_transition),
+                                               sd(data$Biological_transition))),
+             Nearshore_Ichthyoplankton = list(mean=c(mean(data$Nearshore_Ichthyoplankton)+sd(data$Nearshore_Ichthyoplankton),
+                                                     mean(data$Nearshore_Ichthyoplankton)-sd(data$Nearshore_Ichthyoplankton)), 
+                                              sd=c(sd(data$Nearshore_Ichthyoplankton),
+                                                   sd(data$Nearshore_Ichthyoplankton))),
+             Ichthy_community_index = list(mean=c(mean(data$Ichthy_community_index)+sd(data$Ichthy_community_index),
+                                                  mean(data$Ichthy_community_index)-sd(data$Ichthy_community_index)), 
+                                           sd=c(sd(data$Ichthy_community_index),
+                                                sd(data$Ichthy_community_index))),
+             Chinook_salmon_juv = list(mean=c(mean(data$Chinook_salmon_juv)+sd(data$Chinook_salmon_juv),
+                                              mean(data$Chinook_salmon_juv)-sd(data$Chinook_salmon_juv)), 
+                                       sd=c(sd(data$Chinook_salmon_juv),
+                                            sd(data$Chinook_salmon_juv))),
+             Coho_salmon_juv = list(mean=c(mean(data$Coho_salmon_juv)+sd(data$Coho_salmon_juv),
+                                           mean(data$Coho_salmon_juv)-sd(data$Coho_salmon_juv)), 
+                                    sd=c(sd(data$Coho_salmon_juv),
+                                         sd(data$Coho_salmon_juv)))             
+             )
+obs_model2 <- Observation$new(data = data,
+                             dists = dists2,
+                             n_states = 2,
+                             par = par02)
+hmm2 <- HMM$new(obs = obs_model2,
+               hid = hidden2)
+hmm2$fit(silent=TRUE)
+
+hmm2
+
+
+data$est_state2 <- factor(paste0("State", hmm2$viterbi()))
+```
+
+#### 3 states
+
+Here we fit a three state HMM to the set of eight biological indicators
+```{r 3state, echo=FALSE}
+
+# 3 state model
+hidden3 <- MarkovChain$new(data = data, n_states = 3)
+dists3 <- list(Copepod_richness = "norm",
+              N_copepod = "norm",
+              S_copepod = "norm",
+              Biological_transition = "norm",
+              Nearshore_Ichthyoplankton = "norm",
+              Ichthy_community_index = "norm",
+              Chinook_salmon_juv = "norm",
+              Coho_salmon_juv = "norm")
+par03 <- list(Copepod_richness = list(mean=c(mean(data$Copepod_richness)+1.5*sd(data$Copepod_richness),
+                                             mean(data$Copepod_richness),
+                                             mean(data$Copepod_richness)-1.5*sd(data$Copepod_richness)),
+                                      sd=c(sd(data$Copepod_richness),
+                                           sd(data$Copepod_richness),
+                                           sd(data$Copepod_richness))),
+             N_copepod = list(mean=c(mean(data$N_copepod)+1.5*sd(data$N_copepod),
+                                     mean(data$N_copepod),
+                                     mean(data$N_copepod)-1.5*sd(data$N_copepod)), 
+                              sd=c(sd(data$N_copepod),
+                                   sd(data$N_copepod),
+                                   sd(data$N_copepod))),
+             S_copepod = list(mean=c(mean(data$S_copepod)+1.5*sd(data$S_copepod),
+                                     mean(data$S_copepod),
+                                     mean(data$S_copepod)-1.5*sd(data$S_copepod)), 
+                              sd=c(sd(data$S_copepod),
+                                   sd(data$S_copepod),
+                                   sd(data$S_copepod))),
+             Biological_transition = list(mean=c(mean(data$Biological_transition)+1.5*sd(data$Biological_transition),
+                                                 mean(data$Biological_transition),
+                                                 mean(data$Biological_transition)-1.5*sd(data$Biological_transition)), 
+                                          sd=c(sd(data$Biological_transition),
+                                               sd(data$Biological_transition),
+                                               sd(data$Biological_transition))),
+             Nearshore_Ichthyoplankton = list(mean=c(mean(data$Nearshore_Ichthyoplankton)+1.5*sd(data$Nearshore_Ichthyoplankton),
+                                                     mean(data$Nearshore_Ichthyoplankton),
+                                                     mean(data$Nearshore_Ichthyoplankton)-1.5*sd(data$Nearshore_Ichthyoplankton)), 
+                                              sd=c(sd(data$Nearshore_Ichthyoplankton),
+                                                   sd(data$Nearshore_Ichthyoplankton),
+                                                   sd(data$Nearshore_Ichthyoplankton))),
+             Ichthy_community_index = list(mean=c(mean(data$Ichthy_community_index)+1.5*sd(data$Ichthy_community_index),
+                                                  mean(data$Ichthy_community_index),
+                                                  mean(data$Ichthy_community_index)-1.5*sd(data$Ichthy_community_index)), 
+                                           sd=c(sd(data$Ichthy_community_index),
+                                                sd(data$Ichthy_community_index),
+                                                sd(data$Ichthy_community_index))),
+             Chinook_salmon_juv = list(mean=c(mean(data$Chinook_salmon_juv)+1.5*sd(data$Chinook_salmon_juv),
+                                              mean(data$Chinook_salmon_juv),
+                                              mean(data$Chinook_salmon_juv)-1.5*sd(data$Chinook_salmon_juv)), 
+                                       sd=c(sd(data$Chinook_salmon_juv),
+                                            sd(data$Chinook_salmon_juv),
+                                            sd(data$Chinook_salmon_juv))),
+             Coho_salmon_juv = list(mean=c(mean(data$Coho_salmon_juv)+1.5*sd(data$Coho_salmon_juv),
+                                           mean(data$Coho_salmon_juv),
+                                           mean(data$Coho_salmon_juv)-1.5*sd(data$Coho_salmon_juv)), 
+                                    sd=c(sd(data$Coho_salmon_juv),
+                                         sd(data$Coho_salmon_juv),
+                                         sd(data$Coho_salmon_juv)))             
+             )
+obs_model3 <- Observation$new(data = data,
+                             dists = dists3,
+                             n_states = 3,
+                             par = par03)
+hmm3 <- HMM$new(obs = obs_model3,
+               hid = hidden3)
+hmm3$fit(silent=TRUE)
+
+hmm3
+
+
+data$est_state3 <- factor(paste0("State", hmm3$viterbi()))
+
+```
+# Results
+
+We tested two forms of models. In a first step we experimented with the PDO data and a two state model that assumed a normal response of the data. 
+
+In the second part of the lab, we experimented with a 1, 2 and 3 state model for the Local Biological data sets of the stoplight dataset. We also assumed a normal distribution for all data.
+
+The following section summarizes the outputs of our analysis.
+
+### Transition Probabilities
+
+Transition probabilities for the PDO model are fairly evenly distributed, with perhaps a slight tendency towards the first state. 
+```{r, echo=FALSE}
+trans_mat
+```
+
+Transition probabilities for the 2-state biological indicator model are skewed heavily in favor of the system existing in the second state. 
+```{r, echo=FALSE}
+hmm2$par()$tpm
+```
+
+Transition probabilities for the 3-state biological indicator model are perplexing. The model identifies the same probabilites of movement between state 1 and state 2 as the two state model. This is made possible because the model leaves virtually no room for movement from either of these states into state 3. If the system were to find itself in state 3 this model estimated transitioning away from it would be difficult but not impossible, and once this occured the system would be very unlikely to return to that state.
+```{r, echo=FALSE}
+hmm3$par()$tpm
+```
+
+### States
+
+In the case of the PDO model, we seem to be in the first state more than the second. This is consistent with the estimates of long term probabilities where we spend 2/3s of the time in one state and 1/3 in the other. 
+
+```{r, echo=FALSE}
+
+pdo$est_state <- factor(paste0("State", best_model$viterbi()))
+
+ggplot(pdo, aes(time, winter_pdo, col = est_state)) + 
+  geom_point(size = 2) +
+  ylab("Warm or Cold?") + 
+    xlab("") +
+  theme_classic()
+```
+
+The results from the two state biological indicators model is consistent with the transition matrix indicating a strong tendency towards state 2.
+```{r, echo=FALSE}
+ggplot(data, aes(x=year, y=est_state2, col = est_state2)) + 
+  geom_point() + 
+  ylab("") + 
+  xlab("") +
+  scale_x_discrete(breaks=c("1998", "2003", "2008", "2013", "2018")) +
+  theme_classic()
+```
+
+Results from the three state biological indicators model mirror those from the two state model. This is consistent with the transition matrix leaving very little chance for the model to move into a third state.
+```{r, echo=FALSE}
+ggplot(data, aes(x=year, est_state3, col = est_state3)) + 
+  geom_point() + 
+  ylab("") + 
+  xlab("") +
+  scale_x_discrete(breaks=c("1998", "2003", "2008", "2013", "2018")) +
+  theme_classic()
+
+```
+
+# Discussion
+
+## PDO HMM
+
+As a first experience with HMMs, this lab was a great way to appreciate their strengths and also inquire about potential limitations. We used the PDO example to explore the diagnostics and performance of a HMM. The results demonstrated a 60/30 split in states (for long term probabilities, individual model runs could vary between 50/50 and 80/20 for example) which for PDO seemed intuitive given it is an oscillating even but remains uneven in duration and in its phases. 
+
+While the model performed well and our 20 iteration "check" using the loglikelihood seemed to show a stable global minimum, the remainder of diagnostics raised the question of convergence of HMMs. It seemed that while it is easy to compare the performance of different HMMs and their fit, checking convergence is less direct. The loglikelihood test is effective however a question may be raised for how many iterations are sufficient before one decides the model has converged. We explored the TMB object of the fitted model but it was unclear whether other diagnostics were available beyond those listed on the slides.  
+
+## Multistate Biological Data HMM
+
+Modeling multistate biological data with HMMs revealed interesting results. A two state modeling approach heavily favored the second state but allowed movement between the two. The addition of a third state however made no difference in the model's estimation of regime, with the third state being basically ignored by the model. This is perhaps evidence that, based on the biological indicators sampled, the system moves between one of two states (perhaps healthy and unhealthy).
+
+# Team contributions
+
+All team members worked through each lab sections and reconvened to discuss results and the general direction of the lab. Based on this discussion, we then collectively combined our code and each contributed to the write up. 
+

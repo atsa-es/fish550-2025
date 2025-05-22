@@ -163,22 +163,6 @@ mod.list <- list(
 )
 
 chinookcov <- MARSS(ricker_obs, model = mod.list)
-
-chinook_z_lag1 <- dplyr::lag(chinook_z, 1)
-cov_mat_lag <- t(as.matrix(chinook_z_lag1))
-mod.list <- list(
-  B = "identity",
-  U = "zero",
-  Q = "diagonal and equal",
-  Z = "identity",
-  A = "zero",
-  R = "diagonal and equal",
-  x0 = "zero",
-  c = cov_mat_lag,     #  chinook covariate matrix
-  C = "unconstrained" 
-)
-
-chinookcovlag <- MARSS(ricker_obs, model = mod.list)
 ```
 ```{r, echo=FALSE}
 alphachinook<-chinookcov$states[1,]

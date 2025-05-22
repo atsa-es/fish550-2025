@@ -14,35 +14,175 @@ output:
 options(dplyr.summarise.inform = FALSE)
 ```
 
-
-# Data
-
-Describe the salmon data an dany environmental covariates you decide to examine. 
-
-
 ## Load the data
 
 ```{r dlm-load-atsa, eval=FALSE}
 ## library(devtools)
 ## Windows users will likely need to set this
 ## Sys.setenv("R_REMOTES_NO_ERRORS_FROM_WARNINGS" = "true")
-devtools::install_github("nwfsc-timeseries/atsalibrary")
+#devtools::install_github("nwfsc-timeseries/atsalibrary")
 
 ## get data
 data(KvichakSockeye, package="atsalibrary")
 SR_data <- KvichakSockeye
 ```
 
-The data are a dataframe with columns for brood year (`brood_year`), number of spawners (`spawners`), number of recruits (`recruits`) and PDO at year $t-2$ in summer (`pdo_summer_t2`) and in winter (`pdo_winter_t2`).
-
-```{r dlm-data-head}
-## head of data file
-head(SR_data)
-```
-
 ## Wrangle the data
 
 ```{r wrangle_data}
+
+library(dplyr)
+
+# Remove NA's using dplyr
+SR_clean <- SR_data %>%
+  filter(!is.na(spawners) & !is.na(recruits)) %>%
+  mutate(log_RS = log(recruits/spawners),
+         brood_year = as.numeric(brood_year))
+
+
+# Make matrices of the log recruits/spawners and log spawners 
+
+logRS<- matrix(SR_clean$log_RS, nrow=1)
+log_spawners<- matrix(log(SR_clean$spawners), nrow=1)
+
+
+# Quick plot log recruits/spawners vs log spawners 
+plot(logRS~log_spawners, xlab="log spawners", ylab="log recruits/spawners")
+
+
+```
+
+1. Begin by fitting a reduced form of Ricker's model that includes only a time-varying level ($\alpha_t$) and observation error ($v_t$). That is,
+
+\begin{align*}
+\text{log}(R_t) &= \alpha_t + \text{log}(S_t) + v_t \\
+\text{log}(R_t/S_t) &= \alpha_t + v_t
+\end{align*}
+
+This model assumes no density-dependent survival in that the number of recruits is an ascending function of spawners. Plot the ts of $\alpha_t$ and note the AICc for this model. Also plot appropriate model diagnostics.
+
+```{r}
+
+# Model 1: Time-varying intercept only
+# This is the simplest DLM - just one hidden state (α_t) that changes over time
+# log(R_t/S_t) = α_t + v_t  (observation equation)
+# α_t = α_{t-1} + w_t        (state equation - random walk)
+# No covariates, no density dependence - just tracking how productivity drifts over time
+
+library(MARSS)
+
+mod.list <- list(
+  B = matrix(1),      
+  U = matrix(0),        
+  Q = "unconstrained",  
+  Z = matrix(1),        
+  A = matrix(0),        
+  R = "unconstrained",  
+  x0 = "unconstrained"  
+)
+
+model1<-MARSS(logRS,mod.list)
+
+# Extract results
+print(model1)
+
+# MARSS fit is
+# Estimation method: kem 
+# Convergence test: conv.test.slope.tol = 0.5, abstol = 0.001
+# Estimation converged in 24 iterations. 
+# Log-likelihood: -51.87179 
+# AIC: 109.7436   AICc: 110.359   
+#  
+#       Estimate
+# R.R      0.211
+# Q.Q      0.303
+# x0.x0    1.002
+# Initial states (x0) defined at t=0
+
+cat("AICc:", model1$AICc, "\n")
+
+# Extract the time-varying states (α_t estimates)
+alpha_t <- model1$states[1, ]
+alpha_se <- model1$states.se[1, ]
+
+# Create plots
+par(mfrow = c(2, 2))
+
+# 1. Time series of α_t 
+plot(years, alpha_t, type = "l", lwd = 2,
+     main = expression(paste("Time-varying Productivity (", alpha[t], ")")),
+     xlab = "Brood Year", ylab = expression(alpha[t]),
+     ylim = range(alpha_t + c(-2, 2) * alpha_se))
+
+### ADD DIAGNOSTICS 
+
+
+```
+2. Fit the full Ricker model with a time-varying intercept and a static effect of spawners. For this model, obtain the time series of $\alpha_t$, which is an estimate of the stock productivity in the absence of density-dependent effects. How do these estimates of productivity compare to those from the previous question? Plot the ts of $\alpha_t$ and note the AICc for this model. Also plot appropriate model diagnostics. ($Hint$: If you don't want a parameter to vary with time, what does that say about its process variance?)
+
+```{r}
+# Model 2: Full Ricker with time-varying intercept + static density dependence
+# This adds the effect of spawner density (negative effect on productivity)
+# log(R_t/S_t) = α_t - β*S_t + v_t  (observation equation)
+# α_t = α_{t-1} + w_t                (state equation - α varies over time)
+# β = constant                       (density effect is static - no process variance)
+
+# key difference is adding spawners as a covariate, meaning the relationship between year and log(R/S) can vary by density 
+
+spawners_cov <- matrix(SR_clean$spawners, nrow = 1) # need spawners as a covariate
+# should be logged 
+log_spawners_cov <- matrix(log(SR_clean$spawners), nrow = 1) # need spawners as a covariate
+
+mod.list.2 <- list(
+  B = matrix(1),        # alpha_t = alpha_{t-1} + w_t
+  U = matrix(0),
+  Q = "unconstrained",  # alpha_t has process error
+  Z = matrix(1),        # observation = alpha_t + beta*covariate + v_t
+  A = matrix(0),
+  R = "unconstrained",
+  x0 = "unconstrained",
+  D = matrix(1),        # coefficient of covariate beta (use D not C)
+  d = log_spawners_cov  # covariate matrix of logged spawner counts (use d not c)
+)
+
+model2 <- MARSS(logRS, mod.list.2)  # Also fix the model list name here
+
+```
+
+
+
+
+years <- SR_clean$brood_year #years, x variable 
+TT <- length(years)
+dat <- matrix(SR_clean$log_RS, nrow = 1) # Response variable
+
+
+
+
+```
+
+```{r}
+library(MARSS)
+#### EXAMPLE FROM TEXT 
+data(SalmonSurvCUI)
+years <- SalmonSurvCUI[, 1]
+TT <- length(years)
+# response data: logit(survival)
+dat <- matrix(SalmonSurvCUI[, 2], nrow = 1)
+
+
+
+#### In our data 
+# our response variable is log recruits/spawner 
+
+# for each brood year, calculate log recruits/spawner 
+
+
+
+
+
+
+
 ## add some code here
 ```
 

@@ -172,8 +172,7 @@ legend("topright", legend=c("Chinook Covariate", "Reduced Ricker"), col=c("black
 
 #print AIC
 chinookcovaicc<-chinookcov$AICc
-chinooklagaicc<-chinookcovlag$AICc
-AICc<-cbind(model=c("Chinook covariate", "Chinook lag", "Reduced Ricker"), AICc=c(chinookcovaicc, chinooklagaicc, reducedaicc))
+AICc<-cbind(model=c("Chinook covariate", "Reduced Ricker"), AICc=c(chinookcovaicc, reducedaicc))
 print(AICc)
 
 #plot diagnostics

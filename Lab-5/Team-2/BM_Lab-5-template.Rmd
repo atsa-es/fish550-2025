@@ -14,35 +14,76 @@ output:
 options(dplyr.summarise.inform = FALSE)
 ```
 
-
-# Data
-
-Describe the salmon data an dany environmental covariates you decide to examine. 
-
-
 ## Load the data
 
 ```{r dlm-load-atsa, eval=FALSE}
 ## library(devtools)
 ## Windows users will likely need to set this
 ## Sys.setenv("R_REMOTES_NO_ERRORS_FROM_WARNINGS" = "true")
-devtools::install_github("nwfsc-timeseries/atsalibrary")
+#devtools::install_github("nwfsc-timeseries/atsalibrary")
 
 ## get data
 data(KvichakSockeye, package="atsalibrary")
 SR_data <- KvichakSockeye
 ```
 
-The data are a dataframe with columns for brood year (`brood_year`), number of spawners (`spawners`), number of recruits (`recruits`) and PDO at year $t-2$ in summer (`pdo_summer_t2`) and in winter (`pdo_winter_t2`).
-
-```{r dlm-data-head}
-## head of data file
-head(SR_data)
-```
-
 ## Wrangle the data
 
 ```{r wrangle_data}
+
+library(dplyr)
+# Data
+
+SR_clean <- SR_data %>%
+  filter(!is.na(spawners), !is.na(recruits)) %>%
+  mutate(
+    # Calculate log recruits per spawner (productivity)
+    log_RS = log(recruits/spawners),
+    # Spawners (in thousands for scaling)
+    spawners_1000 = spawners/1000
+  )
+
+# Plot log/spawners vs spawners 
+
+plot(log_RS ~ spawners_1000, data = SR_clean, pch = 19, cex = 0.5,
+     xlab = "Spawners (1000s)", ylab = "log(Recruits/Spawner)")
+
+
+```
+
+
+
+years <- SR_clean$brood_year #years, x variable 
+TT <- length(years)
+dat <- matrix(SR_clean$log_RS, nrow = 1) # Response variable
+
+
+
+
+```
+
+```{r}
+library(MARSS)
+#### EXAMPLE FROM TEXT 
+data(SalmonSurvCUI)
+years <- SalmonSurvCUI[, 1]
+TT <- length(years)
+# response data: logit(survival)
+dat <- matrix(SalmonSurvCUI[, 2], nrow = 1)
+
+
+
+#### In our data 
+# our response variable is log recruits/spawner 
+
+# for each brood year, calculate log recruits/spawner 
+
+
+
+
+
+
+
 ## add some code here
 ```
 

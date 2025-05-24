@@ -79,17 +79,6 @@ ggplot(data=SR_data, aes(x=brood_year))+
 
 Use the information and data in the previous section to answer the following questions. Note that if any model is not converging, then you will need to increase the `maxit` parameter in the `control` argument/list that gets passed to `MARSS()`. For example, you might try `control=list(maxit=2000)`.
 
-1. Begin by fitting a reduced form of Ricker's model that includes only a time-varying level ($\alpha_t$) and observation error ($v_t$). That is,
-
-\begin{align*}
-\text{log}(R_t) &= \alpha_t + \text{log}(S_t) + v_t \\
-\text{log}(R_t/S_t) &= \alpha_t + v_t
-\end{align*}
-
-This model assumes no density-dependent survival in that the number of recruits is an ascending function of spawners. Plot the ts of $\alpha_t$ and note the AICc for this model. Also plot appropriate model diagnostics.
-
-
-
 
 # Methods
 
@@ -205,7 +194,7 @@ model.list2 <- list(
   c = covars
 )
 
-# fit2 <- try(MARSS(y, model = model.list2))
+#fit2 <- try(MARSS(y, model = model.list2, control=list(maxit=2000)))
 # 
 # alpha_t2 <- fit2$states[1, ]
 # 

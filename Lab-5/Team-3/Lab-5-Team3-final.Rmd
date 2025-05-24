@@ -1,0 +1,459 @@
+---
+title: Team X - Lab 5
+subtitle: Dynamic Linear Models (DLMs) - Time-varying productivity of salmon
+author: "Emma Christensen, Brian McGreal, Anna Sulc"
+date: May XX, 2025
+output: 
+  html_document:
+    code-folding: true
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include = FALSE}
+options(dplyr.summarise.inform = FALSE)
+```
+
+
+```{r silent=TRUE}
+library(atsalibrary)
+library(dplyr)
+library(ggplot2)
+library(tidyverse)
+library(MARSS)
+
+```
+
+# Data
+
+
+## Load the data
+
+The data are a dataframe with columns for brood year (`brood_year`), number of spawners (`spawners`), number of recruits (`recruits`) and PDO at year $t-2$ in summer (`pdo_summer_t2`) and in winter (`pdo_winter_t2`).
+
+
+
+```{r dlm-load-atsa, eval=FALSE}
+## library(devtools)
+## Windows users will likely need to set this
+## Sys.setenv("R_REMOTES_NO_ERRORS_FROM_WARNINGS" = "true")
+# devtools::install_github("nwfsc-timeseries/atsalibrary")
+
+## get data
+data(KvichakSockeye, package="atsalibrary")
+SR_data <- KvichakSockeye
+
+head(SR_data)
+
+```
+
+The data are a dataframe with columns for brood year (`brood_year`), number of spawners (`spawners`), number of recruits (`recruits`) and PDO at year $t-2$ in summer (`pdo_summer_t2`) and in winter (`pdo_winter_t2`).'
+
+The timeseries ranges from 1952 to 2005. 
+
+## Wrangle the data
+
+```{r wrangle_data}
+
+SR_data <- KvichakSockeye
+
+#Notice there are NAs as spawner and recruit timeseries vary in length. 
+#Drop years with NAs, then replot to check we are ok. 
+
+SR_data <- SR_data[!is.na(SR_data$spawners),]
+SR_data <- SR_data[!is.na(SR_data$recruits),]
+
+years <- SR_data$brood_year
+
+#Plot Data 
+
+ggplot(data=SR_data, aes(x=brood_year))+
+  geom_line(aes(y = spawners), color = "black", size = 1, linetype = "solid") +
+  geom_line(aes(y = recruits), color = "blue", size = 1)
+
+
+```
+
+
+# General tasks
+
+Use the information and data in the previous section to answer the following questions. Note that if any model is not converging, then you will need to increase the `maxit` parameter in the `control` argument/list that gets passed to `MARSS()`. For example, you might try `control=list(maxit=2000)`.
+
+1. Begin by fitting a reduced form of Ricker's model that includes only a time-varying level ($\alpha_t$) and observation error ($v_t$). That is,
+
+\begin{align*}
+\text{log}(R_t) &= \alpha_t + \text{log}(S_t) + v_t \\
+\text{log}(R_t/S_t) &= \alpha_t + v_t
+\end{align*}
+
+This model assumes no density-dependent survival in that the number of recruits is an ascending function of spawners. Plot the ts of $\alpha_t$ and note the AICc for this model. Also plot appropriate model diagnostics.
+
+
+
+
+# Methods
+
+## General model structure 
+
+### Base Model structure
+
+We began by fitting a reduced form of Ricker's model that includes only a time-varying level ($\alpha_t$) and observation error ($v_t$). That is,
+
+\[
+\log\left(\frac{R_t}{S_t}\right) = \alpha_t + v_t
+\]
+
+\begin{align*}
+\text{Observation:} \quad & y_t = Z x_t + v_t \\
+                          & y_t = 1 \cdot \alpha_t + v_t, \quad v_t \sim \mathcal{N}(0, R) \\[1em]
+\text{State:} \quad       & x_t = B x_{t-1} + w_t \\
+                          & \alpha_t = 1 \cdot \alpha_{t-1} + w_t, \quad w_t \sim \mathcal{N}(0, Q)
+\end{align*}
+
+This model assumes no density-dependent survival in that the number of recruits is an ascending function of spawners. We did not include any environmental variables for this step. 
+
+
+```{r}
+
+# Assuming you have logRS = log(R/S) as a time series
+logRS <-  log(SR_data$spawners)/log(SR_data$recruits) 
+
+
+model.list1 <- list(
+  Z = matrix(1),
+  A = matrix(0),
+  R = "diagonal and equal",
+  B = matrix(1),
+  U = matrix(0),
+  Q = "unconstrained",
+  x0 = "unconstrained",
+  tinitx = 0
+)
+
+fit1 <- MARSS(logRS, model = model.list1)
+
+# Extract time-varying alpha_t
+alpha_t1 <- fit1$states[1, ]
+
+
+```
+
+Plot the ts of $\alpha_t$ and note the AICc for this model. Also plot appropriate model diagnostics.
+
+
+```{r}
+# Plot time series
+ts.plot(alpha_t1, main = "Time-varying Intercept (alpha_t) - Reduced Model", ylab = "alpha_t")
+
+# AICc
+cat("AICc of Reduced Model: ", fit1$AICc, "\n")
+
+#Vector to store the AICcs of all models
+mod_compare <- rep(0, 4)
+mod_compare[1] <- fit1$AICc
+
+# Diagnostics (Residuals, QQ Plot and ACF)
+plot(residuals(fit1))
+
+```
+
+
+What environmental or dummy variables did you include and why?
+
+
+### Full Model Structure
+
+Next,we fitted the full Ricker model with a time-varying intercept and a static effect of spawners. 
+
+For this model, we need the time series of $\alpha_t$, which is an estimate of the stock productivity in the absence of density-dependent effects. 
+
+The equation for this model is now: 
+
+\[
+\log\left(\frac{R_t}{S_t}\right) = \alpha_t - \beta S_t + v_t
+\]
+
+\begin{align*}
+\text{Observation:} \quad & y_t = Z x_t + C c_t + v_t \\
+                          & y_t = 1 \cdot \alpha_t + (-1) \cdot S_t + v_t, \quad v_t \sim \mathcal{N}(0, R) \\[1em]
+\text{State:} \quad       & x_t = B x_{t-1} + w_t \\
+                          & \alpha_t = 1 \cdot \alpha_{t-1} + w_t, \quad w_t \sim \mathcal{N}(0, Q)
+\end{align*}
+
+This means that $\alpha_t$ is time-varying and $\beta_t$ is static. 
+
+```{r}
+
+# Checking this because of failure
+y <- matrix(logRS, nrow = 1)
+
+# Make the covariate matrix
+covars <- matrix(SR_data$spawners, nrow = 1)
+
+
+# MARSS model list
+model.list2 <- list(
+  Z = matrix(1),         # observation matrix (1 state)
+  A = matrix(0),         # no intercept
+  R = matrix("r"),       # observation error variance
+  B = matrix(1),         # state dynamics: alpha_t = alpha_{t-1} + w_t
+  U = matrix(0),         # no drift
+  Q = matrix("q"),       # process error variance for alpha_t
+  x0 = matrix("mu"),     # initial state mean
+  tinitx = 0,
+  C = matrix(-1),        # static beta coefficient for S_t
+  c = covars
+)
+
+# fit2 <- try(MARSS(y, model = model.list2))
+# 
+# alpha_t2 <- fit2$states[1, ]
+# 
+# ts.plot(alpha_t2, main = "Time-varying Intercept (alpha_t) - Full Ricker", ylab = "alpha_t")
+# 
+# cat("AICc of Expanded Model: ", fit2$AICc, "\n")
+# 
+# plot(residuals(fit2))
+
+
+```
+
+
+
+How do these estimates of productivity compare to those from the previous question? Plot the ts of $\alpha_t$ and note the AICc for this model. Also plot appropriate model diagnostics. ($Hint$: If you don't want a parameter to vary with time, what does that say about its process variance?)
+
+
+
+### Addition of covariates
+
+We fitted the expanded model that includes the summer PDO index as the covariate (`pdo_summer_t2`). 
+
+The equation for this model is now: 
+
+\[
+\log\left(\frac{R_t}{S_t}\right) = \alpha_t - \beta S_t + \delta \cdot \text{PDO}_t + v_t
+\]
+
+\begin{align*}
+\text{Observation:} \quad & y_t = Z \alpha_t + C_1 c_{1t} + C_2 c_{2t} + v_t \\
+                          & y_t = 1 \cdot \alpha_t + (-1) \cdot S_t + \delta \cdot \text{PDO}_t + v_t, \quad v_t \sim \text{N}(0, R) \\[1em]
+\text{State:} \quad       & \alpha_t = B \alpha_{t-1} + w_t \\
+                          & \alpha_t = 1 \cdot \alpha_{t-1} + w_t, \quad w_t \sim \text{N}(0, Q)
+\end{align*}
+
+What is the mean level of productivity? Plot the ts of $\delta_t$ and note the AICc for this model. Also plot appropriate model diagnostics.
+
+```{r summerPDO}
+
+# Combine covariates: Spawner and PDO
+covars_PS <- rbind(SR_data$spawners, SR_data$pdo_summer_t2)
+
+model.list3 <- list(
+  Z = matrix(1),
+  A = matrix(0),
+  R = "diagonal and equal",
+  B = matrix(1),
+  U = matrix(0),
+  Q = "unconstrained",
+  x0 = "unconstrained",
+  tinitx = 0,
+  C = matrix(c(-1, "delta")),   # Static beta, time-varying delta
+  c = covars_PS
+)
+
+fit3 <- MARSS(logRS, model = model.list3)
+
+alpha_t3 <- fit3$states[1, ]
+delta_PS <- fit3$par$C[2, ]
+
+ts.plot(alpha_t3, main = "Time-varying Intercept (alpha_t) - With PDO", ylab = "alpha_t")
+cat("AICc of PDO Model: ", fit3$AICc, "\n")
+
+mod_compare[3] <- fit3$AICc
+
+# Plot of delta (effect of PDO)
+plot(SR_data$pdo_summer_t2, delta_PS, type = "b", main = "Effect of Summer PDO (delta_t)", ylab = "delta_t")
+
+plot(residuals(fit3))
+
+```
+
+
+```{r winterPDO}
+
+# Combine covariates: Spawner and PDO
+covars_PW <- rbind(SR_data$spawners, SR_data$pdo_winter_t2)
+
+model.list4 <- list(
+  Z = matrix(1),
+  A = matrix(0),
+  R = "diagonal and equal",
+  B = matrix(1),
+  U = matrix(0),
+  Q = "unconstrained",
+  x0 = "unconstrained",
+  tinitx = 0,
+  C = matrix(c(-1, "delta")),   # Static beta, time-varying delta
+  c = covars_PW
+)
+
+fit4 <- MARSS(logRS, model = model.list4)
+
+alpha_t4 <- fit4$states[1, ]
+delta_PW <- fit4$par$C[2, ]
+
+ts.plot(alpha_t4, main = "Time-varying Intercept (alpha_t) - With PDO_w", ylab = "alpha_t")
+cat("AICc of PDO_w Model: ", fit4$AICc, "\n")
+
+mod_compare[4] <- fit4$AICc
+
+
+
+# Plot of delta (effect of PDO) - not sure this is how you do it...
+
+plot(SR_data$pdo_winter_t2, delta_PW, type = "b", main = "Effect of Summer PDO (delta_t)", ylab = "delta_t")
+
+plot(residuals(fit4))
+
+```
+
+
+### Model Forecast for best model
+
+Based on AICc, which of the models above is the most parsimonious? Is it well behaved (i.e., are the model assumptions met)? 
+
+Based on the AICc, the best model is the PDO_summer covariate model.
+
+```{r}
+
+print(mod_compare)
+
+```
+
+
+
+Plot the model forecasts for the best model. Is this a good forecast model?
+
+```{r forecast best}
+
+
+
+```
+
+## Resulting Model forms (matrix form)
+
+
+### Model 1: Reduced Ricker Model (time-varying productivity only)
+
+$$
+\boxed{
+\begin{cases}
+\mathbf{y}_t = \mathbf{Z} \mathbf{x}_t + \mathbf{v}_t \\
+\mathbf{x}_t = \mathbf{B} \mathbf{x}_{t-1} + \mathbf{w}_t
+\end{cases}
+}
+$$
+
+where
+
+$$
+\mathbf{y}_t = \log\left(\frac{R_t}{S_t}\right), \quad
+\mathbf{x}_t = \alpha_t
+$$
+
+and matrices/vectors:
+
+$$
+\mathbf{Z} = [1], \quad
+\mathbf{B} = [1], \quad
+\mathbf{v}_t \sim \mathbf{N}(0, R), \quad
+\mathbf{w}_t \sim \mathbf{N}(0, Q)
+$$
+
+---
+
+### Model 2: Full Ricker with static spawner effect
+
+$$
+\boxed{
+\begin{cases}
+\mathbf{y}_t = \mathbf{Z} \mathbf{x}_t + \mathbf{C} \mathbf{c}_t + \mathbf{v}_t \\
+\mathbf{x}_t = \mathbf{B} \mathbf{x}_{t-1} + \mathbf{w}_t
+\end{cases}
+}
+$$
+
+where
+
+$$
+\mathbf{y}_t = \log\left(\frac{R_t}{S_t}\right), \quad
+\mathbf{x}_t = \alpha_t, \quad
+\mathbf{c}_t = S_t
+$$
+
+and matrices/vectors:
+
+$$
+\mathbf{Z} = [1], \quad
+\mathbf{C} = [-1], \quad
+\mathbf{B} = [1], \quad
+\mathbf{v}_t \sim \mathbf{N}(0, R), \quad
+\mathbf{w}_t \sim \mathbf{N}(0, Q)
+$$
+
+---
+
+### Model 3: Expanded Ricker with PDO covariate
+
+$$
+\boxed{
+\begin{cases}
+\mathbf{y}_t = \mathbf{Z} \mathbf{x}_t + \mathbf{C} \mathbf{c}_t + \mathbf{v}_t \\
+\mathbf{x}_t = \mathbf{B} \mathbf{x}_{t-1} + \mathbf{w}_t
+\end{cases}
+}
+$$
+
+where
+
+$$
+\mathbf{y}_t = \log\left(\frac{R_t}{S_t}\right), \quad
+\mathbf{x}_t = \alpha_t, \quad
+\mathbf{c}_t = \begin{bmatrix} S_t \\ \text{PDO}_t \end{bmatrix}
+$$
+
+and matrices/vectors:
+
+$$
+\mathbf{Z} = [1], \quad
+\mathbf{C} = \begin{bmatrix} -1 & \delta \end{bmatrix}, \quad
+\mathbf{B} = [1], \quad
+\mathbf{v}_t \sim \mathbf{N}(0, R), \quad
+\mathbf{w}_t \sim \mathbf{N}(0, Q)
+$$
+
+
+## Model diagnostics and fit
+
+
+### Comparison of covariate performance
+
+* What sort of model diagnostics did you use to examine model assumptions?
+
+
+# Results
+
+
+# Discussion
+
+
+
+Consider other environmental factors that could influence the time-varying intrinsic productivity of these salmon. For example, are there other large-scale indices of ocean conditions (e.g., sea-surface temperature, El Niño Southern Oscillation)? You could also consider the possible influence of other salmon stocks such as those we examined in Lab 1.
+
+
+
+
+# Team contributions
+
+All team members contributed to the data wrangling and analysis. We each attempted all sections of the lab and then reconvened to compared differences and merge scripts. Each team member contributed text to results and discussion sections. 
+

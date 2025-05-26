@@ -31,6 +31,7 @@ library(atsalibrary)
 
 #Set WD
 setwd("~/Desktop/Research_Repos/CourseWork/FISH550/ModellingCodes")
+setwd("C:/Users/Emma/Desktop/Research_Repos/CourseWork/FISH550/ModellingCodes")
 
 
 #### STEP 1 ####
@@ -178,6 +179,20 @@ covariates_SNAPwbrood <- rbind(SNAP, wbrood)
 rownames(covariates_SNAPwbrood) <- c("SNAP", "Escapement")
 
 
+#Now need to add a row called "lnescp" to both of the covariate dfs that is the log of the escapement in all of the columns
+covariates_IOwbrood <- rbind(covariates_IOwbrood, log(covariates_IOwbrood[2, ]))
+covariates_SNAPwbrood <- rbind(covariates_SNAPwbrood, log(covariates_SNAPwbrood[2, ]))
+
+#Call the new row "lnescp"
+rownames(covariates_IOwbrood)[3] <- "lnescp"
+rownames(covariates_SNAPwbrood)[3] <- "lnescp"
+
+#Now need to remove the escapement row from the covariates
+covariates_IOwbrood <- covariates_IOwbrood[-2, ]
+covariates_SNAPwbrood <- covariates_SNAPwbrood[-2, ]
+
+
+
 #### STEP 3 ####
 Z_IOwb <- matrix(c(1, covariates_IOwbrood[1, ], covariates_IOwbrood[2, ]), nrow = 1)
 
@@ -231,14 +246,14 @@ initial_x0 <- rep(0, 3)  # 3 states: FW1, IO, and density
 
 # Define the model list with the corrected Z and x0
 model.list_IOwb <- list(
-  Z = matrix(1),         
-  B = matrix(1),          
-  U = matrix(0),              
+  Z = matrix(1),
+  B = matrix(1),
+  U = matrix(0),
   Q = matrix("q"),  
   R = matrix("r"),        
   A = "zero",             
   x0 = matrix(0),         
-  V0 = "zero"              
+  V0 = "identity"  # <-- updated!
 )
 
 # Run the model with the corrected specification
@@ -248,7 +263,42 @@ fit_IOwbrood <- MARSS(y, model = model.list_IOwb,
 #Check the output
 summary(fit_IOwbrood)
 
-#plot
-plot(fit_IOwbrood, plot.type = "xtT")
+#Plotting the observed vs fitted
+# Make sure y is a numeric vector
+y_vec <- as.numeric(y)
 
-##########Ending here 5/8 Need to run the Data from the book and rebuild the model
+# Extract fitted values and SEs
+fitted_vals <- fit_IOwbrood$states[1, ]
+se <- sqrt(fit_IOwbrood$states.se[1, ])
+
+# Compute CI bounds
+upper <- fitted_vals + 1.96 * se
+lower <- fitted_vals - 1.96 * se
+
+# Create time axis
+time <- 1:length(fitted_vals)
+
+# Combine into a data frame
+df_plot <- data.frame(
+  Time = time,
+  Observed = y_vec,
+  Fitted = fitted_vals,
+  Upper = upper,
+  Lower = lower
+)
+
+ggplot(df_plot, aes(x = Time)) +
+  geom_line(aes(y = Observed), color = "black", size = 1, linetype = "solid") +
+  geom_line(aes(y = Fitted), color = "blue", size = 1) +
+  geom_ribbon(aes(ymin = Lower, ymax = Upper), fill = "blue", alpha = 0.2) +
+  labs(title = "Observed vs Fitted with 95% CI",
+       y = "Response", x = "Time") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    legend.position = "none"
+  )
+
+
+
+######################Ending here 5/22. Tried to plot the effect of IO and escp over time, but the Z matrix is not estimating 3 states, only one.

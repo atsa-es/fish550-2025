@@ -2,7 +2,7 @@
 title: Team 1 - Lab 5
 subtitle: Dynamic Linear Models (DLMs) - Time-varying productivity of salmon
 author: "Nicole, Tina, Lilac"
-date: May 20, 2025
+date: May 24, 2025
 output: 
   html_document:
     code-folding: true
@@ -41,7 +41,7 @@ log_spawners<-matrix(log(SR_na.rm$spawners), nrow=1)
 
 Use the information and data in the previous section to answer the following questions. Note that if any model is not converging, then you will need to increase the `maxit` parameter in the `control` argument/list that gets passed to `MARSS()`. For example, you might try `control=list(maxit=2000)`.
 
-### Question 1: Reduced Ricker Model
+## Question 1: Reduced Ricker Model
 \begin{align*}
 \text{log}(R_t) &= \alpha_t + \text{log}(S_t) + v_t \\
 \text{log}(R_t/S_t) &= \alpha_t + v_t
@@ -79,7 +79,7 @@ dev.off()
 
 The model diagnostics look fine. There doesn't appear to be any patterns in the residual plots, autocorrelation in the ACF plots, and the QQ-plot shows some deviation from the line but not enough to be very concerned.
 
-### Question 2: Full Ricker Model
+## Question 2: Full Ricker Model
 Fit the full Ricker model with a time-varying intercept and a static effect of spawners. For this model, obtain the time series of $\alpha_t$, which is an estimate of the stock productivity in the absence of density-dependent effects. How do these estimates of productivity compare to those from the previous question? Plot the ts of $\alpha_t$ and note the AICc for this model. Also plot appropriate model diagnostics. ($Hint$: If you don't want a parameter to vary with time, what does that say about its process variance?)
 
 \begin{align*}
@@ -99,6 +99,7 @@ mod.list.2 <- list(
 )
 fullricker<-MARSS(ricker_obs, mod.list.2, control=list(maxit=2000))
 ```
+
 ```{r model diagnostics 2}
 alphafull<-fullricker$states[1,]
 ts.plot(alphafull, main="alpha_t")
@@ -121,17 +122,250 @@ dev.off()
 
 In the full Ricker model diagnostic plots, the observation and standardized residuals are all negative. The reduced Ricker model is also a better fit to the data (delta AICc~197). In comparing the alpha_t values between the full and reduced Ricker models, the reduced model's estimates are smoother than the full model's alpha estimates. This suggests the full model's estimated beta value is biased because it is over-predicting alpha values. This data does not support density dependence. We can try to explain the data using environmental covariates that could be driving the relationship between spawners and recuits instead of density dependence.
 
-### Question 3: Summer PDO 
+## Question 3: Summer PDO 
 Fit the expanded model that includes the summer PDO index as the covariate (`pdo_summer_t2`). What is the mean level of productivity? Plot the ts of $\delta_t$ and note the AICc for this model. Also plot appropriate model diagnostics.
 
-### Question 4: Winter PDO
+```{r, include=FALSE}
+# Prepare the covariate (pdo_summer_t2)
+pdo_summer <- matrix(SR_na.rm$pdo_summer_t2, nrow = 1)
+
+# Get the number of time points
+TT <- ncol(ricker_obs)
+
+# Create an empty Z array: dimensions (n x m x T)
+Z1 <- array(NA, dim = c(1, 2, TT))  # 1 response, 2 predictors (alpha, delta)
+
+# Fill in the Z matrix at each time t
+for (t in 1:TT) {
+  Z1[1, 1, t] <- 1                     # intercept
+  Z1[1, 2, t] <- pdo_summer[1, t]      # summer PDO covariate
+}
+
+# Model list
+mod.list.3 <- list(
+  B = diag(2),                # alpha and delta are both random walks
+  U = matrix(0, 2, 1),        # no drift
+  Q = "unconstrained",        # estimate process variances for both states
+  Z = Z1,                     # observation = alpha + delta_t * PDO
+  A = matrix(0),              # no fixed intercept
+  R = "unconstrained",        # estimate observation noise
+  x0 = "unconstrained"        # estimate initial state
+)
+
+# Initial values for alpha_t and delta_t
+inits <- list(x0 = matrix(c(0, 0), 2, 1))
+
+# Fit model
+pdosummer <- MARSS(ricker_obs, mod.list.3, inits = inits, control=list(maxit=2000))
+```
+
+```{r  model_diagnostics_3, echo=FALSE}
+alpha_t <- pdosummer$states[1, ]
+delta_t <- pdosummer$states[2, ]
+
+ts.plot(alpha_t, main = "alpha_t", ylab = "Base Productivity")
+ts.plot(delta_t, main = "delta_t", ylab = "Effect of PDO (summer)")
+
+cat("Mean alpha_t (base productivity):", mean(alpha_t), "\n")
+cat("AICc:", pdosummer$AICc, "\n")
+
+# Plot
+pdf("marss_pdosummer_plot.pdf", width = 7, height = 6)
+plot(pdosummer, silent = TRUE)
+dev.off()
+```
+![](marss_pdosummer_plot.pdf). 
+
+## Question 4: Winter PDO
 Fit the expanded model that includes the winter PDO index as the covariate (`pdo_winter_t2`). What is the mean level of productivity? Plot the ts of $\delta_t$ and note the AICc for this model. Also plot appropriate model diagnostics.
 
-### Question 5: PDO Covariate Comparison
+```{r, include=FALSE}
+# Prepare the covariate (pdo_winter_t2)
+pdo_winter <- matrix(SR_na.rm$pdo_winter_t2, nrow = 1)
+
+# Get number of time points
+TT <- ncol(ricker_obs)
+
+# Create an empty time-varying Z matrix
+Z2 <- array(NA, dim = c(1, 2, TT))  # 1 observation, 2 latent states
+
+# Fill in Z matrix over time
+for (t in 1:TT) {
+  Z2[1, 1, t] <- 1                  # alpha_t (intercept)
+  Z2[1, 2, t] <- pdo_winter[1, t]   # delta_t * PDO_winter
+}
+
+# Model specification for winter PDO
+mod.list.4 <- list(
+  B = diag(2),                  # alpha_t and delta_t both follow random walks
+  U = matrix(0, 2, 1),          # no drift
+  Q = "unconstrained",          # estimate process variance for both states
+  Z = Z2,                       # Z matrix varies with time
+  A = matrix(0),                # no additional fixed effects
+  R = "unconstrained",          # observation noise
+  x0 = "unconstrained"          # initial values to be estimated
+)
+
+# Initial values for states
+init_vals <- list(x0 = matrix(c(0, 0), 2, 1))
+
+# Fit the model
+pdowinter <- MARSS(ricker_obs, model = mod.list.4, inits = init_vals, control = list(maxit = 2000))
+
+```
+
+```{r  model_diagnostics_4, echo=FALSE}
+# Extract states
+alpha_winter <- pdowinter$states[1, ]  # baseline productivity
+delta_winter <- pdowinter$states[2, ]  # effect of PDO (winter)
+
+# Plot time series of alpha_t and delta_t
+ts.plot(alpha_winter, main = "alpha_t", ylab = "Base Productivity (Winter PDO Model)")
+ts.plot(delta_winter, main = "delta_t", ylab = "Effect of PDO (Winter)")
+
+# Summary statistics
+cat("Mean alpha_t (base productivity):", mean(alpha_winter), "\n")
+cat("AICc for Winter PDO model:", pdowinter$AICc, "\n")
+
+# Plot diagnostics
+pdf("marss_pdowinter_plot.pdf", width = 7, height = 6)
+plot(pdowinter, silent = TRUE)
+dev.off()
+```
+
+The mean level of productivity for summer PDO model is $0.459$ and the mean level of productivity for winter PDO model is $0.477$, which represent the average log productivity of the sockeye salmon population in the absence of environmental effects. Mean base productivity ($\bar\alpha_t$) is slightly higher in the winter model, suggesting that once winter covariation is accounted for, the underlying stock productivity intercept is elevated.
+
+($\alpha_t$) and ($\delta_t$) in both summer and winter PDO models exhibit similar trends. Base productivity ($\alpha_t$) shows long-term fluctuation and potential decline. Early in the series, the PDO effect is weak or slightly negative, but becomes consistently positive in later years. The increasing of PDO's influence ($\delta_t$) over time highlights the importance of environmentally driven variability in salmon recruitment dynamics. Specifically, ($\delta_t$) in summer PDO model exhibits relatively low process variance (Q₂₂ ≈ 0.0071), indicating a fairly stable, slowly changing influence over the 1956–1998 window, while ($\delta_t$) in winter PDO modeldisplays higher process variance (Q₂₂ ≈ 0.0508), so the winter effect fluctuates more strongly year‐to‐year.
+
+The AICc for summer PDO model is $117.9$ and the AICc for winter PDO model is $112.7$. The Winter PDO model has a substantially lower AICc (ΔAICc ≈ 5.17), indicating it better balances fit and complexity.
+
+The better performance of the winter model suggests that winter oceanographic conditions such as temperature, upwelling, prey availability in winter two years prior, are more critical drivers of sockeye productivity than summer anomalies. Winter PDO may affect overwinter survival of juveniles or the physiology of broodstock, leading to stronger recruitment signals. A stable summer PDO effect but a highly variable winter PDO effect hints that summer conditions exert a more constant background influence, whereas winter extremes (cold or warm) trigger episodic recruitment booms or busts.
+
+Based on the model results, we recommend that habitat and hatchery managers might focus monitoring efforts on winter conditions like ice cover and plankton dynamics to anticipate recruitment anomalies.
+
+
+## Question 5: PDO Covariate Comparison
 Based on AICc, which of the models above is the most parsimonious? Is it well behaved (i.e., are the model assumptions met)? Plot the model forecasts for the best model. Is this a good forecast model?
 
+```{r, echo=FALSE}
 
-### Question 6: Alternative co-variates
+# Compile AICc for all models
+model.names <- c("Reduced Ricker", "Full Ricker", "Summer PDO", "Winter PDO")
+model.aicc  <- c(
+  reducedricker$AICc,
+  fullricker$AICc,
+  pdosummer$AICc,
+  pdowinter$AICc
+)
+aicc.table <- data.frame(Model = model.names,
+                         AICc  = model.aicc)
+print(aicc.table)
+
+# Identify the "best" model by lowest AICc
+best.idx <- which.min(model.aicc)
+best.model.name <- model.names[best.idx]
+cat("Best model:", best.model.name, "\n\n")
+
+# Check assumptions for the best model
+# Choose the fitted object
+best.fit <- list(
+  reducedricker = reducedricker,
+  fullricker    = fullricker,
+  pdosummer     = pdosummer,
+  pdowinter     = pdowinter
+)[[best.idx]]
+
+pdf("best_model_diagnostics.pdf", width=8, height=6)
+plot(best.fit, silent=TRUE)
+dev.off()
+marss.res <- MARSSresiduals(best.fit)
+shapiro.test(marss.res$model.residuals) -> sh.test
+cat("Shapiro–Wilk test for residuals: W =", round(sh.test$statistic,3),
+    ", p =", round(sh.test$p.value,3), "\n")
+if(sh.test$p.value > 0.05) {
+  cat("Residuals not significantly non‐normal.\n\n")
+} else {
+  cat("Warning: residuals deviate from normality.\n\n")
+}
+pdf("best_model_qqplot.pdf", width=8, height=6)
+qqnorm(marss.res$model.residuals, main="QQ-plot of Residuals")
+qqline(marss.res$model.residuals, col="red")
+dev.off()
+#plot acf
+resid.vec <- as.numeric(na.omit(marss.res$model.residuals))
+if (length(resid.vec) > 1) {
+  pdf("best_model_acf.pdf", width = 8, height = 6)
+  acf(resid.vec,
+      main = "Autocorrelation of Model Residuals",
+      xlab = "Lag",
+      ylab = "ACF",
+      col  = "darkblue",
+      lwd  = 2)
+  dev.off()
+}
+```
+
+```{r, echo=FALSE}
+# Forecasting from the best model
+best.fit <- reducedricker
+# We will do 5‐year ahead forecasts
+H    <- 5                          # forecast horizon
+fc <- forecast(best.fit, h = H, level = 0.95)
+obs <- as.numeric(ricker_obs)
+t.obs <- seq_along(obs)
+
+# Plot observed + forecast
+# Forecasted values for log(R/S):
+if (is.matrix(fc$pred$xtT)) {
+  fc.mean <- as.numeric(fc$pred$xtT[1, ])    # first (and only) row
+} else {
+  fc.mean <- as.numeric(fc$pred$xtT)
+}
+
+# Forecast variances:
+if (is.matrix(fc$pred$var.pred)) {
+  fc.var <- diag(fc$pred$var.pred)           # diagonal if matrix
+} else {
+  fc.var <- as.numeric(fc$pred$var.pred)
+}
+
+# Standard errors and 95% CI
+fc.se    <- sqrt(fc.var)
+z95      <- qnorm(0.975)
+fc.lower <- fc.mean - z95 * fc.se
+fc.upper <- fc.mean + z95 * fc.se
+
+# Build matching time index
+H2    <- length(fc.mean)                     # actual forecast length
+t.fc  <- max(t.obs) + seq_len(H2)
+
+# Plot to PDF
+pdf("best_model_forecast.pdf", width = 8, height = 5)
+plot(t.obs, obs, type = "l", lwd = 2,
+     xlim = c(1, max(t.fc)),
+     ylim = range(c(obs, fc.lower, fc.upper)),
+     xlab = "Time (t)", ylab = "log(R/S)",
+     main = "5-Year Forecast: Reduced Ricker")
+lines(t.fc, fc.mean, col = "blue", lwd = 2)
+lines(t.fc, fc.lower, lty = 2)
+lines(t.fc, fc.upper, lty = 2)
+abline(v = max(t.obs), lty = 3)
+legend("topleft",
+       legend = c("Observed", "Forecast", "95% CI"),
+       lty    = c(1, 1, 2),
+       col    = c("black", "blue", "black"))
+dev.off()
+
+cat("Forecast plot saved to 'best_model_forecast.pdf'\n")
+
+```
+Surprisingly that we found the reduced Ricker model, which is the simple random‐walk intercept model without density dependence or environmental covariates had the lowest AICc among the four candidates. This indicates that, for these data, neither spawner density nor seasonal PDO indices improve parsimony enough to justify their additional parameters.
+
+Based on the residual diagnostics, there is no obvious residual patterns over time, no significant autocorrelation in the ACF, and an approximately linear QQ‐plot. A Shapiro–Wilk test on the model residuals returned W = 0.983, p = 0.747, indicating no significant departure from normality. These diagnostics suggest that the Reduced Ricker model is well behaved and meets the key Gaussian-state‐space assumptions of MARSS.
+
+Generally speaking, it is a good forecast model because it is parsimonious and statistically well behaved—residuals are white noise and approximately normal, but it is also important to note that the forecasts are based on the assumption that the underlying process remains stable over the forecast horizon. The model does not account for potential future changes in environmental conditions or other factors that could affect salmon productivity. It has the limitation of Lacking any mechanism (covariates or density feedback) to predict genuine ups or downs in productivity. Therefore, while the model provides a reasonable forecast based on historical data, it may not capture future dynamics if significant environmental shifts occur.
+
+## Question 6: Alternative co-variates
 Consider other environmental factors that could influence the time-varying intrinsic productivity of these salmon. For example, are there other large-scale indices of ocean conditions (e.g., sea-surface temperature, El Niño Southern Oscillation)? You could also consider the possible influence of other salmon stocks such as those we examined in Lab 1.
 
 We will fit a model to the Kvichak sockeye data that considers annual abundance of chinook stocks from lab 1 as a covariate. 
@@ -163,22 +397,6 @@ mod.list <- list(
 )
 
 chinookcov <- MARSS(ricker_obs, model = mod.list)
-
-chinook_z_lag1 <- dplyr::lag(chinook_z, 1)
-cov_mat_lag <- t(as.matrix(chinook_z_lag1))
-mod.list <- list(
-  B = "identity",
-  U = "zero",
-  Q = "diagonal and equal",
-  Z = "identity",
-  A = "zero",
-  R = "diagonal and equal",
-  x0 = "zero",
-  c = cov_mat_lag,     #  chinook covariate matrix
-  C = "unconstrained" 
-)
-
-chinookcovlag <- MARSS(ricker_obs, model = mod.list)
 ```
 ```{r, echo=FALSE}
 alphachinook<-chinookcov$states[1,]
@@ -188,8 +406,7 @@ legend("topright", legend=c("Chinook Covariate", "Reduced Ricker"), col=c("black
 
 #print AIC
 chinookcovaicc<-chinookcov$AICc
-chinooklagaicc<-chinookcovlag$AICc
-AICc<-cbind(model=c("Chinook covariate", "Chinook lag", "Reduced Ricker"), AICc=c(chinookcovaicc, chinooklagaicc, reducedaicc))
+AICc<-cbind(model=c("Chinook covariate", "Reduced Ricker"), AICc=c(chinookcovaicc, reducedaicc))
 print(AICc)
 
 #plot diagnostics
@@ -202,24 +419,7 @@ dev.off()
 
 The model that includes chinook as a covariate performs about the same as the reduced Ricker model. Including a lag does not improve model performance.
 
-# Methods
-# We can probably address these model and results questions throughout the sections above and just have a separate discussion section.
-Please address the following in your methods:
-
-* What environmental or dummy variables did you include and why?
-
-* What forms of models did you fit (ie, write them out in matrix form)?
-
-* What sort of model diagnostics did you use to examine model assumptions?
-
-
-# Results
-
-
-# Discussion
-
-
 # Team contributions
 
-Example: Nicole fit and interpreted the reduced and full Ricker models in questions 1 and 2, and the chinook covariate models in question 6.
+Example: Nicole fit and interpreted the reduced and full Ricker models in questions 1 and 2, and the chinook covariate models in question 6. Lilac completed code and interpretation in question 3. Tina completed codes and interpretation for question 4 and 5, and expanded the discussion from question 3.
 

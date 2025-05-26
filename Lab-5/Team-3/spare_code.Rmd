@@ -1,0 +1,145 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+### Addition of covariates
+
+We fitted the expanded model that includes the summer PDO index as the covariate (`pdo_summer_t2`). 
+
+The equation for this model is now: 
+
+\[
+\log\left(\frac{R_t}{S_t}\right) = \alpha_t - \beta S_t + \delta \cdot \text{PDO}_t + v_t
+\]
+
+\begin{align*}
+\text{Observation:} \quad & y_t = Z \alpha_t + C_1 c_{1t} + C_2 c_{2t} + v_t \\
+                          & y_t = 1 \cdot \alpha_t + (-1) \cdot S_t + \delta \cdot \text{PDO}_t + v_t, \quad v_t \sim \text{N}(0, R) \\[1em]
+\text{State:} \quad       & \alpha_t = B \alpha_{t-1} + w_t \\
+                          & \alpha_t = 1 \cdot \alpha_{t-1} + w_t, \quad w_t \sim \text{N}(0, Q)
+\end{align*}
+
+What is the mean level of productivity? Plot the ts of $\delta_t$ and note the AICc for this model. Also plot appropriate model diagnostics.
+
+### Model Forecast for best model
+
+Based on AICc, which of the models above is the most parsimonious? Is it well behaved (i.e., are the model assumptions met)? 
+
+Based on the AICc, the best model is the PDO_summer covariate model.
+
+```{r}
+
+
+
+```
+
+
+
+Plot the model forecasts for the best model. Is this a good forecast model?
+
+```{r forecast best}
+
+
+
+```
+
+## Resulting Model forms (matrix form)
+
+
+### Model 1: Reduced Ricker Model (time-varying productivity only)
+
+$$
+\boxed{
+\begin{cases}
+\mathbf{y}_t = \mathbf{Z} \mathbf{x}_t + \mathbf{v}_t \\
+\mathbf{x}_t = \mathbf{B} \mathbf{x}_{t-1} + \mathbf{w}_t
+\end{cases}
+}
+$$
+
+where
+
+$$
+\mathbf{y}_t = \log\left(\frac{R_t}{S_t}\right), \quad
+\mathbf{x}_t = \alpha_t
+$$
+
+and matrices/vectors:
+
+$$
+\mathbf{Z} = [1], \quad
+\mathbf{B} = [1], \quad
+\mathbf{v}_t \sim \mathbf{N}(0, R), \quad
+\mathbf{w}_t \sim \mathbf{N}(0, Q)
+$$
+
+---
+
+### Model 2: Full Ricker with static spawner effect
+
+$$
+\boxed{
+\begin{cases}
+\mathbf{y}_t = \mathbf{Z} \mathbf{x}_t + \mathbf{C} \mathbf{c}_t + \mathbf{v}_t \\
+\mathbf{x}_t = \mathbf{B} \mathbf{x}_{t-1} + \mathbf{w}_t
+\end{cases}
+}
+$$
+
+where
+
+$$
+\mathbf{y}_t = \log\left(\frac{R_t}{S_t}\right), \quad
+\mathbf{x}_t = \alpha_t, \quad
+\mathbf{c}_t = S_t
+$$
+
+and matrices/vectors:
+
+$$
+\mathbf{Z} = [1], \quad
+\mathbf{C} = [-1], \quad
+\mathbf{B} = [1], \quad
+\mathbf{v}_t \sim \mathbf{N}(0, R), \quad
+\mathbf{w}_t \sim \mathbf{N}(0, Q)
+$$
+
+---
+
+### Model 3: Expanded Ricker with PDO covariate
+
+$$
+\boxed{
+\begin{cases}
+\mathbf{y}_t = \mathbf{Z} \mathbf{x}_t + \mathbf{C} \mathbf{c}_t + \mathbf{v}_t \\
+\mathbf{x}_t = \mathbf{B} \mathbf{x}_{t-1} + \mathbf{w}_t
+\end{cases}
+}
+$$
+
+where
+
+$$
+\mathbf{y}_t = \log\left(\frac{R_t}{S_t}\right), \quad
+\mathbf{x}_t = \alpha_t, \quad
+\mathbf{c}_t = \begin{bmatrix} S_t \\ \text{PDO}_t \end{bmatrix}
+$$
+
+and matrices/vectors:
+
+$$
+\mathbf{Z} = [1], \quad
+\mathbf{C} = \begin{bmatrix} -1 & \delta \end{bmatrix}, \quad
+\mathbf{B} = [1], \quad
+\mathbf{v}_t \sim \mathbf{N}(0, R), \quad
+\mathbf{w}_t \sim \mathbf{N}(0, Q)
+$$
+
+
+## Model diagnostics and fit
+
+
+### Comparison of covariate performance
+
+* What sort of model diagnostics did you use to examine model assumptions?

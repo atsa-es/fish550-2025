@@ -15,10 +15,11 @@ options(dplyr.summarise.inform = FALSE)
 ```
 
 
-```{r silent=TRUE}
+```{r silent=TRUE, include=FALSE}
 library(atsalibrary)
 library(dplyr)
 library(ggplot2)
+library(here)
 library(tidyverse)
 library(MARSS)
 
@@ -26,14 +27,13 @@ library(MARSS)
 
 # Data
 
-
 ## Load the data
 
-The data are a dataframe with columns for brood year (`brood_year`), number of spawners (`spawners`), number of recruits (`recruits`) and PDO at year $t-2$ in summer (`pdo_summer_t2`) and in winter (`pdo_winter_t2`).
+This exercise involves spawner-recruit data for sockeye salmon (Oncorhynchus nerka) from the Kvichak River in SW Alaska that span the years 1952-2005. We have a dataframe with columns for brood year (`brood_year`), number of spawners (`spawners`), number of recruits (`recruits`) and PDO at year $t-2$ in summer (`pdo_summer_t2`) and in winter (`pdo_winter_t2`).
 
 
 
-```{r dlm-load-atsa, eval=FALSE}
+```{r dlm-load-atsa, echo=FALSE}
 ## library(devtools)
 ## Windows users will likely need to set this
 ## Sys.setenv("R_REMOTES_NO_ERRORS_FROM_WARNINGS" = "true")
@@ -41,393 +41,386 @@ The data are a dataframe with columns for brood year (`brood_year`), number of s
 
 ## get data
 data(KvichakSockeye, package="atsalibrary")
-SR_data <- KvichakSockeye
+data <- KvichakSockeye
 
-head(SR_data)
+head(data)
 
 ```
 
-The data are a dataframe with columns for brood year (`brood_year`), number of spawners (`spawners`), number of recruits (`recruits`) and PDO at year $t-2$ in summer (`pdo_summer_t2`) and in winter (`pdo_winter_t2`).'
+We'll take a quick look at spawners and recruits over time in the data.
 
-The timeseries ranges from 1952 to 2005. 
+```{r plot, echo = FALSE}
+#Plot Data 
+colors <- c("Recruits" = "blue", "Spawners" = "black")
+ggplot(data=data, aes(x=brood_year)) +
+  geom_line(aes(y = spawners), color = "black", size = 1) +
+  geom_line(aes(y = recruits), color = "blue", size = 1) +    
+  labs(title = "Kvichak River Sockeye, 1950-1989",
+       subtitle = "Spawners (black) and Recruits (blue)",
+       x="",
+       y = "Fish",
+       color = "Legend") +
+    scale_color_manual(values = colors)
+```
 
 ## Wrangle the data
 
+Before constructing DLMs to be solved using a MARSS model framework, some data cleaning is in order. A variable $y$ is constructed by taking the natural log of recruits divided by spawners ($\ln(R_t/S_t)$). The spawner variable $S_t$ is then scaled to be used as an inidcator variable in the model specification. Finally, because $S_t$ will act as an indicator variable, any observations with missing values in $S_t$ must be dropped, meaning in this case losing the first four observations in the time series.
+
 ```{r wrangle_data}
+# transform data
+data$y <- log(data$recruits/data$spawners)
+data <- data[!is.na(data$spawners),]
 
-SR_data <- KvichakSockeye
+years <- data$brood_year
+TT <- length(years)
+dat <- matrix(data$y, nrow=1)
 
-#Notice there are NAs as spawner and recruit timeseries vary in length. 
-#Drop years with NAs, then replot to check we are ok. 
-
-SR_data <- SR_data[!is.na(SR_data$spawners),]
-SR_data <- SR_data[!is.na(SR_data$recruits),]
-
-years <- SR_data$brood_year
-
-#Plot Data 
-
-ggplot(data=SR_data, aes(x=brood_year))+
-  geom_line(aes(y = spawners), color = "black", size = 1, linetype = "solid") +
-  geom_line(aes(y = recruits), color = "blue", size = 1)
-
-
+s <- data$spawners
+s_z <- matrix((s - mean(s))/sqrt(var(s)), nrow = 1)
+m <- dim(s_z)[1] + 1
 ```
-
-
-# General tasks
-
-Use the information and data in the previous section to answer the following questions. Note that if any model is not converging, then you will need to increase the `maxit` parameter in the `control` argument/list that gets passed to `MARSS()`. For example, you might try `control=list(maxit=2000)`.
-
 
 # Methods
 
-## General model structure 
-
 ### Base Model structure
 
-We began by fitting a reduced form of Ricker's model that includes only a time-varying level ($\alpha_t$) and observation error ($v_t$). That is,
+We began by fitting a reduced form of Ricker's model that including only a time-varying intercept ($\alpha_t$) as well as a time-varying effect of spawner abundance ($/beta_t$). That is,
 
 \[
-\log\left(\frac{R_t}{S_t}\right) = \alpha_t + v_t
+\ln\left(\frac{R_t}{S_t}\right) = \ln(\alpha_t) + \beta_tS_t+ v_t
 \]
 
+By setting $\ln\left(\frac{R_t}{S_t}\right)$ = $y_t$ and $\ln(\alpha_t)$ = $a_t$ we are left with the following observation equation:
+
 \begin{align*}
-\text{Observation:} \quad & y_t = Z x_t + v_t \\
-                          & y_t = 1 \cdot \alpha_t + v_t, \quad v_t \sim \mathcal{N}(0, R) \\[1em]
-\text{State:} \quad       & x_t = B x_{t-1} + w_t \\
-                          & \alpha_t = 1 \cdot \alpha_{t-1} + w_t, \quad w_t \sim \mathcal{N}(0, Q)
+\text{Observation:} \quad & y_t = a_t + \beta_tS_t+ v_t \\
+                          & \quad v_t \sim \mathcal{N}(0, R) \\[1em]
+\end{align*}
+
+By then assuming that $a_t$ and $\beta_t$ are results of two unoberserved underlying processes, we may specify the following state equations:
+
+\begin{align*}
+\text{State:} \quad       & a_t = a_{t-1} + w_{a,t}, \quad w_t \sim \mathcal{N}(0, Q_a) \\
+                          & \beta_t = \beta_{t-1} + w_{\beta,t}, \quad w_t \sim \mathcal{N}(0, Q_\beta) \\ 
 \end{align*}
 
 This model assumes no density-dependent survival in that the number of recruits is an ascending function of spawners. We did not include any environmental variables for this step. 
 
 
-```{r}
+```{r dlm-build}
+# build MARSS model
+# process
+B <- diag(m)
+U <- matrix(0, nrow=m, ncol=1)
+Q <- matrix(list(0), m, m)
+diag(Q) <- c("q.alpha", "q.beta")
 
-# Assuming you have logRS = log(R/S) as a time series
-logRS <-  log(SR_data$spawners)/log(SR_data$recruits) 
+# obs
+Z <- array(NA, c(1, m, TT))
+Z[1,1,] <- rep(1, TT)
+Z[1,2,] <- s_z
+A <- matrix(0)
+R <- matrix("r")
 
+# initital values & controls
+inits <- list(x0 = matrix(c(0,0), nrow = m))
+con_list <- list(maxit = 2146)
+  # 2146 seems to be the minimum number of iterations at which all beta parameter varainces converge to zero
 
-model.list1 <- list(
-  Z = matrix(1),
-  A = matrix(0),
-  R = "diagonal and equal",
-  B = matrix(1),
-  U = matrix(0),
-  Q = "unconstrained",
-  x0 = "unconstrained",
-  tinitx = 0
-)
+# model list
+dlm.list <- list(B=B, U=U, Q=Q, Z=Z, A=A, R=R)
 
-fit1 <- MARSS(logRS, model = model.list1)
+# fit model
+if(!file.exists(here::here("Lab-5", "Team-3", "data", "dlm.rds"))){
+  dlm <- MARSS(dat, model= dlm.list, inits = inits, method = "kem", control = con_list)
+  saveRDS(dlm, file=here::here("Lab-5", "Team-3", "data", "dlm.rds"))
+}
+# load in ssm.phyto_month
+dlm <- readRDS(file=here::here("Lab-5", "Team-3", "data", "dlm.rds"))
+```
 
-# Extract time-varying alpha_t
-alpha_t1 <- fit1$states[1, ]
-
-
+```{r dlm, echo = FALSE}
+dlm
 ```
 
 Plot the ts of $\alpha_t$ and note the AICc for this model. Also plot appropriate model diagnostics.
 
 
-```{r}
-# Plot time series
-ts.plot(alpha_t1, main = "Time-varying Intercept (alpha_t) - Reduced Model", ylab = "alpha_t")
+```{r plotA, echo=FALSE}
+## plot
+alpha <- as.numeric(dlm$states[1,])
+alpha.se <- as.numeric(dlm$states.se[1,])
 
-# AICc
-cat("AICc of Reduced Model: ", fit1$AICc, "\n")
+# alpha
+plotA <- plot(alpha~data$brood_year,
+              main = "Time varying beta estimates, 500 iterations",
+              xlab = "",
+              ylab = "Alpha estimate",
+              type='l', 
+              ylim=c(-3,3), 
+              xlim= c(1956, 2005))
+lines(alpha+1.96*alpha.se~data$brood_year, lty="dashed")
+lines(alpha-1.96*alpha.se~data$brood_year, lty="dashed")
+```
 
-#Vector to store the AICcs of all models
-mod_compare <- rep(0, 4)
-mod_compare[1] <- fit1$AICc
+```{r plotB500, echo=FALSE}
+# new dls - 500 iter
+con_listALT <- list(maxit = 500)
 
-# Diagnostics (Residuals, QQ Plot and ACF)
-plot(residuals(fit1))
+# fit model
+if(!file.exists(here::here("Lab-5", "Team-3", "data", "dlm500.rds"))){
+  dlm500 <- MARSS(dat, model= dlm.list, inits = inits, method = "kem", control = con_listALT)
+  saveRDS(dlm500, file=here::here("Lab-5", "Team-3", "data", "dlm500.rds"))
+}
+# load in ssm.phyto_month
+dlm500 <- readRDS(file=here::here("Lab-5", "Team-3", "data", "dlm500.rds"))
 
+#grab estimates
+beta <- as.numeric(dlm500$states[2,])
+beta.se <- as.numeric(dlm500$states.se[2,])
+
+# beta
+plot(beta~data$brood_year,
+     main = "Time varying beta estimates, 500 iterations",
+     xlab = "",
+     ylab = "Beta estimate",
+     type='l', 
+     ylim=c(-0.5, 0.5),
+     xlim= c(1956, 2005))
+lines(beta+1.96*beta.se~data$brood_year, lty="dashed")
+lines(beta-1.96*beta.se~data$brood_year, lty="dashed")
+```
+
+```{r plotB1000, echo=FALSE}
+# new dls - 500 iter
+con_listALT <- list(maxit = 1000)
+
+# fit model
+if(!file.exists(here::here("Lab-5", "Team-3", "data", "dlm1000.rds"))){
+  dlm1000 <- MARSS(dat, model= dlm.list, inits = inits, method = "kem", control = con_listALT)
+  saveRDS(dlm1000, file=here::here("Lab-5", "Team-3", "data", "dlm1000.rds"))
+}
+# load in ssm.phyto_month
+dlm1000 <- readRDS(file=here::here("Lab-5", "Team-3", "data", "dlm1000.rds"))
+
+#grab estimates
+beta <- as.numeric(dlm1000$states[2,])
+beta.se <- as.numeric(dlm1000$states.se[2,])
+
+# beta
+plot(beta~data$brood_year,
+     main = "Time varying beta estimates, 1000 iterations",
+     xlab = "",
+     ylab = "Beta estimate",
+     type='l', 
+     ylim=c(-0.5, 0.5),
+     xlim= c(1956, 2005))
+lines(beta+1.96*beta.se~data$brood_year, lty="dashed")
+lines(beta-1.96*beta.se~data$brood_year, lty="dashed")
+```
+
+```{r plotB1750, echo=FALSE}
+# new dls - 500 iter
+con_listALT <- list(maxit = 1750)
+
+# fit model
+if(!file.exists(here::here("Lab-5", "Team-3", "data", "dlm1750.rds"))){
+  dlm1750 <- MARSS(dat, model= dlm.list, inits = inits, method = "kem", control = con_listALT)
+  saveRDS(dlm1750, file=here::here("Lab-5", "Team-3", "data", "dlm1750.rds"))
+}
+# load in ssm.phyto_month
+dlm1750 <- readRDS(file=here::here("Lab-5", "Team-3", "data", "dlm1750.rds"))
+
+#grab estimates
+beta <- as.numeric(dlm1750$states[2,])
+beta.se <- as.numeric(dlm1750$states.se[2,])
+
+# beta
+plot(beta~data$brood_year,
+     type='l',
+     main = "Time varying beta estimates, 1750 iterations",
+     xlab = "",
+     ylab = "Beta estimate",
+     ylim=c(-0.5, 0.5),
+     xlim= c(1956, 2005))
+lines(beta+1.96*beta.se~data$brood_year, lty="dashed")
+lines(beta-1.96*beta.se~data$brood_year, lty="dashed")
+```
+
+
+```{r plotB2150, echo=FALSE}
+# beta
+beta <- as.numeric(dlm$states[2,])
+beta.se <- as.numeric(dlm$states.se[2,])
+
+plot(beta~data$brood_year,
+     main = "Time varying beta estimates, 2146 iterations",
+     xlab = "",
+     ylab = "Beta estimate",
+     type='l', 
+     ylim=c(-0.5, 0.5),
+     xlim= c(1956, 2005))
+lines(beta+1.96*beta.se~data$brood_year, lty="dashed")
+lines(beta-1.96*beta.se~data$brood_year, lty="dashed")
 ```
 
 
 What environmental or dummy variables did you include and why?
 
 
-### Full Model Structure
+### Covariates
 
-Next,we fitted the full Ricker model with a time-varying intercept and a static effect of spawners. 
+Next,we fitted the Ricker model with a time-varying intercept and a static effect of spawners. 
 
 For this model, we need the time series of $\alpha_t$, which is an estimate of the stock productivity in the absence of density-dependent effects. 
 
 The equation for this model is now: 
 
-\[
-\log\left(\frac{R_t}{S_t}\right) = \alpha_t - \beta S_t + v_t
-\]
-
 \begin{align*}
-\text{Observation:} \quad & y_t = Z x_t + C c_t + v_t \\
-                          & y_t = 1 \cdot \alpha_t + (-1) \cdot S_t + v_t, \quad v_t \sim \mathcal{N}(0, R) \\[1em]
-\text{State:} \quad       & x_t = B x_{t-1} + w_t \\
-                          & \alpha_t = 1 \cdot \alpha_{t-1} + w_t, \quad w_t \sim \mathcal{N}(0, Q)
+\text{Observation:} \quad & y_t = a_t + \beta_tS_t+ Dd_t + v_t \\
+                          & \quad v_t \sim \mathcal{N}(0, R) \\[1em]
+\text{State:} \quad       & a_t = a_{t-1} + w_{a,t}, \quad w_t \sim \mathcal{N}(0, Q_a) \\
+                          & \beta_t = \beta_{t-1} + w_{\beta,t}, \quad w_t \sim \mathcal{N}(0, Q_\beta) \\ 
 \end{align*}
+
 
 This means that $\alpha_t$ is time-varying and $\beta_t$ is static. 
 
-```{r}
+```{r dlmPw, echo = FALSE}
+# winter pdo
+D <- matrix("pdo", 1, 1)
+pdo_w <- as.data.frame(matrix(data$pdo_winter_t2, nrow=1, byrow=TRUE))
+pdo_w <- data.matrix(pdo_w)
 
-# Checking this because of failure
-y <- matrix(logRS, nrow = 1)
+dlmPw.list <- list(B=B, U=U, Q=Q, Z=Z, A=A, R=R, D=D, d=pdo_w)
 
-# Make the covariate matrix
-covars <- matrix(SR_data$spawners, nrow = 1)
+if(!file.exists(here::here("Lab-5", "Team-3", "data", "dlmPw.rds"))){
+  dlmPw <- MARSS(dat, model= dlmPw.list, inits = inits, method = "kem", control = con_list)
+  saveRDS(dlmPw, file=here::here("Lab-5", "Team-3", "data", "dlmPw.rds"))
+}
 
-
-# MARSS model list
-model.list2 <- list(
-  Z = matrix(1),         # observation matrix (1 state)
-  A = matrix(0),         # no intercept
-  R = matrix("r"),       # observation error variance
-  B = matrix(1),         # state dynamics: alpha_t = alpha_{t-1} + w_t
-  U = matrix(0),         # no drift
-  Q = matrix("q"),       # process error variance for alpha_t
-  x0 = matrix("mu"),     # initial state mean
-  tinitx = 0,
-  C = matrix(-1),        # static beta coefficient for S_t
-  c = covars
-)
-
-#fit2 <- try(MARSS(y, model = model.list2, control=list(maxit=2000)))
-# 
-# alpha_t2 <- fit2$states[1, ]
-# 
-# ts.plot(alpha_t2, main = "Time-varying Intercept (alpha_t) - Full Ricker", ylab = "alpha_t")
-# 
-# cat("AICc of Expanded Model: ", fit2$AICc, "\n")
-# 
-# plot(residuals(fit2))
-
-
+# load in ssm.phyto_month
+dlmPw <- readRDS(file=here::here("Lab-5", "Team-3", "data", "dlmPw.rds"))
+dlmPw
 ```
 
+```{r dlmPs, echo = FALSE}
+# summer pdo
+D <- matrix("pdo", 1, 1)
+pdo_s <- as.data.frame(matrix(data$pdo_summer_t2, nrow=1, byrow=TRUE))
+pdo_s <- data.matrix(pdo_s)
+
+dlmPs.list <- list(B=B, U=U, Q=Q, Z=Z, A=A, R=R, D=D, d=pdo_s)
+
+if(!file.exists(here::here("Lab-5", "Team-3", "data", "dlmPs.rds"))){
+  dlmPs <- MARSS(dat, model= dlmPs.list, inits = inits, method = "kem", control = con_list)
+  saveRDS(dlmPs, file=here::here("Lab-5", "Team-3", "data", "dlmPs.rds"))
+}
+
+# load in ssm.phyto_month
+dlmPs <- readRDS(file=here::here("Lab-5", "Team-3", "data", "dlmPs.rds"))
+dlmPs
+```
+
+```{r dlmPb, echo=FALSE}
+# winter and summer pdo
+D <- matrix(c("pdoW", "pdoS"), 2, 1)
+pdo_b <- rbind(pdo_w, pdo_s)
+pdo_b <- data.matrix(pdo_b)
+
+dlmPb.list <- list(B=B, U=U, Q=Q, Z=Z, A=A, R=R, D=D, d=pdo_b)
+
+if(!file.exists(here::here("Lab-5", "Team-3", "data", "dlmPb.rds"))){
+  dlmPb <- MARSS(dat, model= dlmPb.list, inits = inits, method = "kem", control = con_list)
+  saveRDS(dlmPb, file=here::here("Lab-5", "Team-3", "data", "dlmPb.rds"))
+}
+# load in ssm.phyto_month
+dlmPb <- readRDS(file=here::here("Lab-5", "Team-3", "data", "dlmPb.rds"))
+dlmPb
+```
+
+```{r aic, echo = FALSE}
+## AICc
+# an empty list to collect outputs
+out_list <- list()
+# Add each model's name and AICc 
+out_list[[1]] <- data.frame(Model = "no covariates", AICc = dlm$AICc)
+out_list[[2]] <- data.frame(Model = "winter PDO", AICc = dlmPw$AICc)
+out_list[[3]] <- data.frame(Model = "summer PDO", AICc = dlmPs$AICc)
+out_list[[4]] <- data.frame(Model = "winter and summer PDO", AICc = dlmPb$AICc)
+out_list
+```
+
+```{r covariancePLOT, echo = FALSE}
+alphaPw <- as.numeric(dlmPw$states[1,])
+betaPw <- as.numeric(dlmPw$states[2,])
+alphaPw.se <- as.numeric(dlmPw$states.se[1,])
+betaPw.se <- as.numeric(dlmPw$states.se[2,])
+
+alphaPs <- as.numeric(dlmPs$states[1,])
+betaPs <- as.numeric(dlmPs$states[2,])
+alphaPs.se <- as.numeric(dlmPs$states.se[1,])
+betaPs.se <- as.numeric(dlmPs$states.se[2,])
+
+alphaPb <- as.numeric(dlmPb$states[1,])
+betaPb <- as.numeric(dlmPb$states[2,])
+alphaPb.se <- as.numeric(dlmPb$states.se[1,])
+betaPb.se <- as.numeric(dlmPb$states.se[2,])
+
+plot(alpha~data$brood_year,
+     main = "Time varying alpha estimates",
+     sub = "Null (black), Winter PDO (red), Summer PDO (blue), Full (green)",
+     xlab = "",
+     ylab = "Alpha estimate",
+     type='l', 
+     ylim=c(-3,3), 
+     xlim= c(1956, 2005))
+lines(alpha+1.96*alpha.se~data$brood_year, lty="dashed")
+lines(alpha-1.96*alpha.se~data$brood_year, lty="dashed")
+
+lines(alphaPw~data$brood_year, col = "red")
+lines(alphaPw+1.96*alphaPw.se~data$brood_year, lty="dashed", col = "red")
+lines(alphaPw-1.96*alphaPw.se~data$brood_year, lty="dashed", col = "red")
+
+lines(alphaPs~data$brood_year, col = "blue")
+lines(alphaPs+1.96*alphaPs.se~data$brood_year, lty="dashed", col = "blue")
+lines(alphaPs-1.96*alphaPs.se~data$brood_year, lty="dashed", col = "blue")
+
+lines(alphaPb~data$brood_year, col = "green")
+lines(alphaPb+1.96*alphaPb.se~data$brood_year, lty="dashed", col = "green")
+lines(alphaPb-1.96*alphaPb.se~data$brood_year, lty="dashed", col = "green")
+
+# beta
+plot(beta~data$brood_year,
+     type='l', 
+     main = "Time varying beta estimates",
+     sub = "Null (black), Winter PDO (red), Summer PDO (blue), Full (green)",
+     xlab = "",
+     ylab = "Beta estimate",
+     ylim=c(-0.1,0.1), 
+     xlim= c(1956, 2005))
+lines(beta+1.96*beta.se~data$brood_year, lty="dashed")
+lines(beta-1.96*beta.se~data$brood_year, lty="dashed")
+
+lines(betaPw~data$brood_year, col = "red")
+lines(betaPw+1.96*betaPw.se~data$brood_year, lty="dashed", col = "red")
+lines(betaPw-1.96*betaPw.se~data$brood_year, lty="dashed", col = "red")
+
+lines(betaPs~data$brood_year, col = "blue")
+lines(betaPs+1.96*betaPs.se~data$brood_year, lty="dashed", col = "blue")
+lines(betaPs-1.96*betaPs.se~data$brood_year, lty="dashed", col = "blue")
+
+lines(betaPb~data$brood_year, col = "green")
+lines(betaPb+1.96*betaPb.se~data$brood_year, lty="dashed", col = "green")
+lines(betaPb-1.96*betaPb.se~data$brood_year, lty="dashed", col = "green")
+```
 
 
 How do these estimates of productivity compare to those from the previous question? Plot the ts of $\alpha_t$ and note the AICc for this model. Also plot appropriate model diagnostics. ($Hint$: If you don't want a parameter to vary with time, what does that say about its process variance?)
 
 
 
-### Addition of covariates
-
-We fitted the expanded model that includes the summer PDO index as the covariate (`pdo_summer_t2`). 
-
-The equation for this model is now: 
-
-\[
-\log\left(\frac{R_t}{S_t}\right) = \alpha_t - \beta S_t + \delta \cdot \text{PDO}_t + v_t
-\]
-
-\begin{align*}
-\text{Observation:} \quad & y_t = Z \alpha_t + C_1 c_{1t} + C_2 c_{2t} + v_t \\
-                          & y_t = 1 \cdot \alpha_t + (-1) \cdot S_t + \delta \cdot \text{PDO}_t + v_t, \quad v_t \sim \text{N}(0, R) \\[1em]
-\text{State:} \quad       & \alpha_t = B \alpha_{t-1} + w_t \\
-                          & \alpha_t = 1 \cdot \alpha_{t-1} + w_t, \quad w_t \sim \text{N}(0, Q)
-\end{align*}
-
-What is the mean level of productivity? Plot the ts of $\delta_t$ and note the AICc for this model. Also plot appropriate model diagnostics.
-
-```{r summerPDO}
-
-# Combine covariates: Spawner and PDO
-covars_PS <- rbind(SR_data$spawners, SR_data$pdo_summer_t2)
-
-model.list3 <- list(
-  Z = matrix(1),
-  A = matrix(0),
-  R = "diagonal and equal",
-  B = matrix(1),
-  U = matrix(0),
-  Q = "unconstrained",
-  x0 = "unconstrained",
-  tinitx = 0,
-  C = matrix(c(-1, "delta")),   # Static beta, time-varying delta
-  c = covars_PS
-)
-
-fit3 <- MARSS(logRS, model = model.list3)
-
-alpha_t3 <- fit3$states[1, ]
-delta_PS <- fit3$par$C[2, ]
-
-ts.plot(alpha_t3, main = "Time-varying Intercept (alpha_t) - With PDO", ylab = "alpha_t")
-cat("AICc of PDO Model: ", fit3$AICc, "\n")
-
-mod_compare[3] <- fit3$AICc
-
-# Plot of delta (effect of PDO)
-plot(SR_data$pdo_summer_t2, delta_PS, type = "b", main = "Effect of Summer PDO (delta_t)", ylab = "delta_t")
-
-plot(residuals(fit3))
-
-```
-
-
-```{r winterPDO}
-
-# Combine covariates: Spawner and PDO
-covars_PW <- rbind(SR_data$spawners, SR_data$pdo_winter_t2)
-
-model.list4 <- list(
-  Z = matrix(1),
-  A = matrix(0),
-  R = "diagonal and equal",
-  B = matrix(1),
-  U = matrix(0),
-  Q = "unconstrained",
-  x0 = "unconstrained",
-  tinitx = 0,
-  C = matrix(c(-1, "delta")),   # Static beta, time-varying delta
-  c = covars_PW
-)
-
-fit4 <- MARSS(logRS, model = model.list4)
-
-alpha_t4 <- fit4$states[1, ]
-delta_PW <- fit4$par$C[2, ]
-
-ts.plot(alpha_t4, main = "Time-varying Intercept (alpha_t) - With PDO_w", ylab = "alpha_t")
-cat("AICc of PDO_w Model: ", fit4$AICc, "\n")
-
-mod_compare[4] <- fit4$AICc
-
-
-
-# Plot of delta (effect of PDO) - not sure this is how you do it...
-
-plot(SR_data$pdo_winter_t2, delta_PW, type = "b", main = "Effect of Summer PDO (delta_t)", ylab = "delta_t")
-
-plot(residuals(fit4))
-
-```
-
-
-### Model Forecast for best model
-
-Based on AICc, which of the models above is the most parsimonious? Is it well behaved (i.e., are the model assumptions met)? 
-
-Based on the AICc, the best model is the PDO_summer covariate model.
-
-```{r}
-
-print(mod_compare)
-
-```
-
-
-
-Plot the model forecasts for the best model. Is this a good forecast model?
-
-```{r forecast best}
-
-
-
-```
-
-## Resulting Model forms (matrix form)
-
-
-### Model 1: Reduced Ricker Model (time-varying productivity only)
-
-$$
-\boxed{
-\begin{cases}
-\mathbf{y}_t = \mathbf{Z} \mathbf{x}_t + \mathbf{v}_t \\
-\mathbf{x}_t = \mathbf{B} \mathbf{x}_{t-1} + \mathbf{w}_t
-\end{cases}
-}
-$$
-
-where
-
-$$
-\mathbf{y}_t = \log\left(\frac{R_t}{S_t}\right), \quad
-\mathbf{x}_t = \alpha_t
-$$
-
-and matrices/vectors:
-
-$$
-\mathbf{Z} = [1], \quad
-\mathbf{B} = [1], \quad
-\mathbf{v}_t \sim \mathbf{N}(0, R), \quad
-\mathbf{w}_t \sim \mathbf{N}(0, Q)
-$$
-
----
-
-### Model 2: Full Ricker with static spawner effect
-
-$$
-\boxed{
-\begin{cases}
-\mathbf{y}_t = \mathbf{Z} \mathbf{x}_t + \mathbf{C} \mathbf{c}_t + \mathbf{v}_t \\
-\mathbf{x}_t = \mathbf{B} \mathbf{x}_{t-1} + \mathbf{w}_t
-\end{cases}
-}
-$$
-
-where
-
-$$
-\mathbf{y}_t = \log\left(\frac{R_t}{S_t}\right), \quad
-\mathbf{x}_t = \alpha_t, \quad
-\mathbf{c}_t = S_t
-$$
-
-and matrices/vectors:
-
-$$
-\mathbf{Z} = [1], \quad
-\mathbf{C} = [-1], \quad
-\mathbf{B} = [1], \quad
-\mathbf{v}_t \sim \mathbf{N}(0, R), \quad
-\mathbf{w}_t \sim \mathbf{N}(0, Q)
-$$
-
----
-
-### Model 3: Expanded Ricker with PDO covariate
-
-$$
-\boxed{
-\begin{cases}
-\mathbf{y}_t = \mathbf{Z} \mathbf{x}_t + \mathbf{C} \mathbf{c}_t + \mathbf{v}_t \\
-\mathbf{x}_t = \mathbf{B} \mathbf{x}_{t-1} + \mathbf{w}_t
-\end{cases}
-}
-$$
-
-where
-
-$$
-\mathbf{y}_t = \log\left(\frac{R_t}{S_t}\right), \quad
-\mathbf{x}_t = \alpha_t, \quad
-\mathbf{c}_t = \begin{bmatrix} S_t \\ \text{PDO}_t \end{bmatrix}
-$$
-
-and matrices/vectors:
-
-$$
-\mathbf{Z} = [1], \quad
-\mathbf{C} = \begin{bmatrix} -1 & \delta \end{bmatrix}, \quad
-\mathbf{B} = [1], \quad
-\mathbf{v}_t \sim \mathbf{N}(0, R), \quad
-\mathbf{w}_t \sim \mathbf{N}(0, Q)
-$$
-
-
-## Model diagnostics and fit
-
-
-### Comparison of covariate performance
-
-* What sort of model diagnostics did you use to examine model assumptions?
 
 
 # Results

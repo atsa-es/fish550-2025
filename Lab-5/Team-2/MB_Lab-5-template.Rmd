@@ -30,7 +30,7 @@ devtools::install_github("nwfsc-timeseries/atsalibrary")
 
 ## get data
 data(KvichakSockeye, package="atsalibrary")
-SR_data <- KvichakSockeye
+SR_data = KvichakSockeye
 ```
 
 The data are a dataframe with columns for brood year (`brood_year`), number of spawners (`spawners`), number of recruits (`recruits`) and PDO at year $t-2$ in summer (`pdo_summer_t2`) and in winter (`pdo_winter_t2`).
@@ -43,9 +43,22 @@ head(SR_data)
 ## Wrangle the data
 
 ```{r wrangle_data}
-## add some code here
-```
 
+library(dplyr)
+
+# Remove NA's using dplyr
+SR_clean = SR_data %>%
+  filter(!is.na(spawners) & !is.na(recruits)) %>%
+  mutate(log_RS = log(recruits/spawners),
+         brood_year = as.numeric(brood_year))
+
+
+plot(SR_clean$log_RS ~ SR_clean$spawners,
+     xlab = "Number of spawners",
+     ylab = "log [Spawners/Recruits]")
+
+
+```
 
 # General tasks
 
@@ -64,7 +77,165 @@ This model assumes no density-dependent survival in that the number of recruits 
 
 3. Fit the expanded model that includes the summer PDO index as the covariate (`pdo_summer_t2`). What is the mean level of productivity? Plot the ts of $\delta_t$ and note the AICc for this model. Also plot appropriate model diagnostics.
 
+
+```{r}
+
+# Model 3: Time-varying intercept (baseline productivity) and fixed slope (effect of spawners)
+# with summer PDO as a covariate
+library(MARSS)
+library(ggplot2)
+library(dplyr)
+
+years = SR_clean$brood_year
+TT    = length(years)
+logSR = matrix(SR_clean$log_RS, nrow = 1)
+X     = matrix(SR_clean$pdo_summer_t2, nrow = 1) 
+St    = matrix(SR_clean$spawners, nrow = 1) 
+
+# Combine covariates into one 2 x TT matrix
+covariates = rbind(X, log(St))
+
+# Model specification
+mod.list = list(
+  B  = matrix(1),              # random walk for alpha[t]
+  U  = matrix(0),              # no drift
+  Q  = matrix("q.alpha"),      # variance of alpha[t]
+  Z  = matrix(1),              # alpha[t] directly maps to obs
+  A  = matrix(0),              # no additional offset
+  R  = matrix("r"),            # obs error
+  x0 = matrix(0),             # initial state
+  D  = matrix(c("beta1", "-beta2"), nrow = 1),  # note: -beta2 for negative effect
+  d  = covariates              # 2 x TT matrix
+)
+
+mod3 = MARSS(logSR, mod.list)
+
+mod3CIs = MARSSparamCIs(mod3)
+
+print(mod3CIs)
+cat("AICc:", mod3$AICc, "\n")
+
+# Extract and plot fixed parameter means and SEs
+beta_1_mu = mod3CIs$parMean[1]
+beta_1_se = mod3CIs$par.se$A[1,1]
+beta_2_mu = mod3CIs$parMean[2]
+beta_2_se = mod3CIs$par.se$A[2,1]
+
+data.frame(
+  Parameter = c("beta[1]", "beta[2]"),
+  Mean = c(beta_1_mu, beta_2_mu),
+  SE = c(beta_1_se, beta_2_se)
+) %>%
+  
+  ggplot(aes(x = Parameter, y = Mean)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = Mean - SE, ymax = Mean + SE), width = 0.2) +
+  ggtitle("Fixed parameter estimates") +
+  coord_flip() +
+  theme_minimal() +
+  ylab("Parameter value")
+  
+
+# Extract the states
+alpha_mu = mod3$states[1, ]
+alpha_se = mod3$states.se[1, ]
+
+data.frame(
+  year  = years,
+  alpha = alpha_mu,
+  se    = alpha_se
+) %>%
+  
+  ggplot(aes(x = year, y = alpha)) +
+  geom_line(size = 1) +
+  geom_ribbon(aes(ymin = alpha - 2 * alpha_se, ymax = alpha + 2 * alpha_se), alpha = 0.2) +
+  labs(title = expression(paste("Time-varying Productivity (", alpha[t], ")")),
+       x = "Brood Year", y = expression(alpha[t])) +
+  theme_minimal()
+
+
+```
+
 4. Fit the expanded model that includes the winter PDO index as the covariate (`pdo_winter_t2`). What is the mean level of productivity? Plot the ts of $\delta_t$ and note the AICc for this model. Also plot appropriate model diagnostics.
+
+
+```{r}
+
+# Model 3: Time-varying intercept (baseline productivity) and fixed slope (effect of spawners)
+# with summer PDO as a covariate
+library(MARSS)
+library(ggplot2)
+library(dplyr)
+
+years = SR_clean$brood_year
+TT    = length(years)
+logSR = matrix(SR_clean$log_RS, nrow = 1)
+X     = matrix(SR_clean$pdo_winter_t2, nrow = 1) 
+St    = matrix(SR_clean$spawners, nrow = 1) 
+
+# Combine covariates into one 2 x TT matrix
+covariates = rbind(X, log(St))
+
+# Model specification
+mod.list = list(
+  B  = matrix(1),              # random walk for alpha[t]
+  U  = matrix(0),              # no drift
+  Q  = matrix("q.alpha"),      # variance of alpha[t]
+  Z  = matrix(1),              # alpha[t] directly maps to obs
+  A  = matrix(0),              # no additional offset
+  R  = matrix("r"),            # obs error
+  x0 = matrix(0),             # initial state
+  D  = matrix(c("beta1", "-beta2"), nrow = 1),  # note: -beta2 for negative effect
+  d  = covariates              # 2 x TT matrix
+)
+
+mod4 = MARSS(logSR, mod.list)
+
+mod4CIs = MARSSparamCIs(mod4)
+
+print(mod3CIs)
+cat("AICc:", mod4$AICc, "\n")
+
+# Extract and plot fixed parameter means and SEs
+beta_1_mu = mod4CIs$parMean[1]
+beta_1_se = mod4CIs$par.se$A[1,1]
+beta_2_mu = mod4CIs$parMean[2]
+beta_2_se = mod4CIs$par.se$A[2,1]
+
+data.frame(
+  Parameter = c("beta[1]", "beta[2]"),
+  Mean = c(beta_1_mu, beta_2_mu),
+  SE = c(beta_1_se, beta_2_se)
+) %>%
+  
+  ggplot(aes(x = Parameter, y = Mean)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = Mean - SE, ymax = Mean + SE), width = 0.2) +
+  ggtitle("Fixed parameter estimates") +
+  coord_flip() +
+  theme_minimal() +
+  ylab("Parameter value")
+  
+
+# Extract the states
+alpha_mu = mod4$states[1, ]
+alpha_se = mod4$states.se[1, ]
+
+data.frame(
+  year  = years,
+  alpha = alpha_mu,
+  se    = alpha_se
+) %>%
+  
+  ggplot(aes(x = year, y = alpha)) +
+  geom_line(size = 1) +
+  geom_ribbon(aes(ymin = alpha - 2 * alpha_se, ymax = alpha + 2 * alpha_se), alpha = 0.2) +
+  labs(title = expression(paste("Time-varying Productivity (", alpha[t], ")")),
+       x = "Brood Year", y = expression(alpha[t])) +
+  theme_minimal()
+
+
+```
 
 5. Based on AICc, which of the models above is the most parsimonious? Is it well behaved (i.e., are the model assumptions met)? Plot the model forecasts for the best model. Is this a good forecast model?
 

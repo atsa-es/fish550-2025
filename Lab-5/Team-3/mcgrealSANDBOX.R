@@ -6,6 +6,7 @@ data <- KvichakSockeye
 # transform data
 data$y <- log(data$recruits/data$spawners)
 data <- data[!is.na(data$spawners),]
+data <- data[!is.na(data$recruits),]
 
 years <- data$brood_year
 TT <- length(years)

@@ -2,7 +2,7 @@
 title: Team X - Lab 5
 subtitle: Dynamic Linear Models (DLMs) - Time-varying productivity of salmon
 author: "Emma Christman, Brian McGreal, Anna Sulc"
-date: May XX, 2025
+date: May 27, 2025
 output: 
   html_document:
     code-folding: true

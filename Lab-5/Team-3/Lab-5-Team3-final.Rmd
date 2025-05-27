@@ -1,5 +1,5 @@
 ---
-title: Team X - Lab 5
+title: Team 3 - Lab 5
 subtitle: Dynamic Linear Models (DLMs) - Time-varying productivity of salmon
 author: "Emma Christman, Brian McGreal, Anna Sulc"
 date: May 27, 2025
@@ -359,6 +359,88 @@ out_list[[4]] <- data.frame(Model = "winter and summer PDO", AICc = dlmPb$AICc)
 out_list
 ```
 
+Diagnostics on the on the models show above are compared here.
+```{r diagnostics, echo = FALSE}
+
+# diagnostics on base mode (no covariates)
+resids_dlm <- residuals(dlm, type = "tT")
+
+ggplot(subset(resids_dlm, name == "model"), aes(x = .std.resids)) +
+  geom_histogram(bins = 20, fill = "skyblue", color = "black") +
+  ggtitle("Histogram of Standardized Observation Residuals-dlm") +
+  xlab("Standardized Residual")
+
+ggplot(subset(resids_dlm, name == "model"), aes(sample = .std.resids)) +
+  stat_qq() +
+  stat_qq_line(color = "red") +
+  ggtitle("Q-Q Plot of Standardized Observation Residuals-dlm") +
+  xlab("Theoretical Quantiles") +
+  ylab("Sample Quantiles")
+
+obs_resids_dlm <- subset(resids_dlm, name == "model")
+dlm_resids <- na.omit(obs_resids_dlm$.std.resids)
+acf(dlm_resids, main = "Autocorrelation of Standardized Observation Residuals_dlm")
+
+# diagnostics on winter PDO model
+resids_dlmPw <- residuals(dlmPw, type = "tT")
+
+ggplot(subset(resids_dlmPw, name == "model"), aes(x = .std.resids)) +
+  geom_histogram(bins = 20, fill = "skyblue", color = "black") +
+  ggtitle("Histogram of Standardized Observation Residuals-dlmPw") +
+  xlab("Standardized Residual")
+
+ggplot(subset(resids_dlmPw, name == "model"), aes(sample = .std.resids)) +
+  stat_qq() +
+  stat_qq_line(color = "red") +
+  ggtitle("Q-Q Plot of Standardized Observation Residuals-dlmPw") +
+  xlab("Theoretical Quantiles") +
+  ylab("Sample Quantiles")
+
+obs_resids_dlmPw <- subset(resids_dlmPw, name == "model")
+dlmPw_resids <- na.omit(obs_resids_dlmPw$.std.resids)
+acf(dlmPw_resids, main = "Autocorrelation of Standardized Observation Residuals_dlmPw")
+
+# diagnostics on summer PDO model
+resids_dlmPs <- residuals(dlmPs, type = "tT")
+
+ggplot(subset(resids_dlmPs, name == "model"), aes(x = .std.resids)) +
+  geom_histogram(bins = 20, fill = "skyblue", color = "black") +
+  ggtitle("Histogram of Standardized Observation Residuals-dlmPs") +
+  xlab("Standardized Residual")
+
+ggplot(subset(resids_dlmPs, name == "model"), aes(sample = .std.resids)) +
+  stat_qq() +
+  stat_qq_line(color = "red") +
+  ggtitle("Q-Q Plot of Standardized Observation Residuals-dlmPs") +
+  xlab("Theoretical Quantiles") +
+  ylab("Sample Quantiles")
+
+obs_resids_dlmPs <- subset(resids_dlmPs, name == "model")
+dlmPs_resids <- na.omit(obs_resids_dlmPs$.std.resids)
+acf(dlmPs_resids, main = "Autocorrelation of Standardized Observation Residuals_dlmPs")
+
+# diagnostics on winter and summer PDO model
+resids_dlmPb <- residuals(dlmPb, type = "tT")
+
+ggplot(subset(resids_dlmPw, name == "model"), aes(x = .std.resids)) +
+  geom_histogram(bins = 20, fill = "skyblue", color = "black") +
+  ggtitle("Histogram of Standardized Observation Residuals-dlmPb") +
+  xlab("Standardized Residual")
+
+ggplot(subset(resids_dlmPb, name == "model"), aes(sample = .std.resids)) +
+  stat_qq() +
+  stat_qq_line(color = "red") +
+  ggtitle("Q-Q Plot of Standardized Observation Residuals-dlmPb") +
+  xlab("Theoretical Quantiles") +
+  ylab("Sample Quantiles")
+
+obs_resids_dlmPb <- subset(resids_dlmPb, name == "model")
+dlmPb_resids <- na.omit(obs_resids_dlmPb$.std.resids)
+acf(dlmPb_resids, main = "Autocorrelation of Standardized Observation Residuals_dlmPb")
+
+```
+
+
 Similar to the null model, estiamtes of alpha in all models with covariates show fairly tight confidence intervals around a time-varying mean.
 
 ```{r covariancePLOT_alpha, echo = FALSE}
@@ -431,13 +513,10 @@ lines(betaPb-1.96*betaPb.se~data$brood_year, lty="dashed", col = "green")
 
 
 # Results
-
+The results of the four DLMs show a pretty tight grouping in the AICc values, however the model with no covariates is the best fit for the data. The least-best fit according to the AICc is the model with both summer and winter values. This could be performing poorly because of the increased variability involved in trying to combine two different seasonal signatures into one covariate for the model. There was significant autocorrelation in the spawners covariate at the 5 and 10 year mark.
 
 # Discussion
-
-
-
-Consider other environmental factors that could influence the time-varying intrinsic productivity of these salmon. For example, are there other large-scale indices of ocean conditions (e.g., sea-surface temperature, El Niño Southern Oscillation)? You could also consider the possible influence of other salmon stocks such as those we examined in Lab 1.
+The results of these four models suggest that there is not a strong effect of PDO on the productivity of Kvichak sockeye, based only on the R/S rates over time. Although neither the winter or summer PDO models were considered the "best performing", the winter PDO model showed slightly better performance than the summer. This could be the case because winters at sea may act as a slight bottleneck (as assumed) for survival of Kvichak fish. Summers are typically reliably productive for salmon, as with winter is already a time of slowed growth for fish, and thus the effect of the winter PDO signal may have more of an effect on fish. Besides the effect of PDO, there are other strong environmental signals that may be affecting the productivity of Kvichak sockeye, such as other climate variables including SST/Marine Heatwaves. Additionally, at sea there there is both inter- and intra-specific competition for resources, especially in recent years where the number of sockeye salmon in the ocean has been increasing, as well as the presence of Pink salmon, a major competitor of sockeye. One factor not discussed in this lab as well is the effect of catch on these returning fish. Although escapement goals are set by ADF&G, the number of spawning fish that are able to return to spawning grounds may be affected by the amount of fish caught in the fishery in Bristol Bay.
 
 
 

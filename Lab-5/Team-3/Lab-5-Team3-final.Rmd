@@ -20,9 +20,9 @@ library(atsalibrary)
 library(dplyr)
 library(ggplot2)
 library(here)
-library(tidyverse)
+library(knitr)
 library(MARSS)
-
+library(tidyverse)
 ```
 
 # Data
@@ -34,11 +34,6 @@ This exercise involves spawner-recruit data for sockeye salmon (Oncorhynchus ner
 
 
 ```{r dlm-load-atsa, echo=FALSE}
-## library(devtools)
-## Windows users will likely need to set this
-## Sys.setenv("R_REMOTES_NO_ERRORS_FROM_WARNINGS" = "true")
-# devtools::install_github("nwfsc-timeseries/atsalibrary")
-
 ## get data
 data(KvichakSockeye, package="atsalibrary")
 data <- KvichakSockeye
@@ -49,10 +44,11 @@ head(data)
 
 We'll take a quick look at spawners and recruits over time in the data.
 
-```{r plot, echo = FALSE}
+```{r plot, echo = FALSE, message=FALSE, warnings=FALSE}
 #Plot Data 
+suppressWarnings({
 colors <- c("Recruits" = "blue", "Spawners" = "black")
-ggplot(data=data, aes(x=brood_year)) +
+gorp <- ggplot(data=data, aes(x=brood_year)) +
   geom_line(aes(y = spawners), color = "black", size = 1) +
   geom_line(aes(y = recruits), color = "blue", size = 1) +    
   labs(title = "Kvichak River Sockeye, 1950-1989",
@@ -61,16 +57,19 @@ ggplot(data=data, aes(x=brood_year)) +
        y = "Fish",
        color = "Legend") +
     scale_color_manual(values = colors)
+gorp
+})
 ```
 
 ## Wrangle the data
 
-Before constructing DLMs to be solved using a MARSS model framework, some data cleaning is in order. A variable $y$ is constructed by taking the natural log of recruits divided by spawners ($\ln(R_t/S_t)$). The spawner variable $S_t$ is then scaled to be used as an inidcator variable in the model specification. Finally, because $S_t$ will act as an indicator variable, any observations with missing values in $S_t$ must be dropped, meaning in this case losing the first four observations in the time series.
+Before constructing DLMs to be solved using a MARSS model framework, some data cleaning is in order. A variable $y$ is constructed by taking the natural log of recruits divided by spawners ($\ln(R_t/S_t)$). The spawner variable $S_t$ is then scaled to be used as an inidcator variable in the model specification. Finally, because $S_t$ will act as an indicator variable, any observations with missing values in $S_t$ must be dropped, meaning in this case losing the first four observations in the time series. Because $y$ is constructed using the term $(R_t/S_t)$, any observations missing recruit values will also be dropped, as the resulting $y$ terms are NA, meaning we lose the last seven observations in the time series. This leaves us with complete data for 43 time steps. 
 
 ```{r wrangle_data}
 # transform data
 data$y <- log(data$recruits/data$spawners)
 data <- data[!is.na(data$spawners),]
+data <- data[!is.na(data$recruits),]
 
 years <- data$brood_year
 TT <- length(years)
@@ -94,14 +93,14 @@ We began by fitting a reduced form of Ricker's model that including only a time-
 By setting $\ln\left(\frac{R_t}{S_t}\right)$ = $y_t$ and $\ln(\alpha_t)$ = $a_t$ we are left with the following observation equation:
 
 \begin{align*}
-\text{Observation:} \quad & y_t = a_t + \beta_tS_t+ v_t \\
+\text{Linear Model:} \quad & y_t = a_t + \beta_tS_t+ v_t \\
                           & \quad v_t \sim \mathcal{N}(0, R) \\[1em]
 \end{align*}
 
 By then assuming that $a_t$ and $\beta_t$ are results of two unoberserved underlying processes, we may specify the following state equations:
 
 \begin{align*}
-\text{State:} \quad       & a_t = a_{t-1} + w_{a,t}, \quad w_t \sim \mathcal{N}(0, Q_a) \\
+\text{Parameters:} \quad       & a_t = a_{t-1} + w_{a,t}, \quad w_t \sim \mathcal{N}(0, Q_a) \\
                           & \beta_t = \beta_{t-1} + w_{\beta,t}, \quad w_t \sim \mathcal{N}(0, Q_\beta) \\ 
 \end{align*}
 
@@ -144,7 +143,7 @@ dlm <- readRDS(file=here::here("Lab-5", "Team-3", "data", "dlm.rds"))
 dlm
 ```
 
-Plot the ts of $\alpha_t$ and note the AICc for this model. Also plot appropriate model diagnostics.
+Below is a plot of estimated $a_t$ values across the study period. The model's 95% confidence interval is fairly tight around the mean estimate at all points.
 
 
 ```{r plotA, echo=FALSE}
@@ -154,7 +153,7 @@ alpha.se <- as.numeric(dlm$states.se[1,])
 
 # alpha
 plotA <- plot(alpha~data$brood_year,
-              main = "Time varying beta estimates, 500 iterations",
+              main = "Time varying alpha estimates, 2146 iterations",
               xlab = "",
               ylab = "Alpha estimate",
               type='l', 
@@ -163,6 +162,8 @@ plotA <- plot(alpha~data$brood_year,
 lines(alpha+1.96*alpha.se~data$brood_year, lty="dashed")
 lines(alpha-1.96*alpha.se~data$brood_year, lty="dashed")
 ```
+
+When estimating a time varying $\beta$ term we found an interesting pattern. As we increased the maximum number of iterations the model could run through, the term $Q_\beta$ converges to zero. Below we have plots for models run with 500, 1000, 1750, and 2146 iterations (2146 being the minimum number of iterations necessary for all parameter estimates to converge.)
 
 ```{r plotB500, echo=FALSE}
 # new dls - 500 iter
@@ -265,27 +266,25 @@ lines(beta+1.96*beta.se~data$brood_year, lty="dashed")
 lines(beta-1.96*beta.se~data$brood_year, lty="dashed")
 ```
 
-
-What environmental or dummy variables did you include and why?
+This may be due to the number of spawners having some "true" linear fixed effect on $\ln(R_t/S_t)$ which does not vary through time even when that flexibility is allowed by a modeling approach. 
 
 
 ### Covariates
 
-Next,we fitted the Ricker model with a time-varying intercept and a static effect of spawners. 
-
-For this model, we need the time series of $\alpha_t$, which is an estimate of the stock productivity in the absence of density-dependent effects. 
+Next,we fitted the same Ricker model but included covariate terms meant to control for the effect of ocean climate on the outcome spawner-recruit ratio. The model includes $d_t$ as input covariate data and $D$ as the effect of said covariates on the coutcome.
 
 The equation for this model is now: 
 
 \begin{align*}
-\text{Observation:} \quad & y_t = a_t + \beta_tS_t+ Dd_t + v_t \\
+\text{Linear Model:} \quad & y_t = a_t + \beta_tS_t+ Dd_t + v_t \\
                           & \quad v_t \sim \mathcal{N}(0, R) \\[1em]
-\text{State:} \quad       & a_t = a_{t-1} + w_{a,t}, \quad w_t \sim \mathcal{N}(0, Q_a) \\
+\text{Parameters:} \quad       & a_t = a_{t-1} + w_{a,t}, \quad w_t \sim \mathcal{N}(0, Q_a) \\
                           & \beta_t = \beta_{t-1} + w_{\beta,t}, \quad w_t \sim \mathcal{N}(0, Q_\beta) \\ 
 \end{align*}
 
+We run models with time-varying $a_t$ and $\beta_t$ terms, allowing for 2146 iterations (the minimum number required for $Q_\beta$ to converge to zero). Three models are fit, one including two-year lagged winter PDO, one including two-year lagged summer PDO, and one including both. These will be compared with the null model fit in the last section. 
 
-This means that $\alpha_t$ is time-varying and $\beta_t$ is static. 
+WINTER PDO
 
 ```{r dlmPw, echo = FALSE}
 # winter pdo
@@ -305,6 +304,10 @@ dlmPw <- readRDS(file=here::here("Lab-5", "Team-3", "data", "dlmPw.rds"))
 dlmPw
 ```
 
+SUMMER PDO
+
+Of interest here, this model converges quickly but unlike in the other three specifications, $Q_\beta$ does not converge at zero. 
+
 ```{r dlmPs, echo = FALSE}
 # summer pdo
 D <- matrix("pdo", 1, 1)
@@ -323,6 +326,8 @@ dlmPs <- readRDS(file=here::here("Lab-5", "Team-3", "data", "dlmPs.rds"))
 dlmPs
 ```
 
+WINTER AND SUMMER PDO
+
 ```{r dlmPb, echo=FALSE}
 # winter and summer pdo
 D <- matrix(c("pdoW", "pdoS"), 2, 1)
@@ -340,6 +345,8 @@ dlmPb <- readRDS(file=here::here("Lab-5", "Team-3", "data", "dlmPb.rds"))
 dlmPb
 ```
 
+Model fit is compared using AICc. These models are all very close in AICc score but the null model with no PDO covariates exhibits the best fit. This would seem to imply that the addition of PDO does not improve model fit substantially enough to make up for the additional parameters the model must estimate.
+
 ```{r aic, echo = FALSE}
 ## AICc
 # an empty list to collect outputs
@@ -352,7 +359,9 @@ out_list[[4]] <- data.frame(Model = "winter and summer PDO", AICc = dlmPb$AICc)
 out_list
 ```
 
-```{r covariancePLOT, echo = FALSE}
+Similar to the null model, estiamtes of alpha in all models with covariates show fairly tight confidence intervals around a time-varying mean.
+
+```{r covariancePLOT_alpha, echo = FALSE}
 alphaPw <- as.numeric(dlmPw$states[1,])
 betaPw <- as.numeric(dlmPw$states[2,])
 alphaPw.se <- as.numeric(dlmPw$states.se[1,])
@@ -390,7 +399,11 @@ lines(alphaPs-1.96*alphaPs.se~data$brood_year, lty="dashed", col = "blue")
 lines(alphaPb~data$brood_year, col = "green")
 lines(alphaPb+1.96*alphaPb.se~data$brood_year, lty="dashed", col = "green")
 lines(alphaPb-1.96*alphaPb.se~data$brood_year, lty="dashed", col = "green")
+```
 
+Here we see that, in two covariate models along with the null model, $Q_\beta$ has converged to zero and the model has reutrned a time-invarying estimate of the effect of spawners on $\ln(R_t/S_t)$. The summer PDO model sees $Q_\beta$ converge at 0.0155, leaving the parameter some latitude to vary across the study period. This suggests that including summer PDO (and only summer PDO) controls for some of the time-varying structure of $\ln(R_t/S_t)$ and allows $\beta_t$ to vary throughout time. Nonetheless, the null model retains the best fit.
+
+```{r covariancePLOT_beta, echo = FALSE}
 # beta
 plot(beta~data$brood_year,
      type='l', 
@@ -398,7 +411,7 @@ plot(beta~data$brood_year,
      sub = "Null (black), Winter PDO (red), Summer PDO (blue), Full (green)",
      xlab = "",
      ylab = "Beta estimate",
-     ylim=c(-0.1,0.1), 
+     ylim=c(-0.5,0.5), 
      xlim= c(1956, 2005))
 lines(beta+1.96*beta.se~data$brood_year, lty="dashed")
 lines(beta-1.96*beta.se~data$brood_year, lty="dashed")
@@ -415,12 +428,6 @@ lines(betaPb~data$brood_year, col = "green")
 lines(betaPb+1.96*betaPb.se~data$brood_year, lty="dashed", col = "green")
 lines(betaPb-1.96*betaPb.se~data$brood_year, lty="dashed", col = "green")
 ```
-
-
-How do these estimates of productivity compare to those from the previous question? Plot the ts of $\alpha_t$ and note the AICc for this model. Also plot appropriate model diagnostics. ($Hint$: If you don't want a parameter to vary with time, what does that say about its process variance?)
-
-
-
 
 
 # Results

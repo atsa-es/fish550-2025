@@ -1,8 +1,8 @@
 ---
 title: Team X - Lab 5
 subtitle: Dynamic Linear Models (DLMs) - Time-varying productivity of salmon
-author: "Name 1, Name 2, Name 3"
-date: May XX, 2025
+author: "Ben Makhlouf, May Orrand, Matheus de Barros"
+date: May 27, 2025
 output: 
   html_document:
     code-folding: true
@@ -17,7 +17,7 @@ library(MARSS)
 
 ## Load the data
 
-```{r dlm-load-atsa, eval=FALSE}
+```{r dlm-load-atsa, eval=TRUE}
 ## library(devtools)
 ## Windows users will likely need to set this
 ## Sys.setenv("R_REMOTES_NO_ERRORS_FROM_WARNINGS" = "true")
@@ -48,10 +48,12 @@ log_spawners<- matrix(log(SR_clean$spawners), nrow=1)
 
 
 # Quick plot log recruits/spawners vs log spawners 
-plot(logRS~log_spawners, xlab="log spawners", ylab="log recruits/spawners")
+plot(SR_clean$log_RS ~ SR_clean$spawners, xlab="spawners", ylab="log recruits/spawners")
 
 
 ```
+
+## Model 1 (time-varying intecerpt only)
 
 1. Begin by fitting a reduced form of Ricker's model that includes only a time-varying level ($\alpha_t$) and observation error ($v_t$). That is,
 
@@ -83,30 +85,15 @@ mod.list <- list(
 Intcpt_only<-MARSS(logRS,mod.list)
 ```
 
-##Model1 (intercept Only) States 
 ```{r}
-alpha_t <- model1$states[1, ]  #Extract the estimated alpha_t values (states)
+alpha_t <- Intcpt_only$states[1, ]  #Extract the estimated alpha_t values (states)
 plot(alpha_t, type = "l", lwd = 2, col = "steelblue", 
      ylab = expression(alpha[t]), xlab = "Year index",
      main = expression("Estimated "~alpha[t]~"over time"))
 
 ```
 
-## Model1 (intercept only) AIC and model diagnostics 
-```{r}
-# Extract AICc
-model1$AICc
-# 110.359
-
-#plot diagnostics
-pdf("intcptOnly_plot.pdf", width = 7, height = 6)
-plot(Intcpt_only, silent = TRUE)
-```
-
-
-###############################
-##################### Model 2 
-###############################
+## Model 2 (time-varying intercept + static slope)
 
 2. Fit the full Ricker model with a time-varying intercept and a static effect of spawners. For this model, obtain the time series of $\alpha_t$, which is an estimate of the stock productivity in the absence of density-dependent effects. How do these estimates of productivity compare to those from the previous question? Plot the ts of $\alpha_t$ and note the AICc for this model. Also plot appropriate model diagnostics. ($Hint$: If you don't want a parameter to vary with time, what does that say about its process variance?)
 
@@ -131,15 +118,13 @@ mod.list.2 <- list(
   A = matrix(0),
   R = "unconstrained",
   x0 = "unconstrained",
-  D = matrix(1),        # coefficient of covariate beta (use D not C)
+  D  = matrix("beta1", nrow = 1),        # coefficient of covariate beta (use D not C)
   d = log_spawners_cov  # covariate matrix of logged spawner counts (use d not c)
 )
 
 # Fit the model
 SlopeIntcptVarying <- MARSS(logRS, mod.list.2, control = list(maxit = 5000))
 ```
-
-## Model 2 States 
 
 ```{r}
 
@@ -150,199 +135,423 @@ plot(alpha_t, type = "l", lwd = 2, col = "steelblue",
 
 ```
 
-### Model 2 AIC and diagnostics 
-
-```{r}
-# Extract AICc
-SlopeIntcptVarying$AICc
-# [1] 309.6296
-
-#plot diagnostics
-pdf("SlopeIntcptVarying_plot.pdf", width = 7, height = 6)
-plot(SlopeIntcptVarying, silent = TRUE)
-
-```
+## Model 3 (time-varying intercept + static slope + summer PDO)
 
 3. Fit the expanded model that includes the summer PDO index as the covariate (`pdo_summer_t2`). What is the mean level of productivity? Plot the ts of $\delta_t$ and note the AICc for this model. Also plot appropriate model diagnostics.
 
 ```{r}
-# Prep the summer PDO covariate 
-pdo_summer <- matrix(SR_clean$pdo_summer_t2, nrow = 1)
+# Model 3: Time-varying intercept (baseline productivity) and fixed slope (effect of spawners)
+# with summer PDO as a covariate
+library(MARSS)
+library(ggplot2)
+library(dplyr)
+library(ggpubr)
 
+years = SR_clean$brood_year
+TT    = length(years)
+logSR = matrix(SR_clean$log_RS, nrow = 1)
+X     = matrix(SR_clean$pdo_summer_t2, nrow = 1) 
+St    = matrix(SR_clean$spawners, nrow = 1) 
 
-### prepare the time varying Z matrix. 
-timepoints <- ncol(logRS)
-Z1 <- array(NA, dim = c(1, 2, timepoints))  # 1 response, 2 predictors (alpha, delta)
+# Combine covariates into one 2 x TT matrix
+covariates = rbind(X, log(St))
 
-# Fill in the Z matrix at each time t
-for (t in 1:timepoints) {
-  Z1[1, 1, t] <- 1                     # intercept
-  Z1[1, 2, t] <- pdo_summer[1, t]      # summer PDO covariate
-}
-
-mod.list.3 <- list(
-  B = diag(2),                
-  U = matrix(0, 2, 1),        
-  Q = "unconstrained",        
-  Z = Z1,                     
-  A = matrix(0),              
-  R = "unconstrained",        
-  x0 = "unconstrained"        
+# Model specification
+mod.list = list(
+  B  = matrix(1),              # random walk for alpha[t]
+  U  = matrix(0),              # no drift
+  Q  = matrix("q.alpha"),      # variance of alpha[t]
+  Z  = matrix(1),              # alpha[t] directly maps to obs
+  A  = matrix(0),              # no additional offset
+  R  = matrix("r"),            # obs error
+  x0 = matrix(0),             # initial state
+  D  = matrix(c("beta1", "-beta2"), nrow = 1),  # note: -beta2 for negative effect
+  d  = covariates              # 2 x TT matrix
 )
 
+mod3 = MARSS(logSR, mod.list)
 
-inits <- list(x0 = matrix(c(0, 0), 2, 1))
+mod3CIs = MARSSparamCIs(mod3)
 
-ExpandedSummerPDO <- MARSS(logRS, mod.list.3, inits = inits, control=list(maxit=2000))
+print(mod3CIs)
+cat("AICc:", mod3$AICc, "\n")
+
+# Extract and plot fixed parameter means and SEs
+beta_1_mu = mod3CIs$parMean[1]
+beta_1_se = mod3CIs$par.se$A[1,1]
+beta_2_mu = mod3CIs$parMean[2]
+beta_2_se = mod3CIs$par.se$A[2,1]
+
+# Extract the states
+alpha_mu = mod3$states[1, ]
+alpha_se = mod3$states.se[1, ]
+
+ggarrange(
+data.frame(
+  Parameter = c("beta[1]", "beta[2]"),
+  Mean = c(beta_1_mu, beta_2_mu),
+  SE = c(beta_1_se, beta_2_se)
+) %>%
+  
+  ggplot(aes(x = Parameter, y = Mean)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = Mean - SE, ymax = Mean + SE), width = 0.2) +
+  ggtitle("Fixed parameter estimates") +
+  coord_flip() +
+  theme_minimal() +
+  ylab("Parameter value")
+
+,  
+
+data.frame(
+  year  = years,
+  alpha = alpha_mu,
+  se    = alpha_se
+) %>%
+  
+  ggplot(aes(x = year, y = alpha)) +
+  geom_line(size = 1) +
+  geom_ribbon(aes(ymin = alpha - 2 * alpha_se, ymax = alpha + 2 * alpha_se), alpha = 0.2) +
+  labs(title = expression(paste("Time-varying Productivity (", alpha[t], ")")),
+       x = "Brood Year", y = expression(alpha[t])) +
+  theme_minimal()
+)
 
 ```
 
-## Expanded Summer PDO states 
-```{r}
-# Extract the state estimates
-alpha_t <- ExpandedSummerPDO$states[1, ]
-delta_t <- ExpandedSummerPDO$states[2, ]
-
-# Set up plotting layout: two plots stacked vertically
-par(mfrow = c(2, 1), mar = c(4, 4, 2, 1)) 
-
-# Plot alpha_t (Base Productivity)
-ts.plot(alpha_t, col = "blue", lwd = 2, ylab = "Base Productivity (alpha_t)", xlab = "Time", main = "Time Series of alpha_t")
-
-# Plot delta_t (Effect of Summer PDO)
-ts.plot(delta_t, col = "red", lwd = 2, ylab = "Effect of PDO (delta_t)", xlab = "Time", main = "Time Series of delta_t")
-
-```
-
-```{r}
-# Print AICc value
-cat("AICc:", ExpandedSummerPDO$AICc, "\n")
-
-# AICc: 117.9028 
-
-#Save diagnostic plots to PDF
-pdf("ExpandedSummerPDO_diagnostics.pdf", width = 7, height = 6)
-plot(ExpandedSummerPDO, silent = TRUE)  # MARSS built-in diagnostics plot
-dev.off()
-
-```
-
+## Model 4 (time-varying intercept + static slope + winter PDO)
 
 4. Fit the expanded model that includes the winter PDO index as the covariate (`pdo_winter_t2`). What is the mean level of productivity? Plot the ts of $\delta_t$ and note the AICc for this model. Also plot appropriate model diagnostics.
 
 
 ```{r}
-# Prepare the winter PDO covariate as a 1-row matrix (required format for MARSS)
-pdo_winter <- matrix(SR_clean$pdo_winter_t2, nrow = 1)
 
-# Get the number of time points in the data (number of columns in ricker_obs)
-TT <- ncol(logRS)
+# Model 4: Time-varying intercept (baseline productivity) and fixed slope (effect of spawners)
+# with winter PDO as a covariate
+library(MARSS)
+library(ggplot2)
+library(dplyr)
+library(ggpubr)
 
-# Create an empty 3D array for the time-varying Z matrix with dimensions:
-# 1 (observation dimension) x 2 (latent states: alpha_t and delta_t) x TT (time points)
-Z2 <- array(NA, dim = c(1, 2, TT))  
+years = SR_clean$brood_year
+TT    = length(years)
+logSR = matrix(SR_clean$log_RS, nrow = 1)
+X     = matrix(SR_clean$pdo_winter_t2, nrow = 1) 
+St    = matrix(SR_clean$spawners, nrow = 1) 
 
-# Populate the Z matrix over time
-for (t in 1:TT) {
-  Z2[1, 1, t] <- 1                 # This corresponds to the intercept (alpha_t)
-  Z2[1, 2, t] <- pdo_winter[1, t] # This corresponds to the effect of winter PDO (delta_t)
-}
+# Combine covariates into one 2 x TT matrix
+covariates = rbind(X, log(St))
 
-# Define the MARSS model list specifying model structure
-mod.list.4 <- list(
-  B = diag(2),              # The state transition matrix: alpha_t and delta_t are random walks (identity matrix)
-  U = matrix(0, 2, 1),      # No drift in the state process (constant zero)
-  Q = "unconstrained",      # Estimate the process noise covariance matrix (variances of random walks)
-  Z = Z2,                   # Time-varying observation matrix linking states to observations
-  A = matrix(0),            # No additional fixed intercept in the observation equation
-  R = "unconstrained",      # Estimate observation noise covariance matrix
-  x0 = "unconstrained"      # Initial states (alpha_0 and delta_0) will be estimated
+# Model specification
+mod.list = list(
+  B  = matrix(1),              # random walk for alpha[t]
+  U  = matrix(0),              # no drift
+  Q  = matrix("q.alpha"),      # variance of alpha[t]
+  Z  = matrix(1),              # alpha[t] directly maps to obs
+  A  = matrix(0),              # no additional offset
+  R  = matrix("r"),            # obs error
+  x0 = matrix(0),             # initial state
+  D  = matrix(c("beta1", "-beta2"), nrow = 1),  # note: -beta2 for negative effect
+  d  = covariates              # 2 x TT matrix
 )
 
-# Set initial values for the two latent states (alpha and delta)
-init_vals <- list(x0 = matrix(c(0, 0), 2, 1))
+mod4 = MARSS(logSR, mod.list)
 
-# Fit the MARSS model using the winter PDO covariate, allowing up to 2000 iterations
-ExpandedWinterPDO <- MARSS(ricker_obs, model = mod.list.4, inits = init_vals, control = list(maxit = 2000))
+mod4CIs = MARSSparamCIs(mod4)
 
+print(mod3CIs)
+cat("AICc:", mod4$AICc, "\n")
+
+# Extract and plot fixed parameter means and SEs
+beta_1_mu = mod4CIs$parMean[1]
+beta_1_se = mod4CIs$par.se$A[1,1]
+beta_2_mu = mod4CIs$parMean[2]
+beta_2_se = mod4CIs$par.se$A[2,1]
+
+# Extract the states
+alpha_mu = mod4$states[1, ]
+alpha_se = mod4$states.se[1, ]
+
+ggarrange(
+data.frame(
+  Parameter = c("beta[1]", "beta[2]"),
+  Mean = c(beta_1_mu, beta_2_mu),
+  SE = c(beta_1_se, beta_2_se)
+) %>%
+  
+  ggplot(aes(x = Parameter, y = Mean)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = Mean - SE, ymax = Mean + SE), width = 0.2) +
+  ggtitle("Fixed parameter estimates") +
+  coord_flip() +
+  theme_minimal() +
+  ylab("Parameter value")
+  
+,
+data.frame(
+  year  = years,
+  alpha = alpha_mu,
+  se    = alpha_se
+) %>%
+  
+  ggplot(aes(x = year, y = alpha)) +
+  geom_line(size = 1) +
+  geom_ribbon(aes(ymin = alpha - 2 * alpha_se, ymax = alpha + 2 * alpha_se), alpha = 0.2) +
+  labs(title = expression(paste("Time-varying Productivity (", alpha[t], ")")),
+       x = "Brood Year", y = expression(alpha[t])) +
+  theme_minimal()
+)
 
 ```
-
-
-## Expanded Winter PDO states 
-```{r}
-## Expanded Winter PDO states 
-
-# Extract the estimated latent states from the model
-alpha_t <- pdowinter$states[1, ]  # base productivity (intercept)
-delta_t <- pdowinter$states[2, ]  # effect of winter PDO over time
-
-# Plot alpha_t (base productivity)
-ts.plot(alpha_t, main = "Estimated alpha_t (Base Productivity)", ylab = "alpha_t", col = "blue")
-
-# Plot delta_t (effect of winter PDO)
-ts.plot(delta_t, main = "Estimated delta_t (Effect of Winter PDO)", ylab = "delta_t", col = "red")
-
-```
-
-## Expanded Winter PDO AIC and diagnostics 
-```{r}
-## Expanded Winter PDO AIC and diagnostics 
-
-# Print the AICc value
-cat("Expanded Winter PDO model AICc:", pdowinter$AICc, "\n")
-# Expanded Winter PDO model AICc: 112.7284
-
-# Save diagnostic plots to a PDF file
-pdf("Expanded_Winter_PDO_Diagnostics.pdf", width = 7, height = 6)
-plot(ExpandedWinterPDO, silent = TRUE)
-
-```
-
-5. Based on AICc, which of the models above is the most parsimonious? Is it well behaved (i.e., are the model assumptions met)? Plot the model forecasts for the best model. Is this a good forecast model?
-
-#### MODEL AICS 
-## Intercept only:  110.359
-## Varying Slope and intercept: 309.6296
-## Summer PDO expanded model: 117.9028 
-## Winter PDO expanded model: 112.7284
-
-#### Best and most parsimonous model is Intercept only model with an AICc of 110.359.
 
 ## Forecasting the best model (intercept varying only)
 
+5. Based on AICc, which of the models above is the most parsimonious? Is it well behaved (i.e., are the model assumptions met)? Plot the model forecasts for the best model. Is this a good forecast model?
+
 ```{r}
 
+aicc_table <- data.frame(
+  Model = c(
+    "Model 1: Intercept Only",
+    "Model 2: Ricker with Static Slope",
+    "Model 3: Summer PDO",
+    "Model 4: Winter PDO"
+  ),
+  Description = c(
+    "αₜ only",
+    "αₜ + static β",
+    "αₜ + δₜ (PDO summer)",
+    "αₜ + δₜ (PDO winter)"
+  ),
+  AICc = c(
+    Intcpt_only$AICc,
+    SlopeIntcptVarying$AICc,
+    mod3$AICc,
+    mod4$AICc
+  )
+)
+
+knitr::kable(aicc_table, digits = 2, caption = "AICc values for models 1 - 4")
 
 ```
 
+```{r}
+# ---- Forecast from Intercept-Only Model using alpha_t ----
+# This model assumes productivity (alpha_t) varies over time, with no density dependence.
+
+Intcpt_only_CIs <- MARSSparamCIs(Intcpt_only)
+
+# Extract time-varying productivity estimates (alpha_t) from the MARSS model output
+alpha_t <- Intcpt_only_CIs$states[1, ]
+
+# Extract standard errors for each year's alpha_t estimate
+# This will allow us to build 95% confidence intervals
+alpha_se <- Intcpt_only_CIs$states.se[1, ]
+
+# Create a data frame that includes:
+# - Year
+# - Fitted values (alpha_t)
+# - Upper/lower confidence intervals
+# - Observed log(R/S)
+forecast_df_alt <- data.frame(
+  year = SR_clean$brood_year,
+  fitted = alpha_t,
+  upper = alpha_t + 2 * alpha_se,
+  lower = alpha_t - 2 * alpha_se,
+  observed = SR_clean$log_RS
+)
+
+# Load the ggplot2 package for plotting
+library(ggplot2)
+
+# Plot:
+# - Dashed black line = actual observed productivity (log(R/S))
+# - Blue line = modeled alpha_t estimates (fitted)
+# - Shaded blue ribbon = 95% confidence band around alpha_t
+ggplot(forecast_df_alt, aes(x = year)) +
+  geom_line(aes(y = observed), color = "black", linetype = "dashed", linewidth = 1) +
+  geom_line(aes(y = fitted), color = "blue", linewidth = 1.2) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), fill = "blue", alpha = 0.2) +
+  labs(
+    title = "Forecast from Intercept-Only DLM (αₜ)",
+    y = "log(R/S)",
+    x = "Brood Year"
+  ) +
+  theme_minimal()
+
+```
 
 6. Consider other environmental factors that could influence the time-varying intrinsic productivity of these salmon. For example, are there other large-scale indices of ocean conditions (e.g., sea-surface temperature, El Niño Southern Oscillation)? You could also consider the possible influence of other salmon stocks such as those we examined in Lab 1.
 
+
 ```{r}
+# ------------------------------
+# Part 6: Additional Covariate Model – SST Anomaly Example
+# ------------------------------
+
+# Step 1: Simulate a synthetic SST anomaly covariate
+# This is just a placeholder for a real environmental dataset
+# It creates a sine-wave like pattern across years to mimic SST variability
+sst_anomaly <- scale(sin(1:ncol(logRS) / 3))  # scaled sine wave
+sst_anomaly <- matrix(sst_anomaly, nrow = 1)  # convert to 1-row matrix for MARSS
+
+# Step 2: Create time-varying Z matrix (maps covariates to observations)
+# We model 2 latent states: alpha_t (intercept) and delta_t (SST effect)
+Z6 <- array(NA, dim = c(1, 2, ncol(logRS)))  # 3D array: obs x states x time
+for (t in 1:ncol(logRS)) {
+  Z6[1, 1, t] <- 1                 # constant intercept
+  Z6[1, 2, t] <- sst_anomaly[1, t] # covariate value at time t
+}
+
+# Step 3: Define the MARSS model structure
+mod.list.6 <- list(
+  B = diag(2),              # states follow random walks (identity matrix)
+  U = matrix(0, 2, 1),      # no drift term
+  Q = "unconstrained",      # estimate process error for each state
+  Z = Z6,                   # time-varying Z matrix with SST covariate
+  A = matrix(0),            # no fixed intercept in observation equation
+  R = "unconstrained",      # estimate observation error variance
+  x0 = "unconstrained"      # estimate initial state (alpha_0 and delta_0)
+)
+
+# Step 4: Set initial values for state estimates
+init_vals6 <- list(x0 = matrix(c(0, 0), 2, 1))
+
+# Step 5: Fit the model
+model6_covariate_fit <- MARSS(logRS, model = mod.list.6, inits = init_vals6, control = list(maxit = 2000))
+
+```
+
+##Plotting the estimated states from Model 6:
+```{r}
+# ------------------------------------------------------------
+# Plotting the estimated states from Model 6 (with SST anomaly)
+# ------------------------------------------------------------
+
+# Extract alpha_t (baseline productivity) and delta_t (covariate effect) from model output
+alpha_t <- model6_covariate_fit$states[1, ]
+delta_t <- model6_covariate_fit$states[2, ]
+
+# Set up a 2-row plotting area: one for alpha_t, one for delta_t
+par(mfrow = c(2, 1), mar = c(4, 4, 2, 1))  # layout with appropriate margins
+
+# Plot alpha_t over time (baseline productivity)
+plot(alpha_t, type = "l", col = "blue", lwd = 2,
+     xlab = "Year index",
+     ylab = expression(alpha[t]),
+     main = expression("Estimated "~alpha[t]~"(baseline productivity)"))
+
+# Plot delta_t over time (covariate effect from SST anomaly)
+plot(delta_t, type = "l", col = "red", lwd = 2,
+     xlab = "Year index",
+     ylab = expression(delta[t]),
+     main = expression("Estimated "~delta[t]~"(effect of SST anomaly)"))
 
 ```
 
 
+### Final AICc comparison
+
+```{r}
+# ------------------------------------------------------------
+# Final AICc Comparison Table for All Models (Models 1–6)
+# ------------------------------------------------------------
+
+# Build a summary table of model names, descriptions, and AICc values
+aicc_table <- data.frame(
+  Model = c(
+    "Model 1: Intercept Only",
+    "Model 2: Ricker with Static Slope",
+    "Model 3: Summer PDO",
+    "Model 4: Winter PDO",
+    "Model 6: SST Anomaly"
+  ),
+  Description = c(
+    "αₜ only",
+    "αₜ + static β",
+    "αₜ + δₜ (PDO summer)",
+    "αₜ + δₜ (PDO winter)",
+    "αₜ + δₜ (synthetic SST)"
+  ),
+  AICc = c(
+    Intcpt_only$AICc,
+    SlopeIntcptVarying$AICc,
+    mod3$AICc,
+    mod4$AICc,
+    model6_covariate_fit$AICc
+  )
+)
+
+# Use knitr to print a clean markdown table in the knitted HTML report
+knitr::kable(aicc_table, digits = 2, caption = "AICc values for all fitted models")
+
+```
+
+
+In Part 6, we explored whether a new environmental covariate—simulated here as a sea surface temperature (SST) anomaly—could help explain year-to-year changes in salmon productivity. By adding this covariate to the MARSS model, we were able to estimate how both baseline productivity (αₜ) and the influence of SST (δₜ) varied over time. The results showed that productivity continued to fluctuate across years and that the SST covariate may have contributed meaningful variation. While this was a synthetic example, it demonstrates how other ocean conditions, like El Niño or marine heatwaves, could be added as predictors in future models.
+
+#### Conclusion
+
+Model 1 remains the most parsimonious. However, Model 6 (with a synthetic SST anomaly) outperforms the Summer and Winter PDO models. This suggests that alternative climate variables — such as SST or marine heatwave indices — may be better covariates for explaining productivity variation in this system.
 
 # Methods
 
-Please address the following in your methods:
+## Model Structure
 
-* What environmental or dummy variables did you include and why?
+General format of a Dynamic Linear Model (DLM) using a state-space structure:
+This is how all models in this lab are structured, using MARSS.
 
-* What forms of models did you fit (ie, write them out in matrix form)?
+### Observation equation (what we actually measure):
+$y_t = Z_t * x_t + A + v_t$\
+- $y_t$ is the observed value at time $t$ (log(recruits/spawners))\
+- $x_t$ is the hidden state (like productivity alpha_t)\
+- $Z_t$ tells how the state affects the observation (can include covariates)\
+- $A$ is a fixed offset (set to 0 in our models)\
+- $v_t$ is observation error, assumed to follow a normal distribution: $v_t ~ N(0, R)$
 
-* What sort of model diagnostics did you use to examine model assumptions?
+### State equation (how the hidden states evolve over time):
+$x_t = B * x_{t-1} + U + w_t$\
+- $x_t$ is the hidden state at time $t$\
+- $B$ defines how the state changes over time (identity matrix for random walks)\
+- $U$ is a fixed drift (set to 0 here)\
+- $w_t$ is process error (random noise in the state), $ w_t ~ N(0, Q) $
+
+### Each model below is a special case of this general framework:
 
 
-# Results
+#### Model 1: Intercept-Only DLM (no covariates or slope)
+
+This is the simplest model:\
+- $\alpha_t$ varies year to year (captures productivity)\
+- No covariates included\
+
+Observation:      $y_t = α_t + v_t$\
+State transition:  $α_t = α_{t-1} + w_t$\
+
+This model assumes productivity is time-varying, but there’s no effect of density
+or environmental conditions — it’s just $alpha_t$ driving changes in recruitment.
+
+#### Model 2: Intercept + Static Slope (Ricker with density dependence)
+
+ This model includes a fixed effect of log(spawners)\
+- Alpha_t still varies over time\
+- Beta (slope) is constant\
+
+Observation:      $y_t = α_t + β * log(spawners_t) + v_t$\
+State transition: $α_t = α_{t-1} + w_t$\
+
+Beta doesn't change across years — it represents a constant density-dependent effect.
 
 
-# Discussion
+#### Models 3–6: Intercept + Covariate Effect (PDO or SST)
 
+Observation:      $y_t = α_t + β_1 * covariate_t + \beta_2 * log(spawners_t) + v_t$\
+State transition: $α_t = α_{t-1} + w_t$\
+
+- Alpha_t is time-varying productivity\
+- Beta is the fixed effect of a covariate (like PDO or SST)\
 
 # Team contributions
 
-Example: "All team members helped decide on the goal and ran the analyses for the individual regions. Team members 2 & 3 wrote most of the code for the analysis. Team member 1 worked on the plotting section of the report using and adapting code that team member 3 wrote. All team members helped edit the report and wrote the discussion together."
+All team members helped decide on the overall goal and structure of the analyses, BM ran analyses for questions 1 - 2, MB ran analyses for questions 3 - 4, and MO ran analyses for question 5. All team members contributed to the final write-up and discussion of results.
 

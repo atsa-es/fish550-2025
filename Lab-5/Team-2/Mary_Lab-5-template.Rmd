@@ -19,6 +19,15 @@ options(dplyr.summarise.inform = FALSE)
 
 Describe the salmon data an dany environmental covariates you decide to examine. 
 
+```{r dlm-read-data, message=FALSE, warning=FALSE}
+suppressPackageStartupMessages({
+  library(atsalibrary)
+  data(KvichakSockeye, package="atsalibrary")
+})
+SR_data <- KvichakSockeye
+
+```
+
 
 ## Load the data
 
@@ -28,9 +37,6 @@ Describe the salmon data an dany environmental covariates you decide to examine.
 ## Sys.setenv("R_REMOTES_NO_ERRORS_FROM_WARNINGS" = "true")
 devtools::install_github("nwfsc-timeseries/atsalibrary")
 
-## get data
-data(KvichakSockeye, package="atsalibrary")
-SR_data <- KvichakSockeye
 ```
 
 The data are a dataframe with columns for brood year (`brood_year`), number of spawners (`spawners`), number of recruits (`recruits`) and PDO at year $t-2$ in summer (`pdo_summer_t2`) and in winter (`pdo_winter_t2`).

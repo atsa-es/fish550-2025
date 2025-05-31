@@ -1,0 +1,186 @@
+---
+title: "Team 2 - Lab 5"
+subtitle: "Dynamic Linear Models (DLMs) - Time-varying productivity of salmon"
+author: "Mary, Ben, Magnus"
+date: "May 2025"
+output: 
+  html_document:
+    code-folding: true
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include = FALSE}
+options(dplyr.summarise.inform = FALSE)
+knitr::opts_chunk$set(message = FALSE, warning = FALSE)
+```
+
+# Data
+
+We analyzed the Kvichak Sockeye salmon dataset from the `atsalibrary` package. This dataset includes yearly observations of brood-year salmon spawner abundance and resulting recruits. Additionally, it contains environmental covariates representing ocean conditions—the Pacific Decadal Oscillation (PDO) indices—from two years prior to each brood year. Specifically, `pdo_summer_t2` and `pdo_winter_t2` reflect summer and winter PDO values, respectively, lagged to account for early life-stage exposure of the salmon to ocean conditions.
+
+## Load the data
+
+```{r dlm-read-data}
+library(atsalibrary)
+data(KvichakSockeye, package="atsalibrary")
+SR_data <- KvichakSockeye
+```
+
+```{r dlm-data-head}
+head(SR_data)
+```
+
+## Wrangle the data
+
+```{r wrangle_data}
+library(dplyr)
+
+SR_clean <- SR_data %>%
+  filter(!is.na(spawners) & !is.na(recruits)) %>%
+  mutate(
+    log_RS = log(recruits / spawners),
+    brood_year = as.numeric(brood_year),
+    logR = log(recruits),
+    logS = log(spawners)
+  )
+
+plot(SR_clean$log_RS ~ SR_clean$spawners,
+     xlab = "Number of spawners",
+     ylab = "log [Recruits/Spawners]")
+```
+
+# General Tasks
+
+## Question 1 – Reduced Ricker Model (time-varying alpha)
+
+```{r model1_reduced_ricker}
+library(MARSS)
+years <- SR_clean$brood_year
+logRS <- matrix(SR_clean$log_RS, nrow = 1)
+
+mod1 <- MARSS(
+  logRS,
+  model = list(
+    B = matrix(1),
+    U = matrix(0),
+    Q = matrix("q"),
+    Z = matrix(1),
+    A = matrix(0),
+    R = matrix("r"),
+    x0 = matrix("mu")
+  ),
+  control = list(maxit = 5000)
+)
+
+mod1$AICc
+plot(mod1)
+```
+
+## Question 2 – Full Ricker Model (time-varying alpha + static beta)
+
+```{r model2_full_ricker}
+logR <- matrix(SR_clean$logR, nrow = 1)
+logS <- matrix(SR_clean$logS, nrow = 1)
+
+mod2 <- MARSS(
+  logR,
+  model = list(
+    B = matrix(1),
+    U = matrix(0),
+    Q = matrix("q"),
+    Z = matrix(1),
+    A = matrix(0),
+    R = matrix("r"),
+    x0 = matrix(0),
+    D = matrix("b", 1, 1),
+    d = logS
+  ),
+  control = list(maxit = 5000)
+)
+
+mod2$AICc
+plot(mod2)
+```
+
+## Question 3 – Add Summer PDO as Covariate
+
+```{r model3_summer_pdo}
+X <- matrix(SR_clean$pdo_summer_t2, nrow = 1)
+St <- matrix(SR_clean$spawners, nrow = 1)
+covariates <- rbind(X, log(St))
+
+mod3 <- MARSS(
+  logRS,
+  model = list(
+    B = matrix(1),
+    U = matrix(0),
+    Q = matrix("q.alpha"),
+    Z = matrix(1),
+    A = matrix(0),
+    R = matrix("r"),
+    x0 = matrix(0),
+    D = matrix(c("beta1", "-beta2"), nrow = 1),
+    d = covariates
+  )
+)
+
+mod3CIs <- MARSSparamCIs(mod3)
+mod3$AICc
+
+library(ggplot2)
+data.frame(
+  Parameter = c("beta[1]", "beta[2]"),
+  Mean = mod3CIs$parMean[1:2],
+  SE = c(mod3CIs$par.se$A[1,1], mod3CIs$par.se$A[2,1])
+) %>%
+  ggplot(aes(x = Parameter, y = Mean)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = Mean - SE, ymax = Mean + SE), width = 0.2) +
+  coord_flip() +
+  theme_minimal() +
+  ggtitle("Fixed parameter estimates")
+```
+
+## Question 4 – Add Winter PDO as Covariate
+
+```{r model4_winter_pdo}
+X <- matrix(SR_clean$pdo_winter_t2, nrow = 1)
+covariates <- rbind(X, log(St))
+
+mod4 <- MARSS(
+  logRS,
+  model = list(
+    B = matrix(1),
+    U = matrix(0),
+    Q = matrix("q.alpha"),
+    Z = matrix(1),
+    A = matrix(0),
+    R = matrix("r"),
+    x0 = matrix(0),
+    D = matrix(c("beta1", "-beta2"), nrow = 1),
+    d = covariates
+  )
+)
+
+mod4CIs <- MARSSparamCIs(mod4)
+mod4$AICc
+
+data.frame(
+  Parameter = c("beta[1]", "beta[2]"),
+  Mean = mod4CIs$parMean[1:2],
+  SE = c(mod4CIs$par.se$A[1,1], mod4CIs$par.se$A[2,1])
+) %>%
+  ggplot(aes(x = Parameter, y = Mean)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = Mean - SE, ymax = Mean + SE), width = 0.2) +
+  coord_flip() +
+  theme_minimal() +
+  ggtitle("Fixed parameter estimates")
+```
+
+---
+
+# ✅ Mary picks up from here
+
+You can now begin with Question 5: comparing AICc values, checking model diagnostics, and plotting forecasts for the best-fitting model. Let me know if you'd like help scripting that. Also, the methods, results, and discussion sections can now be filled based on the models above.
